@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars and adjust. terraform.tfvars is gitignored.
+aws_region  = "us-east-1"
+project     = "medibridge"
+environment = "dev"
+owner       = "Olga"
+vpc_cidr    = "10.0.0.0/16"
+az_count    = 2
