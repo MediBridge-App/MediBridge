@@ -1,0 +1,50 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['frontend/**']
+  push:
+    branches: [main]
+    paths: ['frontend/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      # SCAFFOLD GUARD — remove once frontend/ has a package.json.
+      # Until then this job skips its real steps and stays green.
+      # Owner (Vida): scaffold the React/Next.js app, then delete this guard
+      # block and the `if:` conditions below.
+      - name: Check for Node project
+        id: check
+        run: |
+          if [ -f package.json ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No package.json yet — skipping frontend CI. Add it to enable lint/build."
+          fi
+
+      - name: Set up Node
+        if: steps.check.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        if: steps.check.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Lint
+        if: steps.check.outputs.ready == 'true'
+        run: npm run lint --if-present
+
+      - name: Type-check & build
+        if: steps.check.outputs.ready == 'true'
+        run: npm run build --if-present

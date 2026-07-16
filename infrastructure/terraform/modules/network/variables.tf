@@ -13,3 +13,9 @@ variable "az_count" {
   default     = 2
   description = "Number of AZs to spread subnets across."
 }
+
+variable "app_port" {
+  type        = number
+  default     = 8000
+  description = "Port the FastAPI backend listens on; ECS SG allows this from the ALB SG only."
+}
