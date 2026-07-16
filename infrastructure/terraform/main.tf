@@ -17,12 +17,12 @@
 # Phase 1 — network, encryption, storage, auth
 # ---------------------------------------------------------------------------
 
-# module "network" {
-#   source      = "./modules/network"
-#   name_prefix = local.name_prefix
-#   vpc_cidr    = var.vpc_cidr
-#   az_count    = var.az_count
-# }
+module "network" {
+  source      = "./modules/network"
+  name_prefix = local.name_prefix
+  vpc_cidr    = var.vpc_cidr
+  az_count    = var.az_count
+}
 
 # module "kms" {
 #   source      = "./modules/kms"

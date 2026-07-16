@@ -7,9 +7,21 @@
 # Workers (Ayesha):  processing_queue_url, ecr_workers_url
 # Frontend (Vida):   alb_url, cognito_user_pool_id, cognito_client_id
 
-# output "vpc_id" {
-#   value = module.network.vpc_id
-# }
+output "vpc_id" {
+  value = module.network.vpc_id
+}
+
+output "public_subnet_ids" {
+  value = module.network.public_subnet_ids
+}
+
+output "private_app_subnet_ids" {
+  value = module.network.private_app_subnet_ids
+}
+
+output "private_data_subnet_ids" {
+  value = module.network.private_data_subnet_ids
+}
 
 # output "document_bucket_name" {
 #   value = module.s3.bucket_name
