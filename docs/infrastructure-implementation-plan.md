@@ -79,7 +79,7 @@ Build in this order (each is a module you write, `plan`, then `apply`):
 3. **`s3`** — document bucket: SSE-KMS with the CMK, block all public access, versioning on, a lifecycle rule for cost. No public policy — access is via presigned URLs the backend generates.
 4. **`secrets`** — Secrets Manager entries for DB master credentials (generate the password in Terraform, store it here) and an app-secrets placeholder. KMS-encrypted.
 5. **`rds`** — PostgreSQL, small instance class, in private-data subnets, `publicly_accessible = false`, storage encrypted with the CMK, `rds.force_ssl` enforced, credentials sourced from Secrets Manager. DB subnet group + the RDS SG from step 1.
-6. **`cognito`** — user pool + app client. Create groups that map to the app roles (e.g. clinic-admin, staff). MFA optional in dev — note it as a security enhancement. Configure token settings the backend expects.
+6. **`cognito`** — user pool + app client. Create one group per app role. **The canonical role list lives in `database/0002_create_users.sql`** (owner: Raissa) — group names must match that column's values byte-for-byte, since the group name lands verbatim in the JWT `cognito:groups` claim. Never restate the list in another file; link to it. MFA optional in dev — note it as a security enhancement. Configure token settings the backend expects.
 7. **`ecr`** — repositories for `backend` and `workers` images so Bella and Ayesha can start pushing.
 8. **Publish outputs.** Add to `outputs.tf`: VPC/subnet IDs, security group IDs, S3 bucket name, KMS key ARN, RDS endpoint, Cognito user pool ID + client ID, ECR repo URLs, secret ARNs. Fill in the matching keys in the repo's `.env.example` mapping so backend/DB teams can wire their `.env`.
 
