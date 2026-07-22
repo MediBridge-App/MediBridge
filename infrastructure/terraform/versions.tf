@@ -24,7 +24,7 @@ terraform {
   # backend "s3" {
   #   bucket         = "medibridge-dev-tfstate"
   #   key            = "dev/terraform.tfstate"
-  #   region         = "us-east-1"
+  #   region         = "us-east-2"
   #   dynamodb_table = "medibridge-dev-tflock"
   #   encrypt        = true
   # }
