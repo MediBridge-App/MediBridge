@@ -2,7 +2,7 @@
 
 **Owner:** Olga — Infrastructure and Security
 **Directory:** `infrastructure/`
-**Tooling:** Terraform (IaC), AWS (`us-east-1`), single `dev` environment first
+**Tooling:** Terraform (IaC), AWS (`us-east-2`), single `dev` environment first
 **Source of truth for design:** `docs/infrastructure-blueprint.md`
 
 This plan turns the blueprint into an ordered, do-this-then-that build. It is scoped to the infrastructure/security role and mapped to the three project milestones so the frontend, backend, worker, and database teams get what they need, when they need it.
@@ -19,7 +19,7 @@ Yes. The blueprint requires that "all infrastructure must be defined as code" (D
 
 ## Guiding principles
 
-- **One environment first (`dev`), one region (`us-east-1`).** Get the whole pipeline working before adding environments.
+- **One environment first (`dev`), one region (`us-east-2`).** Get the whole pipeline working before adding environments.
 - **Everything as code, nothing clicked in the console.** If you must click something to unblock the team, capture it in Terraform immediately after.
 - **Least privilege from the start.** No wildcard IAM, no long-lived static keys where a task/execution role works.
 - **Encrypt by default.** KMS at rest, TLS in transit. This is a HIPAA-principles project — the encryption model is not optional polish.
@@ -56,7 +56,7 @@ Textract and Bedrock are not provisioned as infrastructure — they are API endp
 
 ### Phase 0 — Foundations (before Milestone 1 work starts)
 
-1. **Confirm AWS account + region access.** Dedicated MediBridge dev account, `us-east-1`. Verify you can authenticate the AWS CLI (`aws sts get-caller-identity`).
+1. **Confirm AWS account + region access.** Dedicated MediBridge dev account, `us-east-2`. Verify you can authenticate the AWS CLI (`aws sts get-caller-identity`).
 2. **Enable Bedrock model access.** In the Bedrock console, request access to the model(s) Ayesha's workers will use. Document which model IDs are enabled. (Manual, one-time.)
 3. **Install pinned tooling.** Terraform (pin a version in `versions.tf`), AWS CLI v2.
 4. **Lay down the Terraform skeleton** (scaffolded for you in `infrastructure/terraform/`): `versions.tf`, `providers.tf`, `variables.tf`, `locals.tf` (naming + common tags), `main.tf` (module wiring), `outputs.tf`, `terraform.tfvars.example`.
