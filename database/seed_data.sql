@@ -30,12 +30,12 @@ INSERT INTO organizations (id, name, org_code, type, created_at) VALUES
 -- USERS (6) — 2 per organization
 -- ---------------------------------------------------------------------
 INSERT INTO users (id, cognito_id, organization_id, email, full_name, role, is_active, last_login, created_at) VALUES
-  ('b0000000-0000-4000-8000-000000000001', 'cognito-sub-0001', 'a0000000-0000-4000-8000-000000000001', 'j.rivera@stmercy.org',        'Dr. James Rivera', 'physician',            true, now() - interval '1 day',  now() - interval '29 days'),
+  ('b0000000-0000-4000-8000-000000000001', 'cognito-sub-0001', 'a0000000-0000-4000-8000-000000000001', 'j.rivera@stmercy.org',        'Dr. James Rivera', 'provider',            true, now() - interval '1 day',  now() - interval '29 days'),
   ('b0000000-0000-4000-8000-000000000002', 'cognito-sub-0002', 'a0000000-0000-4000-8000-000000000001', 'maria.santos@stmercy.org',    'Maria Santos',     'referral_coordinator', true, now() - interval '2 hours', now() - interval '29 days'),
-  ('b0000000-0000-4000-8000-000000000003', 'cognito-sub-0003', 'a0000000-0000-4000-8000-000000000002', 'sarah.chen@riverside.org',    'Dr. Sarah Chen',   'specialist',           true, now() - interval '5 hours', now() - interval '27 days'),
-  ('b0000000-0000-4000-8000-000000000004', 'cognito-sub-0004', 'a0000000-0000-4000-8000-000000000002', 'emily.wong@riverside.org',    'Emily Wong',       'admin',                true, now() - interval '1 day',  now() - interval '27 days'),
-  ('b0000000-0000-4000-8000-000000000005', 'cognito-sub-0005', 'a0000000-0000-4000-8000-000000000003', 'michael.osei@metrogeneral.org','Dr. Michael Osei','physician',            true, now() - interval '3 hours', now() - interval '24 days'),
-  ('b0000000-0000-4000-8000-000000000006', 'cognito-sub-0006', 'a0000000-0000-4000-8000-000000000003', 'linda.park@metrogeneral.org', 'Linda Park',       'admin',                true, now() - interval '6 hours', now() - interval '24 days');
+  ('b0000000-0000-4000-8000-000000000003', 'cognito-sub-0003', 'a0000000-0000-4000-8000-000000000002', 'sarah.chen@riverside.org',    'Dr. Sarah Chen',   'provider',           true, now() - interval '5 hours', now() - interval '27 days'),
+  ('b0000000-0000-4000-8000-000000000004', 'cognito-sub-0004', 'a0000000-0000-4000-8000-000000000002', 'emily.wong@riverside.org',    'Emily Wong',       'registered_nurse',                true, now() - interval '1 day',  now() - interval '27 days'),
+  ('b0000000-0000-4000-8000-000000000005', 'cognito-sub-0005', 'a0000000-0000-4000-8000-000000000003', 'michael.osei@metrogeneral.org','Dr. Michael Osei','organization_admin',            true, now() - interval '3 hours', now() - interval '24 days'),
+  ('b0000000-0000-4000-8000-000000000006', 'cognito-sub-0006', 'a0000000-0000-4000-8000-000000000003', 'linda.park@metrogeneral.org', 'Linda Park',       'medical_assistant',                true, now() - interval '6 hours', now() - interval '24 days');
 
 -- ---------------------------------------------------------------------
 -- DOCUMENTS (10) — covering every document_type, priority, and pipeline status
