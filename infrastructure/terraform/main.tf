@@ -56,32 +56,47 @@ module "secrets" {
 #   name_prefix = local.name_prefix
 # }
 
-# module "ecr" {
-#   source      = "./modules/ecr"
-#   name_prefix = local.name_prefix
-#   repositories = ["backend", "workers"]
-# }
+module "ecr" {
+  source       = "./modules/ecr"
+  name_prefix  = local.name_prefix
+  repositories = ["backend", "workers"]
+}
 
 # ---------------------------------------------------------------------------
 # Phase 2 — compute, ingress, async pipeline
 # ---------------------------------------------------------------------------
 
-# module "alb" {
-#   source            = "./modules/alb"
-#   name_prefix       = local.name_prefix
-#   vpc_id            = module.network.vpc_id
-#   public_subnet_ids = module.network.public_subnet_ids
-# }
+module "alb" {
+  source            = "./modules/alb"
+  name_prefix       = local.name_prefix
+  vpc_id            = module.network.vpc_id
+  public_subnet_ids = module.network.public_subnet_ids
+  security_group_id = module.network.alb_security_group_id
+}
 
-# module "ecs" {
-#   source            = "./modules/ecs"
-#   name_prefix       = local.name_prefix
-#   vpc_id            = module.network.vpc_id
-#   app_subnet_ids    = module.network.private_app_subnet_ids
-#   ecr_backend_url   = module.ecr.repository_urls["backend"]
-#   target_group_arn  = module.alb.target_group_arn
-#   security_group_id = module.network.ecs_security_group_id
-# }
+module "ecs" {
+  source               = "./modules/ecs"
+  name_prefix          = local.name_prefix
+  vpc_id               = module.network.vpc_id
+  app_subnet_ids       = module.network.private_app_subnet_ids
+  ecr_backend_url      = module.ecr.repository_urls["backend"]
+  target_group_arn     = module.alb.target_group_arn
+  security_group_id    = module.network.ecs_security_group_id
+  aws_region           = var.aws_region
+  kms_key_arn          = module.kms.key_arn
+  document_bucket_name = module.s3.bucket_name
+  document_bucket_arn  = module.s3.bucket_arn
+  db_secret_arn        = module.secrets.db_credentials_arn
+  app_secrets_arn      = module.secrets.app_secrets_arn
+
+  # Start at 0 until Bella has pushed an image. With no image to pull the
+  # service restart-loops and the ALB reports the target permanently unhealthy.
+  # Raise to 1 once `docker push` has happened.
+  desired_count = 0
+
+  # Creating a service against a target group with no listener attached fails.
+  depends_on = [module.alb]
+}
 
 # module "sqs" {
 #   source      = "./modules/sqs"
