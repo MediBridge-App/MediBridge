@@ -24,22 +24,22 @@ module "network" {
   az_count    = var.az_count
 }
 
-# module "kms" {
-#   source      = "./modules/kms"
-#   name_prefix = local.name_prefix
-# }
+module "kms" {
+  source      = "./modules/kms"
+  name_prefix = local.name_prefix
+}
 
-# module "s3" {
-#   source      = "./modules/s3"
-#   name_prefix = local.name_prefix
-#   kms_key_arn = module.kms.key_arn
-# }
+module "s3" {
+  source      = "./modules/s3"
+  name_prefix = local.name_prefix
+  kms_key_arn = module.kms.key_arn
+}
 
-# module "secrets" {
-#   source      = "./modules/secrets"
-#   name_prefix = local.name_prefix
-#   kms_key_arn = module.kms.key_arn
-# }
+module "secrets" {
+  source      = "./modules/secrets"
+  name_prefix = local.name_prefix
+  kms_key_arn = module.kms.key_arn
+}
 
 # module "rds" {
 #   source             = "./modules/rds"

@@ -2,7 +2,7 @@
 
 **Owner:** Olga — Infrastructure and Security
 **Directory:** `infrastructure/`
-**Tooling:** Terraform (IaC), AWS (`us-east-1`), single `dev` environment first
+**Tooling:** Terraform (IaC), AWS (`us-east-2`), single `dev` environment first
 **Source of truth for design:** `docs/infrastructure-blueprint.md`
 
 This plan turns the blueprint into an ordered, do-this-then-that build. It is scoped to the infrastructure/security role and mapped to the three project milestones so the frontend, backend, worker, and database teams get what they need, when they need it.
@@ -19,7 +19,7 @@ Yes. The blueprint requires that "all infrastructure must be defined as code" (D
 
 ## Guiding principles
 
-- **One environment first (`dev`), one region (`us-east-1`).** Get the whole pipeline working before adding environments.
+- **One environment first (`dev`), one region (`us-east-2`).** Get the whole pipeline working before adding environments.
 - **Everything as code, nothing clicked in the console.** If you must click something to unblock the team, capture it in Terraform immediately after.
 - **Least privilege from the start.** No wildcard IAM, no long-lived static keys where a task/execution role works.
 - **Encrypt by default.** KMS at rest, TLS in transit. This is a HIPAA-principles project — the encryption model is not optional polish.
@@ -56,7 +56,7 @@ Textract and Bedrock are not provisioned as infrastructure — they are API endp
 
 ### Phase 0 — Foundations (before Milestone 1 work starts)
 
-1. **Confirm AWS account + region access.** Dedicated MediBridge dev account, `us-east-1`. Verify you can authenticate the AWS CLI (`aws sts get-caller-identity`).
+1. **Confirm AWS account + region access.** Dedicated MediBridge dev account, `us-east-2`. Verify you can authenticate the AWS CLI (`aws sts get-caller-identity`).
 2. **Enable Bedrock model access.** In the Bedrock console, request access to the model(s) Ayesha's workers will use. Document which model IDs are enabled. (Manual, one-time.)
 3. **Install pinned tooling.** Terraform (pin a version in `versions.tf`), AWS CLI v2.
 4. **Lay down the Terraform skeleton** (scaffolded for you in `infrastructure/terraform/`): `versions.tf`, `providers.tf`, `variables.tf`, `locals.tf` (naming + common tags), `main.tf` (module wiring), `outputs.tf`, `terraform.tfvars.example`.
@@ -79,7 +79,7 @@ Build in this order (each is a module you write, `plan`, then `apply`):
 3. **`s3`** — document bucket: SSE-KMS with the CMK, block all public access, versioning on, a lifecycle rule for cost. No public policy — access is via presigned URLs the backend generates.
 4. **`secrets`** — Secrets Manager entries for DB master credentials (generate the password in Terraform, store it here) and an app-secrets placeholder. KMS-encrypted.
 5. **`rds`** — PostgreSQL, small instance class, in private-data subnets, `publicly_accessible = false`, storage encrypted with the CMK, `rds.force_ssl` enforced, credentials sourced from Secrets Manager. DB subnet group + the RDS SG from step 1.
-6. **`cognito`** — user pool + app client. Create groups that map to the app roles (e.g. clinic-admin, staff). MFA optional in dev — note it as a security enhancement. Configure token settings the backend expects.
+6. **`cognito`** — user pool + app client. Create one group per app role. **The canonical role list lives in `database/0002_create_users.sql`** (owner: Raissa) — group names must match that column's values byte-for-byte, since the group name lands verbatim in the JWT `cognito:groups` claim. Never restate the list in another file; link to it. MFA optional in dev — note it as a security enhancement. Configure token settings the backend expects.
 7. **`ecr`** — repositories for `backend` and `workers` images so Bella and Ayesha can start pushing.
 8. **Publish outputs.** Add to `outputs.tf`: VPC/subnet IDs, security group IDs, S3 bucket name, KMS key ARN, RDS endpoint, Cognito user pool ID + client ID, ECR repo URLs, secret ARNs. Fill in the matching keys in the repo's `.env.example` mapping so backend/DB teams can wire their `.env`.
 

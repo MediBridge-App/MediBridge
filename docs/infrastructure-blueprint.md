@@ -6,7 +6,7 @@ This document defines the baseline AWS infrastructure design for the MediBridge 
 
 - Environment: `dev`
 - AWS account: dedicated course or team-owned AWS account for MediBridge only
-- Primary region: `us-east-1`
+- Primary region: `us-east-2`
 - Reasoning:
   - broad service availability for Amazon Bedrock, Textract, Cognito, ECS, and RDS
   - straightforward access to ACM, ALB, CloudWatch, and S3 integrations
@@ -128,7 +128,7 @@ Trust boundary rules:
 
 The `dev` environment is optimized for team velocity, cost control, and simple demos.
 
-- Single AWS region: `us-east-1`
+- Single AWS region: `us-east-2`
 - Single environment first: `dev`, with naming conventions that can later support `staging` and `prod`
 - Lower-cost sizing is acceptable:
   - small RDS instance class

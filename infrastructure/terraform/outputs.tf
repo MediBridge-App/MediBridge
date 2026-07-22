@@ -23,22 +23,34 @@ output "private_data_subnet_ids" {
   value = module.network.private_data_subnet_ids
 }
 
-# output "document_bucket_name" {
-#   value = module.s3.bucket_name
-# }
+output "document_bucket_name" {
+  description = "Document bucket name — Bella needs this for uploads and presigned URLs."
+  value       = module.s3.bucket_name
+}
 
-# output "kms_key_arn" {
-#   value = module.kms.key_arn
-# }
+output "document_bucket_arn" {
+  description = "Document bucket ARN — used in the ECS task and Lambda IAM policies."
+  value       = module.s3.bucket_arn
+}
+
+output "kms_key_arn" {
+  description = "CMK ARN — Ayesha needs this for the OCR/Bedrock Lambda role."
+  value       = module.kms.key_arn
+}
 
 # output "rds_endpoint" {
 #   value = module.rds.endpoint
 # }
 
-# output "db_secret_arn" {
-#   description = "Secrets Manager ARN holding DB credentials."
-#   value       = module.secrets.db_credentials_arn
-# }
+output "db_secret_arn" {
+  description = "Secrets Manager ARN holding DB credentials. Safe to share — IAM controls who can read the value."
+  value       = module.secrets.db_credentials_arn
+}
+
+output "app_secrets_arn" {
+  description = "Secrets Manager ARN for application secrets (empty placeholder)."
+  value       = module.secrets.app_secrets_arn
+}
 
 # output "cognito_user_pool_id" {
 #   value = module.cognito.user_pool_id
