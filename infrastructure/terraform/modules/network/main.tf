@@ -137,9 +137,25 @@ resource "aws_route_table_association" "data" {
 }
 
 resource "aws_security_group" "alb" {
-  name        = "${var.name_prefix}-alb-sg"
+  name = "${var.name_prefix}-alb-sg"
+  # NOTE: do not edit this description. AWS freezes security group
+  # descriptions at creation, so changing the text forces a destroy-and-
+  # recreate — which deadlocks, because the ECS security group references
+  # this one and AWS will not delete a referenced group. Rules can be added
+  # and removed freely; only the description is immutable.
   description = "Allow HTTPS from the internet to the ALB"
   vpc_id      = aws_vpc.this.id
+
+  # Dev runs over plain HTTP: ACM cannot issue a certificate for the raw
+  # *.elb.amazonaws.com name, and we have no custom domain. Documented as a
+  # known gap — close it by registering a domain and adding an ACM cert.
+  ingress {
+    description = "HTTP from internet (dev only, no TLS available)"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   ingress {
     description = "HTTPS from internet"

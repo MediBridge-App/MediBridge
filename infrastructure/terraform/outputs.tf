@@ -60,17 +60,30 @@ output "app_secrets_arn" {
 #   value = module.cognito.client_id
 # }
 
-# output "ecr_backend_url" {
-#   value = module.ecr.repository_urls["backend"]
-# }
+output "ecr_backend_url" {
+  description = "Bella pushes the FastAPI image here."
+  value       = module.ecr.repository_urls["backend"]
+}
 
-# output "ecr_workers_url" {
-#   value = module.ecr.repository_urls["workers"]
-# }
+output "ecr_workers_url" {
+  description = "Ayesha pushes the worker image here."
+  value       = module.ecr.repository_urls["workers"]
+}
 
-# output "alb_url" {
-#   value = module.alb.dns_name
-# }
+output "alb_url" {
+  description = "App entry point for Vida. http, not https — no domain, so no ACM cert."
+  value       = module.alb.url
+}
+
+output "ecs_cluster_name" {
+  description = "ECS cluster name."
+  value       = module.ecs.cluster_name
+}
+
+output "ecs_service_name" {
+  description = "Backend service name. CI uses this to force a new deployment."
+  value       = module.ecs.service_name
+}
 
 # output "processing_queue_url" {
 #   value = module.sqs.processing_queue_url
