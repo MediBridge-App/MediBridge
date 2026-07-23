@@ -1,5 +1,3 @@
-
-
 BEGIN;
 
 -- ---------------------------------------------------------------------
@@ -28,14 +26,15 @@ INSERT INTO organizations (id, name, org_code, type, created_at) VALUES
 
 -- ---------------------------------------------------------------------
 -- USERS (6) — 2 per organization
+-- Roles: organization_admin, provider, registered_nurse, referral_coordinator, medical_assistant
 -- ---------------------------------------------------------------------
 INSERT INTO users (id, cognito_id, organization_id, email, full_name, role, is_active, last_login, created_at) VALUES
-  ('b0000000-0000-4000-8000-000000000001', 'cognito-sub-0001', 'a0000000-0000-4000-8000-000000000001', 'j.rivera@stmercy.org',        'Dr. James Rivera', 'physician',            true, now() - interval '1 day',  now() - interval '29 days'),
-  ('b0000000-0000-4000-8000-000000000002', 'cognito-sub-0002', 'a0000000-0000-4000-8000-000000000001', 'maria.santos@stmercy.org',    'Maria Santos',     'referral_coordinator', true, now() - interval '2 hours', now() - interval '29 days'),
-  ('b0000000-0000-4000-8000-000000000003', 'cognito-sub-0003', 'a0000000-0000-4000-8000-000000000002', 'sarah.chen@riverside.org',    'Dr. Sarah Chen',   'specialist',           true, now() - interval '5 hours', now() - interval '27 days'),
-  ('b0000000-0000-4000-8000-000000000004', 'cognito-sub-0004', 'a0000000-0000-4000-8000-000000000002', 'emily.wong@riverside.org',    'Emily Wong',       'admin',                true, now() - interval '1 day',  now() - interval '27 days'),
-  ('b0000000-0000-4000-8000-000000000005', 'cognito-sub-0005', 'a0000000-0000-4000-8000-000000000003', 'michael.osei@metrogeneral.org','Dr. Michael Osei','physician',            true, now() - interval '3 hours', now() - interval '24 days'),
-  ('b0000000-0000-4000-8000-000000000006', 'cognito-sub-0006', 'a0000000-0000-4000-8000-000000000003', 'linda.park@metrogeneral.org', 'Linda Park',       'admin',                true, now() - interval '6 hours', now() - interval '24 days');
+  ('b0000000-0000-4000-8000-000000000001', 'cognito-sub-0001', 'a0000000-0000-4000-8000-000000000001', 'j.rivera@stmercy.org',         'Dr. James Rivera', 'provider',             true, now() - interval '1 day',   now() - interval '29 days'),
+  ('b0000000-0000-4000-8000-000000000002', 'cognito-sub-0002', 'a0000000-0000-4000-8000-000000000001', 'maria.santos@stmercy.org',     'Maria Santos',      'referral_coordinator', true, now() - interval '2 hours', now() - interval '29 days'),
+  ('b0000000-0000-4000-8000-000000000003', 'cognito-sub-0003', 'a0000000-0000-4000-8000-000000000002', 'sarah.chen@riverside.org',     'Dr. Sarah Chen',    'provider',             true, now() - interval '5 hours', now() - interval '27 days'),
+  ('b0000000-0000-4000-8000-000000000004', 'cognito-sub-0004', 'a0000000-0000-4000-8000-000000000002', 'emily.wong@riverside.org',     'Emily Wong',        'registered_nurse',     true, now() - interval '1 day',   now() - interval '27 days'),
+  ('b0000000-0000-4000-8000-000000000005', 'cognito-sub-0005', 'a0000000-0000-4000-8000-000000000003', 'michael.osei@metrogeneral.org','Dr. Michael Osei', 'organization_admin',   true, now() - interval '3 hours', now() - interval '24 days'),
+  ('b0000000-0000-4000-8000-000000000006', 'cognito-sub-0006', 'a0000000-0000-4000-8000-000000000003', 'linda.park@metrogeneral.org',  'Linda Park',        'medical_assistant',    true, now() - interval '6 hours', now() - interval '24 days');
 
 -- ---------------------------------------------------------------------
 -- DOCUMENTS (10) — covering every document_type, priority, and pipeline status
@@ -169,7 +168,14 @@ INSERT INTO tasks (id, document_id, assigned_to_user_id, created_by_user_id, tit
   ('44440000-0000-4000-8000-000000000002', 'c0000000-0000-4000-8000-000000000006', 'b0000000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000006', 'Contact referring provider — possible CAD, urgent',  'in_progress', now() + interval '1 day', now() - interval '2 days' + interval '18 minutes'),
   ('44440000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000002', 'Schedule cardiology follow-up appointment for John Doe', 'completed', now() - interval '2 days', now() - interval '5 days' + interval '25 minutes');
 
-
+-- ---------------------------------------------------------------------
+-- ADDITIONAL EDGE-CASE DOCUMENTS
+-- Requested by Engineer 2 (Bella) to test error handling and filtering:
+--   TX-1011 -> rejected by recipient (duplicate submission)
+--   TX-1012 -> OCR pipeline failure (corrupted/unreadable scan)
+--   TX-1013 -> permission-denied case: routed to Metro General only;
+--              St. Mercy user's access attempt is denied and logged
+-- ---------------------------------------------------------------------
 INSERT INTO documents (id, tx_ref, sender_org_id, recipient_org_id, uploaded_by_user_id, file_s3_key, original_filename, file_size, document_type, subject, priority, status, notes, created_at, delivered_at, read_at) VALUES
   ('c0000000-0000-4000-8000-000000000011', 'TX-1011',
     'a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002',
