@@ -41,15 +41,15 @@ module "secrets" {
   kms_key_arn = module.kms.key_arn
 }
 
-# module "rds" {
-#   source             = "./modules/rds"
-#   name_prefix        = local.name_prefix
-#   kms_key_arn        = module.kms.key_arn
-#   vpc_id             = module.network.vpc_id
-#   data_subnet_ids    = module.network.private_data_subnet_ids
-#   db_secret_arn      = module.secrets.db_credentials_arn
-#   allowed_source_sg  = module.network.ecs_security_group_id
-# }
+module "rds" {
+  source            = "./modules/rds"
+  name_prefix       = local.name_prefix
+  kms_key_arn       = module.kms.key_arn
+  vpc_id            = module.network.vpc_id
+  data_subnet_ids   = module.network.private_data_subnet_ids
+  db_secret_arn     = module.secrets.db_credentials_arn
+  allowed_source_sg = module.network.ecs_security_group_id
+}
 
 # module "cognito" {
 #   source      = "./modules/cognito"
