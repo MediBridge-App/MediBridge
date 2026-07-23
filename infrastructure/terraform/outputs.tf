@@ -38,9 +38,15 @@ output "kms_key_arn" {
   value       = module.kms.key_arn
 }
 
-# output "rds_endpoint" {
-#   value = module.rds.endpoint
-# }
+output "rds_endpoint" {
+  description = "Database hostname for Raissa's migrations and Bella's backend. Reachable only from inside the VPC."
+  value       = module.rds.endpoint
+}
+
+output "rds_port" {
+  description = "Database port (5432)."
+  value       = module.rds.port
+}
 
 output "db_secret_arn" {
   description = "Secrets Manager ARN holding DB credentials. Safe to share — IAM controls who can read the value."
