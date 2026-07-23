@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import AppLayout from './components/layout/AppLayout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import InboxPage from './pages/InboxPage'
@@ -13,15 +14,22 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/inbox" element={<InboxPage />} />
-        <Route path="/send" element={<SendDocumentPage />} />
-        <Route path="/audit" element={<AuditTrailPage />} />
-        <Route path="/ai-analysis" element={<AIAnalysisPage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/security" element={<SecurityPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+
+        {/* Protected — all wrapped in sidebar layout */}
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/send" element={<SendDocumentPage />} />
+          <Route path="/audit" element={<AuditTrailPage />} />
+          <Route path="/ai-analysis" element={<AIAnalysisPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/security" element={<SecurityPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+
+        {/* Default */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
