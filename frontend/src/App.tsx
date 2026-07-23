@@ -1,0 +1,31 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import LoginPage from './pages/LoginPage'
+import DashboardPage from './pages/DashboardPage'
+import InboxPage from './pages/InboxPage'
+import SendDocumentPage from './pages/SendDocumentPage'
+import AuditTrailPage from './pages/AuditTrailPage'
+import AIAnalysisPage from './pages/AIAnalysisPage'
+import NotificationsPage from './pages/NotificationsPage'
+import SecurityPage from './pages/SecurityPage'
+import SettingsPage from './pages/SettingsPage'
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/inbox" element={<InboxPage />} />
+        <Route path="/send" element={<SendDocumentPage />} />
+        <Route path="/audit" element={<AuditTrailPage />} />
+        <Route path="/ai-analysis" element={<AIAnalysisPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/security" element={<SecurityPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}
+
+export default App
