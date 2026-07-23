@@ -8,17 +8,19 @@ class LoginRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
+
     id: UUID
     email: str
-    name: str
+    full_name: str
     role: str
-    org_id: UUID
+    organization_id: UUID
 
     class Config:
         from_attributes = True
 
 
 class TokenResponse(BaseModel):
+
     access_token: str
     token_type: str
     user: UserResponse

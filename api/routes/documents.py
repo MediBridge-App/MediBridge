@@ -13,6 +13,9 @@ from schemas.document import (
     DocumentStatusUpdate
 )
 
+from services.audit import create_audit_log
+from services.s3 import generate_presigned_upload_url
+
 
 router = APIRouter(
     prefix="/documents",
@@ -38,15 +41,13 @@ def get_inbox(
         "22222222-2222-2222-2222-222222222222"
     )
 
-    documents = (
+    return (
         db.query(Document)
         .filter(
             Document.recipient_org_id == current_org_id
         )
         .all()
     )
-
-    return documents
 
 
 
@@ -68,15 +69,13 @@ def get_sent(
         "11111111-1111-1111-1111-111111111111"
     )
 
-    documents = (
+    return (
         db.query(Document)
         .filter(
             Document.sender_org_id == current_org_id
         )
         .all()
     )
-
-    return documents
 
 
 
@@ -165,8 +164,35 @@ def send_document(
 
 
     db.add(new_document)
+
     db.commit()
+
     db.refresh(new_document)
+
+
+    # Create audit event
+    create_audit_log(
+
+        db=db,
+
+        event_type="document_sent",
+
+        action="Document sent",
+
+        document_id=new_document.id,
+
+        user_id=uploaded_by_user_id,
+
+        organization_id=sender_org_id,
+
+        details={
+            "document_type": new_document.document_type,
+            "subject": new_document.subject
+        }
+    )
+
+
+    db.commit()
 
 
     return new_document
@@ -219,6 +245,7 @@ def update_document_status(
             detail="Invalid document status"
         )
 
+    old_status = document.status
 
     document.status = body.status
 
@@ -227,7 +254,31 @@ def update_document_status(
         document.delivered_at = datetime.utcnow()
 
 
+    create_audit_log(
+
+    db=db,
+
+    event_type="document_status_changed",
+
+    action="Document status updated",
+
+    document_id=document.id,
+
+    user_id=UUID(
+        "33333333-3333-3333-3333-333333333333"
+    ),
+
+    organization_id=document.recipient_org_id,
+
+    details={
+        "old_status": old_status,
+        "new_status": body.status
+    }
+)
+
+
     db.commit()
+
     db.refresh(document)
 
 
@@ -244,8 +295,6 @@ def update_document_status(
 def create_upload_url(
     request: UploadURLRequest
 ):
-
-    from services.s3 import generate_presigned_upload_url
 
     return generate_presigned_upload_url(
         request.filename,
@@ -268,7 +317,7 @@ def search_documents(
     db: Session = Depends(get_db)
 ):
 
-    documents = (
+    return (
         db.query(Document)
         .filter(
             Document.subject.ilike(
@@ -277,5 +326,3 @@ def search_documents(
         )
         .all()
     )
-
-    return documents

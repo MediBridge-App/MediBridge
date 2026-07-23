@@ -1,6 +1,10 @@
 from fastapi import APIRouter
 
-from schemas.auth import LoginRequest, TokenResponse, UserResponse
+from schemas.auth import (
+    LoginRequest,
+    TokenResponse,
+    UserResponse
+)
 
 
 router = APIRouter(
@@ -9,12 +13,19 @@ router = APIRouter(
 )
 
 
-@router.post("/login", response_model=TokenResponse)
+# ==========================================
+# POST /auth/login
+# ==========================================
+
+@router.post(
+    "/login",
+    response_model=TokenResponse
+)
 def login(
     user: LoginRequest
 ):
 
-    # placeholder user
+    # Temporary authentication
     return {
         "access_token": "fake-token",
         "token_type": "bearer",
@@ -28,6 +39,11 @@ def login(
     }
 
 
+
+# ==========================================
+# POST /auth/logout
+# ==========================================
+
 @router.post("/logout")
 def logout():
 
@@ -36,7 +52,15 @@ def logout():
     }
 
 
-@router.get("/me", response_model=UserResponse)
+
+# ==========================================
+# GET /auth/me
+# ==========================================
+
+@router.get(
+    "/me",
+    response_model=UserResponse
+)
 def get_current_user():
 
     return {
