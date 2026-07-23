@@ -231,5 +231,41 @@ INSERT INTO notifications (id, user_id, document_id, type, message, is_read, cre
   ('22220000-0000-4000-8000-000000000007', 'b0000000-0000-4000-8000-000000000002', 'c0000000-0000-4000-8000-000000000011', 'document_rejected', 'Your insurance form was rejected by Riverside Cardiology: duplicate submission.', false, now() - interval '2 days' - interval '12 hours'),
   ('22220000-0000-4000-8000-000000000008', 'b0000000-0000-4000-8000-000000000005', 'c0000000-0000-4000-8000-000000000012', 'processing_error',  'OCR failed for your CBC results upload. Please re-scan and re-upload.', false, now() - interval '3 hours' + interval '5 minutes');
 
+
+-- ---------------------------------------------------------------------
+-- SECURITY_SETTINGS — one row per organization
+-- ---------------------------------------------------------------------
+INSERT INTO security_settings (id, organization_id, mfa_enabled, ip_allowlisting_enabled, session_timeout_minutes, last_security_scan, created_at) VALUES
+  ('55550000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', true,  false, 30, now() - interval '10 days', now() - interval '29 days'),
+  ('55550000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000002', true,  true,  15, now() - interval '5 days',  now() - interval '27 days'),
+  ('55550000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000003', false, false, 60, now() - interval '15 days', now() - interval '24 days');
+
+-- ---------------------------------------------------------------------
+-- USER_NOTIFICATION_PREFERENCES — one row per user
+-- ---------------------------------------------------------------------
+INSERT INTO user_notification_preferences (id, user_id, document_delivered, document_read, urgent_documents, audit_events, ai_processing_complete, created_at) VALUES
+  ('66660000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', true, true, true, false, true,  now() - interval '29 days'),
+  ('66660000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002', true, true, true, true,  true,  now() - interval '29 days'),
+  ('66660000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000003', true, false, true, false, true,  now() - interval '27 days'),
+  ('66660000-0000-4000-8000-000000000004', 'b0000000-0000-4000-8000-000000000004', true, true, true, false, false, now() - interval '27 days'),
+  ('66660000-0000-4000-8000-000000000005', 'b0000000-0000-4000-8000-000000000005', true, true, false, true, true,  now() - interval '24 days'),
+  ('66660000-0000-4000-8000-000000000006', 'b0000000-0000-4000-8000-000000000006', false, true, true, false, true, now() - interval '24 days');
+
+-- ---------------------------------------------------------------------
+-- API_KEYS — one active key per organization
+-- ---------------------------------------------------------------------
+INSERT INTO api_keys (id, organization_id, name, key_prefix, key_hash, is_active, created_at, last_used_at) VALUES
+  ('77770000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'Production Key', 'mb_prod_', 'hashed_key_placeholder_0001', true, now() - interval '20 days', now() - interval '2 hours'),
+  ('77770000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000002', 'Staging Key',    'mb_stg_',  'hashed_key_placeholder_0002', true, now() - interval '18 days', now() - interval '1 day'),
+  ('77770000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000003', 'Production Key', 'mb_prod_', 'hashed_key_placeholder_0003', false, now() - interval '22 days', now() - interval '6 days');
+
+-- ---------------------------------------------------------------------
+-- WEBHOOKS — one per organization
+-- ---------------------------------------------------------------------
+INSERT INTO webhooks (id, organization_id, name, url, events, is_active, created_at) VALUES
+  ('88880000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'EHR Sync Webhook',     'https://ehr.stmercy.org/webhooks/medibridge',     ARRAY['doc.sent','doc.received'], true,  now() - interval '20 days'),
+  ('88880000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000002', 'Notification Relay',   'https://riverside.example.com/hooks/notify',       ARRAY['doc.received','doc.read'],  true,  now() - interval '18 days'),
+  ('88880000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000003', 'Legacy Integration',   'https://metrogeneral.example.com/legacy/hook',     ARRAY['doc.sent'],                 false, now() - interval '22 days');
+
 COMMIT;
 
