@@ -1,0 +1,885 @@
+{
+  "info": {
+    "name": "MediBridge API",
+    "description": "MediBridge — Secure AI-Assisted Clinical Document Exchange",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string",
+      "description": "Set after /auth/login"
+    },
+    {
+      "key": "org_stmercy_id",
+      "value": "a0000000-0000-4000-8000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "org_riverside_id",
+      "value": "a0000000-0000-4000-8000-000000000002",
+      "type": "string"
+    },
+    {
+      "key": "org_metro_id",
+      "value": "a0000000-0000-4000-8000-000000000003",
+      "type": "string"
+    },
+    {
+      "key": "user_maria_id",
+      "value": "b0000000-0000-4000-8000-000000000002",
+      "type": "string"
+    },
+    {
+      "key": "doc_delivered_id",
+      "value": "c0000000-0000-4000-8000-000000000001",
+      "type": "string",
+      "description": "TX-1001, status=delivered"
+    },
+    {
+      "key": "doc_uploaded_id",
+      "value": "c0000000-0000-4000-8000-000000000009",
+      "type": "string",
+      "description": "TX-1009, status=uploaded"
+    },
+    {
+      "key": "audit_event_id",
+      "value": "EVT-000001",
+      "type": "string"
+    },
+    {
+      "key": "notification_id",
+      "value": "22220000-0000-4000-8000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "doc_rejected_id",
+      "value": "c0000000-0000-4000-8000-000000000011",
+      "type": "string",
+      "description": "TX-1011, status=rejected"
+    },
+    {
+      "key": "doc_ocr_failed_id",
+      "value": "c0000000-0000-4000-8000-000000000012",
+      "type": "string",
+      "description": "TX-1012, status=ocr_failed"
+    },
+    {
+      "key": "doc_permission_denied_id",
+      "value": "c0000000-0000-4000-8000-000000000013",
+      "type": "string",
+      "description": "TX-1013, routed to Metro General only"
+    },
+    {
+      "key": "user_stmercy_physician_id",
+      "value": "b0000000-0000-4000-8000-000000000001",
+      "type": "string",
+      "description": "Dr. James Rivera (St. Mercy) — unauthorized org for doc_permission_denied_id"
+    },
+    {
+      "key": "audit_event_rejected_id",
+      "value": "EVT-000012",
+      "type": "string",
+      "description": "document_rejected event for TX-1011"
+    },
+    {
+      "key": "audit_event_ocr_failure_id",
+      "value": "EVT-000014",
+      "type": "string",
+      "description": "ai_processing (OCR failure) event for TX-1012"
+    },
+    {
+      "key": "audit_event_auth_failure_id",
+      "value": "EVT-000015",
+      "type": "string",
+      "description": "auth_failure event for TX-1013"
+    },
+    {
+      "key": "notification_rejected_id",
+      "value": "22220000-0000-4000-8000-000000000007",
+      "type": "string",
+      "description": "document_rejected notification"
+    },
+    {
+      "key": "notification_processing_error_id",
+      "value": "22220000-0000-4000-8000-000000000008",
+      "type": "string",
+      "description": "processing_error notification"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register [NOT YET IMPLEMENTED]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"new.user@stmercy.org\",\n  \"full_name\": \"New User\",\n  \"password\": \"changeme123\",\n  \"organization_id\": \"{{org_stmercy_id}}\",\n  \"role\": \"provider\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "NOT YET IMPLEMENTED as of 2026-07-23. Bella's api/routes/auth.py currently only has /auth/login, /auth/logout, and /auth/me. This request will 404 until /auth/register is built. Kept here so the contract stays documented."
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria.santos@stmercy.org\",\n  \"password\": \"changeme123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "NOTE: as of 2026-07-23 this is temporary/mocked auth on the backend  it returns a fake token and a fixed fake user regardless of credentials. Downstream endpoints (documents/inbox, documents/sent) also use hardcoded placeholder org/user IDs, not real seed data IDs, until Cognito/JWT is wired up."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get current user (me)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get dashboard stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/dashboard/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "stats"
+              ]
+            },
+            "description": "Returns documents_sent, documents_received, pending_review, ai_processed, plus *_change_pct fields. NOTE: as of 2026-07-23 ai_processed and all *_change_pct fields are hardcoded to 0 in the backend not yet computed from real data."
+          }
+        },
+        {
+          "name": "Get document activity (sent vs received)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/dashboard/activity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "activity"
+              ]
+            },
+            "description": "NOTE: as of 2026-07-23 this returns a hardcoded 2-day stub (Mon/Tue with 0 counts), not real per-day aggregation yet."
+          }
+        },
+        {
+          "name": "Get document type breakdown",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/dashboard/document-types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "document-types"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get recent documents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/dashboard/recent",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "recent"
+              ]
+            },
+            "description": "Returns the 10 most recently created documents across all orgs (not scoped to current org yet)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "Get inbox",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/documents/inbox?status=delivered",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "inbox"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "delivered",
+                  "description": "optional filter: uploaded | ocr_complete | classified | routed | delivered | rejected | ocr_failed"
+                }
+              ]
+            },
+            "description": "NOTE: as of 2026-07-23 the backend does not filter by ?status yet it returns all documents for the current org regardless of the query param. Also uses a hardcoded placeholder org ID until auth is wired up, so results won't match seed_data.sql org IDs yet."
+          }
+        },
+        {
+          "name": "Get sent documents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/documents/sent",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "sent"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get document by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_delivered_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "{{doc_delivered_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search documents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/documents/search?q=lipid+panel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "lipid panel"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get presigned upload URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"original_filename\": \"new_referral.pdf\",\n  \"content_type\": \"application/pdf\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/documents/upload-url",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "upload-url"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sender_org_id\": \"{{org_stmercy_id}}\",\n  \"recipient_org_id\": \"{{org_riverside_id}}\",\n  \"file_s3_key\": \"documents/new_referral.pdf\",\n  \"original_filename\": \"new_referral.pdf\",\n  \"document_type\": \"referral\",\n  \"subject\": \"New cardiology referral\",\n  \"priority\": \"normal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/documents/send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "send"
+              ]
+            },
+            "description": "NOTE: as of 2026-07-23 the backend's DocumentCreate schema doesn't actually accept sender_org_id in the body it's derived from a hardcoded placeholder 'current user' until auth is wired up. Sending it here is harmless (extra fields are ignored) but it won't affect the created document's sender_org_id."
+          }
+        },
+        {
+          "name": "Update document status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ocr_complete\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_uploaded_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "{{doc_uploaded_id}}",
+                "status"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit",
+      "item": [
+        {
+          "name": "Get all audit events",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/audit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "audit"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get single audit event",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/audit/{{audit_event_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "audit",
+                "{{audit_event_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export audit log (CSV)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/audit/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "audit",
+                "export"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get all notifications",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark notification as read",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/notifications/{{notification_id}}/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notification_id}}",
+                "read"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark all notifications as read",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/notifications/read-all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "read-all"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Analysis",
+      "item": [
+        {
+          "name": "Get all AI analyses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/ai/analysis",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "analysis"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get AI analysis for a document",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/ai/analysis/{{doc_delivered_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "analysis",
+                "{{doc_delivered_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organizations",
+      "item": [
+        {
+          "name": "Get all organizations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/organizations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "organizations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get organization by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/organizations/{{org_stmercy_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "organizations",
+                "{{org_stmercy_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get org users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update user role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"organization_admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_maria_id}}/role",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{user_maria_id}}",
+                "role"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update user status (activate/deactivate)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_maria_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{user_maria_id}}",
+                "status"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Handling & Edge Cases",
+      "item": [
+        {
+          "name": "Get inbox filtered by status=rejected",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/documents/inbox?status=rejected",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "inbox"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "rejected"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get inbox filtered by status=ocr_failed",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/documents/inbox?status=ocr_failed",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "inbox"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "ocr_failed"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get rejected document by ID (TX-1011)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_rejected_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "{{doc_rejected_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get OCR-failed document by ID (TX-1012)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_ocr_failed_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "{{doc_ocr_failed_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Attempt unauthorized access to routed document (TX-1013, expect 403)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_permission_denied_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "{{doc_permission_denied_id}}"
+              ]
+            }
+          },
+          "description": "Run this while authenticated as user_stmercy_physician_id (an org not granted document_access to TX-1013). Expected: 403 Forbidden, and a new auth_failure row should appear in audit_logs."
+        },
+        {
+          "name": "Get audit event (document_rejected)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/audit/{{audit_event_rejected_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "audit",
+                "{{audit_event_rejected_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get audit event (OCR failure)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/audit/{{audit_event_ocr_failure_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "audit",
+                "{{audit_event_ocr_failure_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get audit event (auth_failure)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/audit/{{audit_event_auth_failure_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "audit",
+                "{{audit_event_auth_failure_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get notification (document_rejected)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/notifications/{{notification_rejected_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notification_rejected_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get notification (processing_error)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/notifications/{{notification_processing_error_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notification_processing_error_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

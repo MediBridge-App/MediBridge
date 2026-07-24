@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:16
+    container_name: medibridge-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: medibridge
+    ports:
+      # Default 5432. If you already have a local Postgres running on 5432,
+      # override with a .env file (POSTGRES_PORT=5433) or edit this locally —
+      # just don't commit a change here without flagging it to the team.
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - medibridge_pgdata:/var/lib/postgresql/data
+
+volumes:
+  medibridge_pgdata:
