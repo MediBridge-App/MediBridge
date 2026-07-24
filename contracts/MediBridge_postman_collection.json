@@ -128,7 +128,7 @@
       "name": "Auth",
       "item": [
         {
-          "name": "Register",
+          "name": "Register [NOT YET IMPLEMENTED]",
           "request": {
             "method": "POST",
             "header": [
@@ -150,7 +150,8 @@
                 "auth",
                 "register"
               ]
-            }
+            },
+            "description": "NOT YET IMPLEMENTED as of 2026-07-23. Bella's api/routes/auth.py currently only has /auth/login, /auth/logout, and /auth/me. This request will 404 until /auth/register is built. Kept here so the contract stays documented."
           }
         },
         {
@@ -176,7 +177,8 @@
                 "auth",
                 "login"
               ]
-            }
+            },
+            "description": "NOTE: as of 2026-07-23 this is temporary/mocked auth on the backend  it returns a fake token and a fixed fake user regardless of credentials. Downstream endpoints (documents/inbox, documents/sent) also use hardcoded placeholder org/user IDs, not real seed data IDs, until Cognito/JWT is wired up."
           }
         },
         {
@@ -214,6 +216,78 @@
       ]
     },
     {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get dashboard stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/dashboard/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "stats"
+              ]
+            },
+            "description": "Returns documents_sent, documents_received, pending_review, ai_processed, plus *_change_pct fields. NOTE: as of 2026-07-23 ai_processed and all *_change_pct fields are hardcoded to 0 in the backend not yet computed from real data."
+          }
+        },
+        {
+          "name": "Get document activity (sent vs received)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/dashboard/activity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "activity"
+              ]
+            },
+            "description": "NOTE: as of 2026-07-23 this returns a hardcoded 2-day stub (Mon/Tue with 0 counts), not real per-day aggregation yet."
+          }
+        },
+        {
+          "name": "Get document type breakdown",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/dashboard/document-types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "document-types"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get recent documents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/dashboard/recent",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "recent"
+              ]
+            },
+            "description": "Returns the 10 most recently created documents across all orgs (not scoped to current org yet)."
+          }
+        }
+      ]
+    },
+    {
       "name": "Documents",
       "item": [
         {
@@ -236,7 +310,8 @@
                   "description": "optional filter: uploaded | ocr_complete | classified | routed | delivered | rejected | ocr_failed"
                 }
               ]
-            }
+            },
+            "description": "NOTE: as of 2026-07-23 the backend does not filter by ?status yet it returns all documents for the current org regardless of the query param. Also uses a hardcoded placeholder org ID until auth is wired up, so results won't match seed_data.sql org IDs yet."
           }
         },
         {
@@ -342,7 +417,8 @@
                 "documents",
                 "send"
               ]
-            }
+            },
+            "description": "NOTE: as of 2026-07-23 the backend's DocumentCreate schema doesn't actually accept sender_org_id in the body it's derived from a hardcoded placeholder 'current user' until auth is wired up. Sending it here is harmless (extra fields are ignored) but it won't affect the created document's sender_org_id."
           }
         },
         {
@@ -719,9 +795,9 @@
                 "documents",
                 "{{doc_permission_denied_id}}"
               ]
-            },
-            "description": "Run this while authenticated as user_stmercy_physician_id (an org not granted document_access to TX-1013). Expected: 403 Forbidden, and a new auth_failure row should appear in audit_logs."
-          }
+            }
+          },
+          "description": "Run this while authenticated as user_stmercy_physician_id (an org not granted document_access to TX-1013). Expected: 403 Forbidden, and a new auth_failure row should appear in audit_logs."
         },
         {
           "name": "Get audit event (document_rejected)",
