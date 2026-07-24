@@ -18,7 +18,6 @@ interface AuditToolbarProps {
     typeFilter: string
     onTypeFilterChange: (value: string) => void
     totalCount: number
-    filteredCount: number
 }
 
 export default function AuditToolbar({
@@ -27,7 +26,6 @@ export default function AuditToolbar({
     typeFilter,
     onTypeFilterChange,
     totalCount,
-    filteredCount,
 }: AuditToolbarProps) {
     return (
         <div
