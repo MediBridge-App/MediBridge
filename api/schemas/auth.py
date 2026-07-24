@@ -14,6 +14,8 @@ class UserResponse(BaseModel):
     full_name: str
     role: str
     organization_id: UUID
+    specialty: str | None = None
+    npi_number: str | None = None
 
     class Config:
         from_attributes = True

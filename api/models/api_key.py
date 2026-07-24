@@ -6,9 +6,10 @@ import uuid
 from database import Base
 
 
-class User(Base):
+class APIKey(Base):
 
-    __tablename__ = "users"
+    __tablename__ = "api_keys"
+
 
     id = Column(
         UUID(as_uuid=True),
@@ -17,11 +18,6 @@ class User(Base):
         index=True
     )
 
-    cognito_id = Column(
-        String(255),
-        unique=True,
-        nullable=False
-    )
 
     organization_id = Column(
         UUID(as_uuid=True),
@@ -29,44 +25,38 @@ class User(Base):
         nullable=False
     )
 
-    email = Column(
-        String(255),
-        unique=True,
+
+    name = Column(
+        String(100),
         nullable=False
     )
 
-    full_name = Column(
+
+    key_prefix = Column(
+        String(20),
+        nullable=False
+    )
+
+
+    key_hash = Column(
         String(255),
         nullable=False
     )
 
-    role = Column(
-        String(50),
-        nullable=False
-    )
 
     is_active = Column(
         Boolean,
         default=True
     )
 
-    last_login = Column(
-        DateTime,
-        nullable=True
-    )
 
     created_at = Column(
         DateTime,
         default=datetime.utcnow
     )
 
-    specialty = Column(
-        String(100),
-        nullable=True
-    )
 
-
-    npi_number = Column(
-        String(20),
+    last_used_at = Column(
+        DateTime,
         nullable=True
     )

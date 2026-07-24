@@ -21,6 +21,6 @@ def get_current_user(
         "id": "temporary-user-id",
         "email": "test@medibridge.com",
         "role": "provider",
-        "org_id": "temporary-org-id",
+        "organization_id": "temporary-org-id",
         "token": token
     }
