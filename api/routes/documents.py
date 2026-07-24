@@ -4,7 +4,6 @@ from uuid import UUID
 from datetime import datetime
 import uuid
 
-from sqlalchemy import or_
 from database import get_db
 from models.document import Document
 from schemas.document import (
@@ -34,6 +33,10 @@ router = APIRouter(
     response_model=list[DocumentResponse]
 )
 def get_inbox(
+    status: str | None = None,
+    type: str | None = None,
+    priority: str | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db)
 ):
 
@@ -42,14 +45,46 @@ def get_inbox(
         "22222222-2222-2222-2222-222222222222"
     )
 
-    return (
+
+    query = (
         db.query(Document)
         .filter(
             Document.recipient_org_id == current_org_id
         )
-        .all()
     )
 
+
+    # Filter by status
+    if status:
+        query = query.filter(
+            Document.status == status
+        )
+
+
+    # Filter by document type
+    if type:
+        query = query.filter(
+            Document.document_type == type
+        )
+
+
+    # Filter by priority
+    if priority:
+        query = query.filter(
+            Document.priority == priority
+        )
+
+
+    # Search subject
+    if search:
+        query = query.filter(
+            Document.subject.ilike(
+                f"%{search}%"
+            )
+        )
+
+
+    return query.all()
 
 
 # ==================================================
