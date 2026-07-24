@@ -58,13 +58,15 @@ output "app_secrets_arn" {
   value       = module.secrets.app_secrets_arn
 }
 
-# output "cognito_user_pool_id" {
-#   value = module.cognito.user_pool_id
-# }
+output "cognito_user_pool_id" {
+  description = "User pool ID — for Vida's login UI and Bella's token validation."
+  value       = module.cognito.user_pool_id
+}
 
-# output "cognito_client_id" {
-#   value = module.cognito.client_id
-# }
+output "cognito_client_id" {
+  description = "Web app client ID — public, needed by Vida and Bella."
+  value       = module.cognito.client_id
+}
 
 output "ecr_backend_url" {
   description = "Bella pushes the FastAPI image here."
