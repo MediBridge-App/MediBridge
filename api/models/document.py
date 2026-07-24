@@ -58,12 +58,12 @@ class Document(Base):
 
     document_type = Column(
         String(100),
-        nullable=False
+        nullable=True
     )
 
     subject = Column(
         String(255),
-        nullable=False
+        nullable=True
     )
 
     priority = Column(

@@ -4,6 +4,7 @@ from uuid import UUID
 from datetime import datetime
 import uuid
 
+from sqlalchemy import or_
 from database import get_db
 from models.document import Document
 from schemas.document import (
@@ -186,8 +187,8 @@ def send_document(
         organization_id=sender_org_id,
 
         details={
-            "document_type": new_document.document_type,
-            "subject": new_document.subject
+            "document_type": new_document.document_type or "unknown",
+            "subject": new_document.subject or "unknown"
         }
     )
 
@@ -320,6 +321,7 @@ def search_documents(
     return (
         db.query(Document)
         .filter(
+            Document.subject.isnot(None), 
             Document.subject.ilike(
                 f"%{q}%"
             )

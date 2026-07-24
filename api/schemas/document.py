@@ -7,8 +7,8 @@ class DocumentCreate(BaseModel):
 
     recipient_org_id: UUID
 
-    document_type: str
-    subject: str
+    document_type: str | None = None
+    subject: str | None = None
 
     priority: str = "normal"
 
@@ -30,8 +30,8 @@ class DocumentResponse(BaseModel):
     recipient_org_id: UUID
     uploaded_by_user_id: UUID
 
-    document_type: str
-    subject: str
+    document_type: str | None
+    subject: str | None
 
     priority: str
     status: str

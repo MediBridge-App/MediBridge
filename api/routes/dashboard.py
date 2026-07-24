@@ -82,16 +82,17 @@ def document_types(
     db: Session = Depends(get_db)
 ):
 
-    results = (
-        db.query(
-            Document.document_type,
-            func.count(Document.id)
-        )
-        .group_by(
-            Document.document_type
-        )
-        .all()
+    rresults = (
+    db.query(
+        Document.document_type,
+        func.count(Document.id)
     )
+    .filter(Document.document_type.isnot(None))  
+    .group_by(
+        Document.document_type
+    )
+    .all()
+)
 
 
     return [
