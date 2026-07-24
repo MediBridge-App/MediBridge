@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import documents, auth, dashboard, audit, security_setting, user_notification_preferences, users, organizations, notifications, ai, tasks, api_keys, webhooks
+from routes import documents, auth, dashboard, audit, security_setting, user_notification_preferences, users, organizations, notifications, ai, tasks, api_keys, webhooks, uploads
 
 
 app = FastAPI()
@@ -18,6 +18,7 @@ app.include_router(security_setting.router)
 app.include_router(user_notification_preferences.router)
 app.include_router(api_keys.router)
 app.include_router(webhooks.router)
+app.include_router(uploads.router)
 
 
 @app.get("/")
