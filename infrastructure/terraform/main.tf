@@ -51,10 +51,10 @@ module "rds" {
   allowed_source_sg = module.network.ecs_security_group_id
 }
 
-# module "cognito" {
-#   source      = "./modules/cognito"
-#   name_prefix = local.name_prefix
-# }
+module "cognito" {
+  source      = "./modules/cognito"
+  name_prefix = local.name_prefix
+}
 
 module "ecr" {
   source       = "./modules/ecr"

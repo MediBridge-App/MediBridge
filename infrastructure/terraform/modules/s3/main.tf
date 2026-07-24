@@ -63,6 +63,26 @@ resource "aws_s3_bucket_versioning" "documents" {
   }
 }
 
+# Lets the browser upload/download directly via presigned URLs. Without this,
+# the browser blocks the cross-origin request before it reaches S3 — the
+# backend can still generate the URL, but the actual PUT fails.
+resource "aws_s3_bucket_cors_configuration" "documents" {
+  bucket = aws_s3_bucket.documents.id
+
+  cors_rule {
+    allowed_origins = var.cors_allowed_origins
+    allowed_methods = ["GET", "PUT"]
+
+    # Broad within trusted origins so presigned PUTs (which carry the KMS and
+    # content-type headers) aren't rejected on a missing-header technicality.
+    allowed_headers = ["*"]
+
+    # ETag lets the frontend confirm the upload succeeded.
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
 # S3 accepts plain HTTP by default. Deny-only, so it grants nothing and does
 # not conflict with block_public_policy.
 data "aws_iam_policy_document" "documents" {
