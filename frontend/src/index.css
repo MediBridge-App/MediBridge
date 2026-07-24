@@ -15,3 +15,11 @@ body {
   color: #0f172a;
   margin: 0;
 }
+/* var(--card)             → #ffffff (white)
+var(--border)           → #e2e8f0
+var(--muted)            → #f8fafc
+var(--foreground)       → #0f172a
+var(--muted-foreground) → #64748b
+var(--primary)          → #0e7490
+var(--secondary)        → #f0fdf9
+var(--input-background) → #f8fafc */

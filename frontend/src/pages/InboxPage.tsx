@@ -33,7 +33,7 @@ export default function InboxPage() {
 
     return (
         <div
-            className="flex overflow-hidden rounded-xl border border-slate-200 bg-white"
+            className="flex overflow-hidden rounded-xl border border-slate-200 bg-white "
             style={{ height: 'calc(100vh - 120px)' }}
         >
             {/* Left panel */}

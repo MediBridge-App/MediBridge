@@ -113,11 +113,12 @@ export interface AIAnalysis {
 // ─── Organization ─────────────────────────────────────────────────────────────
 
 export interface Organization {
-  id: string;
-  name: string;
-  orgCode: string;
-  type: string;
-  createdAt: string;
+  id: string
+  name: string
+  orgCode?: string
+  type: string
+  location?: string
+  createdAt?: string 
 }
 
 // ─── Inbox ───────────────────────────────────────────────────────────────────
@@ -140,4 +141,14 @@ export interface InboxDocument {
   documentType: DocumentType;
   priority: DocumentPriority;
   isUnread: boolean;
+}
+
+
+export interface SendDocumentForm {
+  selectedOrg: Organization | null;
+  docType: string;
+  priority: "normal" | "urgent" | "routine";
+  subject: string;
+  notes: string;
+  file: { name: string; size: string; type: string } | null;
 }

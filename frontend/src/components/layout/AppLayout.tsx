@@ -25,7 +25,7 @@ export default function AppLayout() {
                 style={{ marginLeft: '240px' }}
             >
                 <TopBar title={title} />
-                <main className="flex-1 overflow-y-auto bg-slate-50 p-6">
+                <main className="flex-1 overflow-y-auto " style={{background: "#f0f4f8"}}>
                     <Outlet />
                 </main>
             </div>
