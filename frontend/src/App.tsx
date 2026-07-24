@@ -9,10 +9,13 @@ import AIAnalysisPage from './pages/AIAnalysisPage'
 import NotificationsPage from './pages/NotificationsPage'
 import SecurityPage from './pages/SecurityPage'
 import SettingsPage from './pages/SettingsPage'
+import { InboxProvider } from './components/context/InboxContext'
+
 
 function App() {
   return (
     <BrowserRouter>
+    <InboxProvider>
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
@@ -32,6 +35,7 @@ function App() {
         {/* Default */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      </InboxProvider>
     </BrowserRouter>
   )
 }

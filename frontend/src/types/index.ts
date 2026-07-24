@@ -119,3 +119,25 @@ export interface Organization {
   type: string;
   createdAt: string;
 }
+
+// ─── Inbox ───────────────────────────────────────────────────────────────────
+
+export interface InboxDocument {
+  id: string;
+  type: string;
+  subject: string;
+  from: string;
+  fromOrg: string;
+  to: string;
+  toOrg: string;
+  status: DocumentStatus;
+  time: string;
+  size: string;
+  pages: number;
+  aiSummary: string;
+  aiTags: string[];
+  aiCategory: string;
+  documentType: DocumentType;
+  priority: DocumentPriority;
+  isUnread: boolean;
+}

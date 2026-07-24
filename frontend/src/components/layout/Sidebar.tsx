@@ -10,6 +10,8 @@ import {
     Settings,
     Activity,
 } from 'lucide-react'
+import { useInbox } from '../context/InboxContext'
+import { clsx } from 'clsx'
 
 const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -26,6 +28,8 @@ const systemItems = [
 ]
 
 export default function Sidebar() {
+    const { unreadCount } = useInbox()
+
     return (
         <aside
             className="fixed left-0 top-0 h-screen w-60 flex flex-col"
@@ -68,17 +72,35 @@ export default function Sidebar() {
                             <NavLink
                                 to={item.to}
                                 className={({ isActive }) =>
-                                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                                        ? 'text-white'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                    }`
+                                    clsx(
+                                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                                        isActive
+                                            ? 'text-white'
+                                            : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    )
                                 }
                                 style={({ isActive }) =>
-                                    isActive ? { backgroundColor: 'rgba(14,165,160,0.2)', color: 'white' } : {}
+                                    isActive ? { backgroundColor: 'rgba(14,165,160,0.2)' } : {}
                                 }
                             >
                                 {item.icon}
-                                {item.label}
+                                <span className="flex-1">{item.label}</span>
+                                {item.to === '/inbox' && unreadCount > 0 && (
+                                    <span
+                                        className="rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold text-white"
+                                        style={{ backgroundColor: '#0ea5a0' }}
+                                    >
+                                        {unreadCount}
+                                    </span>
+                                )}
+                                {item.to === '/notifications' && (
+                                    <span
+                                        className="rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold text-white"
+                                        style={{ backgroundColor: '#0ea5a0' }}
+                                    >
+                                        2
+                                    </span>
+                                )}
                             </NavLink>
                         </li>
                     ))}
