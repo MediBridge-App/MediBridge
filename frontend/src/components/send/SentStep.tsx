@@ -1,5 +1,6 @@
 import { CheckCircle2 } from 'lucide-react'
 import type { Organization } from '../../types'
+// import { useMemo } from 'react'
 
 interface SentStepProps {
     selectedOrg: Organization
@@ -14,7 +15,8 @@ export default function SentStep({
     priority,
     onReset,
 }: SentStepProps) {
-    const txId = 'TX-' + (8822 + Math.floor(Math.random() * 10))
+    const txId = 'TX-8830'
+    // const txId = useMemo(() => 'TX-' + (8822 + Math.floor(Math.random() * 10)), [])
 
     const details = [
         { label: 'Transmission ID', value: txId },

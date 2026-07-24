@@ -10,8 +10,8 @@ import {
     Settings,
     Activity,
 } from 'lucide-react'
-import { useInbox } from '../context/InboxContext'
 import { clsx } from 'clsx'
+import { useInbox } from '../../hooks/useInbox';
 
 const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },

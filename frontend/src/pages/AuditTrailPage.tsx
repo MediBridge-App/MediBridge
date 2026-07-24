@@ -32,7 +32,6 @@ export default function AuditTrailPage() {
                 typeFilter={typeFilter}
                 onTypeFilterChange={setTypeFilter}
                 totalCount={MOCK_AUDIT_LOGS.length}
-                filteredCount={filtered.length}
             />
             <AuditTable logs={filtered} />
             <AuditFooter
