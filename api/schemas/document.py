@@ -57,7 +57,7 @@ class UploadURLRequest(BaseModel):
 
     filename: str
     content_type: str
-    document_type: str
+    document_type: str | None = None
 
 
 

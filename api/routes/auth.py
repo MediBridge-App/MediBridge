@@ -14,6 +14,21 @@ router = APIRouter(
 
 
 # ==========================================
+# Temporary user until real authentication
+# (Cognito + JWT)
+# ==========================================
+
+TEST_USER = {
+    "id": "11111111-1111-1111-1111-111111111111",
+    "email": "test@medibridge.com",
+    "full_name": "Test User",
+    "role": "provider",
+    "organization_id": "22222222-2222-2222-2222-222222222222"
+}
+
+
+
+# ==========================================
 # POST /auth/login
 # ==========================================
 
@@ -26,16 +41,12 @@ def login(
 ):
 
     # Temporary authentication
+    # Later replaced with Cognito authentication
+
     return {
         "access_token": "fake-token",
         "token_type": "bearer",
-        "user": {
-            "id": "11111111-1111-1111-1111-111111111111",
-            "email": user.email,
-            "full_name": "Test User",
-            "role": "provider",
-            "organization_id": "22222222-2222-2222-2222-222222222222"
-        }
+        "user": TEST_USER
     }
 
 
@@ -46,6 +57,9 @@ def login(
 
 @router.post("/logout")
 def logout():
+
+    # Temporary logout
+    # Real implementation will invalidate JWT/session
 
     return {
         "message": "Logged out"
@@ -63,10 +77,7 @@ def logout():
 )
 def get_current_user():
 
-    return {
-        "id": "11111111-1111-1111-1111-111111111111",
-        "email": "test@medibridge.com",
-        "full_name": "Test User",
-        "role": "provider",
-        "organization_id": "22222222-2222-2222-2222-222222222222"
-    }
+    # Temporary current user
+    # Later populated from JWT token
+
+    return TEST_USER
