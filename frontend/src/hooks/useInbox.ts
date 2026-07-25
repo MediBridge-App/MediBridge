@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { InboxContext } from '../components/context/InboxContext';
+import { InboxContext } from '../context/InboxContext';
 
 export function useInbox() {
   const ctx = useContext(InboxContext)

@@ -9,7 +9,7 @@ import AIAnalysisPage from './pages/AIAnalysisPage'
 import NotificationsPage from './pages/NotificationsPage'
 import SecurityPage from './pages/SecurityPage'
 import SettingsPage from './pages/SettingsPage'
-import { InboxProvider } from './components/context/InboxContext'
+import { InboxProvider } from './context/InboxContext'
 
 
 function App() {
