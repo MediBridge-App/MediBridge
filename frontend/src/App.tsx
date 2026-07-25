@@ -11,8 +11,11 @@ import SecurityPage from './pages/SecurityPage'
 import SettingsPage from './pages/SettingsPage'
 import { InboxProvider } from './context/InboxContext'
 import { NotificationsProvider } from './context/NotificationsContext'
+import ProfilePanel from './components/layout/ProfilePanel'
+import { useState } from 'react'
 
 function App() {
+  const [showProfile, setShowProfile] = useState(false)
   return (
     <BrowserRouter>
       <NotificationsProvider>
@@ -22,7 +25,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
 
             {/* Protected — all wrapped in sidebar layout */}
-            <Route element={<AppLayout />}>
+            <Route element={<AppLayout onProfileClick={() => setShowProfile(true)} />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/inbox" element={<InboxPage />} />
               <Route path="/send" element={<SendDocumentPage />} />
@@ -36,6 +39,9 @@ function App() {
             {/* Default */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
+          {showProfile && (
+            <ProfilePanel onClose={() => setShowProfile(false)} />
+          )}
         </InboxProvider>
       </NotificationsProvider>
     </BrowserRouter>

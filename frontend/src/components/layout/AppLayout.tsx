@@ -12,20 +12,23 @@ const PAGE_TITLES: Record<string, string> = {
     '/security': 'Security',
     '/settings': 'Settings',
 }
+interface AppLayoutProps {
+    onProfileClick: () => void;
+}
 
-export default function AppLayout() {
+export default function AppLayout({ onProfileClick }: AppLayoutProps){
     const location = useLocation()
     const title = PAGE_TITLES[location.pathname] || 'MediBridge'
 
     return (
         <div className="flex h-screen overflow-hidden">
-            <Sidebar />
+            <Sidebar onProfileClick={onProfileClick}/>
             <div
                 className="flex-1 flex flex-col overflow-hidden"
                 style={{ marginLeft: '240px' }}
             >
                 <TopBar title={title} />
-                <main className="flex-1 overflow-y-auto " style={{background: "#f0f4f8"}}>
+                <main className="flex-1 overflow-y-auto " style={{ background: "#f0f4f8"}} >
                     <Outlet />
                 </main>
             </div>

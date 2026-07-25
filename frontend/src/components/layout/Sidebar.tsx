@@ -28,9 +28,14 @@ const systemItems = [
     { to: '/settings', label: 'Settings', icon: <Settings size={18} /> },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  onProfileClick: () => void
+}
+
+export default function Sidebar({ onProfileClick }: SidebarProps) {
     const { unreadCount } = useInbox()
     const { unreadCount: notifCount } = useNotifications()
+
 
     return (
         <aside
@@ -136,19 +141,22 @@ export default function Sidebar() {
             </nav>
 
             {/* User footer */}
-            <div className="px-4 py-4 border-t border-white/10">
-                <div className="flex items-center gap-3">
+            <div className="px-3 py-4 border-t border-white/10">
+                <button
+                    onClick={onProfileClick}
+                    className="flex items-center gap-3 px-2 py-1.5 w-full rounded-lg hover:bg-white/5 transition-colors"
+                >
                     <div
                         className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
                         style={{ backgroundColor: '#0ea5a0' }}
                     >
                         JR
                     </div>
-                    <div>
+                    <div className="text-left">
                         <div className="text-white text-sm font-medium">Dr. James Rivera</div>
                         <div className="text-xs" style={{ color: '#64748b' }}>provider</div>
                     </div>
-                </div>
+                </button>
             </div>
         </aside>
     )
