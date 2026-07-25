@@ -307,3 +307,61 @@ export const MOCK_AUDIT_LOGS = [
     hash: "d5e2c1...8g4h",
   },
 ];
+
+export const MOCK_NOTIFICATIONS = [
+  {
+    id: "1",
+    type: "new_document",
+    title: "New document received",
+    description: "City Lab Partners sent TX-8821: CBC + Metabolic Panel",
+    timeAgo: "2 min ago",
+    isUnread: true,
+    icon: "document",
+  },
+  {
+    id: "2",
+    type: "urgent",
+    title: "Urgent document requires attention",
+    description: "Insurance pre-authorization TX-8818 deadline: June 17, 2026",
+    timeAgo: "18 min ago",
+    isUnread: true,
+    icon: "urgent",
+  },
+  {
+    id: "3",
+    type: "ai_complete",
+    title: "AI analysis complete",
+    description: "5 documents processed. 1 urgency flag detected.",
+    timeAgo: "45 min ago",
+    isUnread: false,
+    icon: "ai",
+  },
+  {
+    id: "4",
+    type: "delivery_confirmed",
+    title: "Delivery confirmed",
+    description: "TX-8817 was read by RadTech Imaging Center",
+    timeAgo: "2h ago",
+    isUnread: false,
+    icon: "delivery",
+  },
+  {
+    id: "5",
+    type: "security_alert",
+    title: "Security alert",
+    description: "3 failed login attempts from 198.51.100.8 — access blocked",
+    timeAgo: "7h ago",
+    isUnread: false,
+    icon: "security",
+  },
+  {
+    id: "6",
+    type: "new_document",
+    title: "New referral received",
+    description:
+      "Dr. Sarah Chen sent a Cardiology referral for Patient #P-94821",
+    timeAgo: "Yesterday",
+    isUnread: false,
+    icon: "document",
+  },
+];

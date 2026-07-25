@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useInbox } from '../../hooks/useInbox';
+import { useNotifications } from '../../hooks/useNotifications'
 
 const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -29,6 +30,7 @@ const systemItems = [
 
 export default function Sidebar() {
     const { unreadCount } = useInbox()
+    const { unreadCount: notifCount } = useNotifications()
 
     return (
         <aside
@@ -98,7 +100,7 @@ export default function Sidebar() {
                                         className="rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold text-white"
                                         style={{ backgroundColor: '#0ea5a0' }}
                                     >
-                                        2
+                                        {notifCount}
                                     </span>
                                 )}
                             </NavLink>
