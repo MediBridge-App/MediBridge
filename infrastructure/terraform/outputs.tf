@@ -38,9 +38,15 @@ output "kms_key_arn" {
   value       = module.kms.key_arn
 }
 
-# output "rds_endpoint" {
-#   value = module.rds.endpoint
-# }
+output "rds_endpoint" {
+  description = "Database hostname for Raissa's migrations and Bella's backend. Reachable only from inside the VPC."
+  value       = module.rds.endpoint
+}
+
+output "rds_port" {
+  description = "Database port (5432)."
+  value       = module.rds.port
+}
 
 output "db_secret_arn" {
   description = "Secrets Manager ARN holding DB credentials. Safe to share — IAM controls who can read the value."
@@ -52,13 +58,15 @@ output "app_secrets_arn" {
   value       = module.secrets.app_secrets_arn
 }
 
-# output "cognito_user_pool_id" {
-#   value = module.cognito.user_pool_id
-# }
+output "cognito_user_pool_id" {
+  description = "User pool ID — for Vida's login UI and Bella's token validation."
+  value       = module.cognito.user_pool_id
+}
 
-# output "cognito_client_id" {
-#   value = module.cognito.client_id
-# }
+output "cognito_client_id" {
+  description = "Web app client ID — public, needed by Vida and Bella."
+  value       = module.cognito.client_id
+}
 
 output "ecr_backend_url" {
   description = "Bella pushes the FastAPI image here."
