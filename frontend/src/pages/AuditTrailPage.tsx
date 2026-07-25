@@ -23,8 +23,8 @@ export default function AuditTrailPage() {
 
     return (
         <div
-            className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white"
-            style={{ height: 'calc(100vh - 120px)' }}
+            className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white"
+            style={{ minHeight: 'calc(100vh - 120px)' }}
         >
             <AuditToolbar
                 search={search}
