@@ -93,6 +93,17 @@ output "ecs_service_name" {
   value       = module.ecs.service_name
 }
 
-# output "processing_queue_url" {
-#   value = module.sqs.processing_queue_url
-# }
+output "db_jump_instance_id" {
+  description = "SSM jump host ID — the target for the DB port-forwarding command."
+  value       = module.db_access.instance_id
+}
+
+output "processing_queue_url" {
+  description = "Queue URL Bella's backend sends processing jobs to."
+  value       = module.sqs.processing_queue_url
+}
+
+output "worker_function_name" {
+  description = "Lambda worker — Ayesha deploys her handler here with `aws lambda update-function-code`."
+  value       = module.lambda.function_name
+}

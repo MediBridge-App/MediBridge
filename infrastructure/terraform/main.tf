@@ -51,6 +51,15 @@ module "rds" {
   allowed_source_sg = module.network.ecs_security_group_id
 }
 
+# SSM jump host so the team can reach the private RDS from their laptops.
+module "db_access" {
+  source                = "./modules/db-access"
+  name_prefix           = local.name_prefix
+  vpc_id                = module.network.vpc_id
+  subnet_id             = module.network.private_app_subnet_ids[0]
+  rds_security_group_id = module.rds.security_group_id
+}
+
 module "cognito" {
   source      = "./modules/cognito"
   name_prefix = local.name_prefix
@@ -98,19 +107,24 @@ module "ecs" {
   depends_on = [module.alb]
 }
 
-# module "sqs" {
-#   source      = "./modules/sqs"
-#   name_prefix = local.name_prefix
-#   kms_key_arn = module.kms.key_arn
-# }
+module "sqs" {
+  source      = "./modules/sqs"
+  name_prefix = local.name_prefix
+  kms_key_arn = module.kms.key_arn
+}
 
-# module "lambda" {
-#   source           = "./modules/lambda"
-#   name_prefix      = local.name_prefix
-#   source_queue_arn = module.sqs.processing_queue_arn
-#   document_bucket  = module.s3.bucket_name
-#   app_subnet_ids   = module.network.private_app_subnet_ids
-# }
+module "lambda" {
+  source           = "./modules/lambda"
+  name_prefix      = local.name_prefix
+  source_queue_arn = module.sqs.processing_queue_arn
+  document_bucket  = module.s3.bucket_name
+  kms_key_arn      = module.kms.key_arn
+
+  # Not in a VPC for now — reaches Textract/Bedrock/S3 over public AWS
+  # endpoints and updates status via the backend API. Pass the private app
+  # subnets here only if the worker needs to hit RDS directly.
+  app_subnet_ids = []
+}
 
 # module "observability" {
 #   source      = "./modules/observability"

@@ -13,8 +13,13 @@ variable "document_bucket" {
   description = "S3 bucket holding documents to read."
 }
 
+variable "kms_key_arn" {
+  type        = string
+  description = "CMK ARN. The worker needs Decrypt/GenerateDataKey for encrypted S3 objects and SQS messages."
+}
+
 variable "app_subnet_ids" {
   type        = list(string)
   default     = []
-  description = "Private app subnets if the function needs VPC/RDS access."
+  description = "Private app subnets, only if the function needs VPC/RDS access. Empty = not in a VPC."
 }
