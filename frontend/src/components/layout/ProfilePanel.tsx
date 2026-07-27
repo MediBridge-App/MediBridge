@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X, Camera, Send, Inbox, Activity, Edit2, LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { signOut } from 'aws-amplify/auth'
 
 interface ProfilePanelProps {
     onClose: () => void
@@ -13,7 +14,13 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
     const navigate = useNavigate()
     const [activeTab, setActiveTab] = useState<Tab>('Profile')
 
-    function handleSignOut() {
+    async function handleSignOut() {
+        try {
+            await signOut()
+        } catch (err) {
+            console.error('Sign out error:', err)
+        }
+        onClose()
         navigate('/login')
     }
 

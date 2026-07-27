@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Activity, Shield, Zap, ClipboardList, Eye, EyeOff } from 'lucide-react'
+import { signIn } from 'aws-amplify/auth'
 
 const DEMO_ACCOUNTS = [
     {
@@ -36,23 +37,39 @@ export default function LoginPage() {
         if (!email || !password) return
         setError('')
         setIsLoading(true)
-        setTimeout(() => {
+        try {
+            await signIn({ username: email, password })
+            navigate('/dashboard')
+        } catch (err: unknown) {
+            const error = err as { message?: string }
+            setError(error.message || 'Invalid email or password')
+        } finally {
             setIsLoading(false)
-            if (email && password) {
-                navigate('/dashboard')
-            } else {
-                setError('Invalid email or password')
-            }
-        }, 1000)
+        }
     }
 
-    function handleDemoLogin(initials: string) {
+    async function handleDemoLogin(initials: string) {
+        setError('')
         setIsLoading(true)
-        setTimeout(() => {
-            setIsLoading(false)
+
+        const demoCredentials: Record<string, { email: string; password: string }> = {
+            JR: { email: 'j.rivera@stmercy.org', password: 'Demo1234!Pass' },
+            SC: { email: 'sarah.chen@riverside.org', password: 'Demo1234!Pass' },
+            MS: { email: 'maria.santos@stmercy.org', password: 'Demo1234!Pass' },
+        }
+
+        const creds = demoCredentials[initials]
+        if (!creds) return
+
+        try {
+            await signIn({ username: creds.email, password: creds.password })
             navigate('/dashboard')
-        }, 800)
-        console.log('Demo login:', initials)
+        } catch (err: unknown) {
+            const error = err as { message?: string }
+            setError(error.message || 'Demo login failed')
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
@@ -157,6 +174,7 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="you@hospital.org"
+                                autoComplete="email"
                                 className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-teal-500"
                             />
                         </div>
@@ -181,6 +199,7 @@ export default function LoginPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
+                                    autoComplete="new-password"
                                     className="w-full px-4 py-3 pr-10 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-teal-500"
                                 />
                                 <button
