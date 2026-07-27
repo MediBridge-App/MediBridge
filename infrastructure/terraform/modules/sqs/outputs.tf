@@ -1,5 +1,10 @@
+output "topic_arn" {
+  description = "SNS topic the backend PUBLISHES document.sent events to. This is the enqueue target now, not the queue."
+  value       = aws_sns_topic.documents.arn
+}
+
 output "processing_queue_url" {
-  description = "Queue URL the backend sends document-processing jobs to."
+  description = "Queue URL — internal to the pipeline. The backend publishes to the topic, not here."
   value       = aws_sqs_queue.processing.url
 }
 

@@ -97,6 +97,7 @@ module "ecs" {
   document_bucket_arn  = module.s3.bucket_arn
   db_secret_arn        = module.secrets.db_credentials_arn
   app_secrets_arn      = module.secrets.app_secrets_arn
+  events_topic_arn     = module.sqs.topic_arn
 
   # Start at 0 until Bella has pushed an image. With no image to pull the
   # service restart-loops and the ALB reports the target permanently unhealthy.

@@ -98,8 +98,13 @@ output "db_jump_instance_id" {
   value       = module.db_access.instance_id
 }
 
+output "events_topic_arn" {
+  description = "SNS topic Bella's backend publishes document.sent events to. This is the enqueue target."
+  value       = module.sqs.topic_arn
+}
+
 output "processing_queue_url" {
-  description = "Queue URL Bella's backend sends processing jobs to."
+  description = "Internal pipeline queue (SNS delivers here, Lambda consumes). Backend publishes to the topic, not this."
   value       = module.sqs.processing_queue_url
 }
 

@@ -14,8 +14,41 @@
 #
 # Inherits common tags via the provider default_tags block in the root config.
 
+data "aws_caller_identity" "current" {}
+
+# Key policy. The first statement is the AWS default — the account root keeps
+# full control, so IAM policies (like our admin role) continue to govern the
+# key and we can NEVER lock ourselves out. The second statement is the only
+# addition: it lets the SNS service encrypt messages it delivers into the
+# CMK-encrypted SQS queue. Without it, SNS->SQS delivery fails silently.
+data "aws_iam_policy_document" "main" {
+  statement {
+    sid       = "EnableAccountAdmin"
+    effect    = "Allow"
+    actions   = ["kms:*"]
+    resources = ["*"]
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+  }
+
+  statement {
+    sid       = "AllowSNSToUseKeyForSQSDelivery"
+    effect    = "Allow"
+    actions   = ["kms:GenerateDataKey*", "kms:Decrypt"]
+    resources = ["*"]
+    principals {
+      type        = "Service"
+      identifiers = ["sns.amazonaws.com"]
+    }
+  }
+}
+
 resource "aws_kms_key" "main" {
-  description = "${var.name_prefix} CMK for S3, RDS, Secrets Manager, and SQS"
+  description = "${var.name_prefix} CMK for S3, RDS, Secrets Manager, SQS, and SNS"
+
+  policy = data.aws_iam_policy_document.main.json
 
   # Rotate the backing key material annually. AWS keeps older material so
   # previously-encrypted data stays readable.

@@ -93,3 +93,9 @@ variable "log_retention_days" {
   default     = 30
   description = "CloudWatch log retention. Never zero — that means keep forever."
 }
+
+variable "events_topic_arn" {
+  type        = string
+  default     = ""
+  description = "SNS topic the backend publishes document.sent events to. Empty = no publish permission."
+}
