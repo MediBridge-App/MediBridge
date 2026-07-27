@@ -65,7 +65,7 @@ export default function NotificationItem({
         >
             {/* Icon */}
             <div
-                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                 style={{ backgroundColor: config.bg, color: config.color }}
             >
                 {config.icon}
@@ -75,10 +75,10 @@ export default function NotificationItem({
             <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                     <p className="text-sm font-semibold text-slate-800">{title}</p>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                         {isUnread && (
                             <span
-                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                className="w-2 h-2 rounded-full shrink-0"
                                 style={{ backgroundColor: '#0e7490' }}
                             />
                         )}

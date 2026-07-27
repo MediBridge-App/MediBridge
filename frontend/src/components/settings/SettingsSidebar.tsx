@@ -31,7 +31,7 @@ const SECTIONS = [
 
 export default function SettingsSidebar({ active, onChange }: SettingsSidebarProps) {
     return (
-        <div className="w-56 flex-shrink-0">
+        <div className="w-56 shrink-0">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
                 Settings
             </p>

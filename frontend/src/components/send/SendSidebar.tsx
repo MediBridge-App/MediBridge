@@ -11,7 +11,7 @@ export default function SendSidebar() {
                 </p>
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
                     <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                         style={{ backgroundColor: '#e0f2fe' }}
                     >
                         <Building2 size={16} style={{ color: '#0e7490' }} />
@@ -68,7 +68,7 @@ export default function SendSidebar() {
                             className="flex items-start gap-2.5 p-3 rounded-lg bg-slate-50 border border-slate-200"
                         >
                             <span
-                                className="text-xs font-bold font-mono flex-shrink-0"
+                                className="text-xs font-bold font-mono shrink-0"
                                 style={{ color: '#0e7490' }}
                             >
                                 0{i + 1}

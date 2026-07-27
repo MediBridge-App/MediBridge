@@ -68,7 +68,7 @@ export default function AuditToolbar({
             <div className="flex items-center gap-3">
                 {/* Search */}
                 <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-slate-50 border border-slate-200 flex-1 max-w-sm">
-                    <Search size={13} className="text-slate-400 flex-shrink-0" />
+                    <Search size={13} className="text-slate-400 shrink-0" />
                     <input
                         value={search}
                         onChange={(e) => onSearchChange(e.target.value)}

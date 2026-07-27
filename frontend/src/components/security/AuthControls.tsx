@@ -10,7 +10,7 @@ function Toggle({ enabled, onChange }: ToggleProps) {
     return (
         <button
             onClick={() => onChange(!enabled)}
-            className="relative inline-flex items-center rounded-full transition-colors flex-shrink-0"
+            className="relative inline-flex items-center rounded-full transition-colors shrink-0"
             style={{
                 width: 44,
                 height: 24,
@@ -42,7 +42,7 @@ export default function AuthControls() {
                 {/* MFA */}
                 <div className="flex items-center gap-4 py-4">
                     <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                         style={{ backgroundColor: '#f1f5f9' }}
                     >
                         <KeyRound size={16} style={{ color: '#0e7490' }}  />
@@ -61,7 +61,7 @@ export default function AuthControls() {
                 {/* IP Allowlisting */}
                 <div className="flex items-center gap-4 py-4">
                     <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                         style={{ backgroundColor: '#f1f5f9' }}
                     >
                         <Globe size={16} style={{ color: '#0e7490' }}  />

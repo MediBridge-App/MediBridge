@@ -84,7 +84,7 @@ export default function UserAccessList() {
                         >
                             {/* Avatar */}
                             <div
-                                className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                                 style={{ backgroundColor: '#0e7490' }}
                             >
                                 {user.initials}
@@ -102,14 +102,14 @@ export default function UserAccessList() {
 
                             {/* Access badge */}
                             <span
-                                className="text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0"
+                                className="text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0"
                                 style={{ backgroundColor: access.bg, color: access.color }}
                             >
                                 {user.access}
                             </span>
 
                             {/* Status */}
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <div className="flex items-center gap-1.5 shrink-0">
                                 <span
                                     className="w-1.5 h-1.5 rounded-full"
                                     style={{

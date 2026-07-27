@@ -102,7 +102,7 @@ export default function DocumentForm({
                                 }}
                             >
                                 <span
-                                    className="rounded-full flex-shrink-0"
+                                    className="rounded-full shrink-0"
                                     style={{
                                         width: 7,
                                         height: 7,

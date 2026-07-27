@@ -54,7 +54,7 @@ export default function FileUpload({ file, onFileChange }: FileUploadProps) {
                     style={{ backgroundColor: '#f0fdf9', borderColor: '#0e7490' }}
                 >
                     <div
-                        className="rounded-lg flex items-center justify-center flex-shrink-0"
+                        className="rounded-lg flex items-center justify-center shrink-0"
                         style={{ width: 36, height: 36, backgroundColor: '#0e749020' }}
                     >
                         <File size={16} style={{ color: '#0e7490' }} />

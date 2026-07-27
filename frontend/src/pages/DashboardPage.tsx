@@ -137,7 +137,7 @@ export default function DashboardPage() {
                             key={item.id}
                             className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer"
                         >
-                            <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-400">
+                            <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 text-slate-400">
                                 <FileText size={16} />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -152,7 +152,7 @@ export default function DashboardPage() {
                                 </div>
                                 <p className="text-xs text-slate-500">From: {item.senderOrgName}</p>
                             </div>
-                            <div className="flex items-center gap-3 flex-shrink-0">
+                            <div className="flex items-center gap-3 shrink-0">
                                 <Badge label={item.status} variant={item.status} />
                                 <span className="text-xs text-slate-400">{item.timeAgo}</span>
                             </div>
@@ -194,7 +194,7 @@ export default function DashboardPage() {
                     >
                         {/* Icon box */}
                         <div
-                            className="rounded-lg flex items-center justify-center flex-shrink-0"
+                            className="rounded-lg flex items-center justify-center shrink-0"
                             style={{
                                 width: 36,
                                 height: 36,

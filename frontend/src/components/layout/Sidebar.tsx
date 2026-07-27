@@ -147,7 +147,7 @@ export default function Sidebar({ onProfileClick }: SidebarProps) {
                     className="flex items-center gap-3 px-2 py-1.5 w-full rounded-lg hover:bg-white/5 transition-colors"
                 >
                     <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
                         style={{ backgroundColor: '#0ea5a0' }}
                     >
                         JR

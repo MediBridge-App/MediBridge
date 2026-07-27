@@ -54,7 +54,7 @@ export default function RecipientSearch({ selected, onSelect }: RecipientSearchP
                 // Search state
                 <div className="relative">
                     <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 bg-slate-50 border border-slate-200">
-                        <Search size={14} className="text-slate-400 flex-shrink-0" />
+                        <Search size={14} className="text-slate-400 shrink-0" />
                         <input
                             value={search}
                             onChange={(e) => {

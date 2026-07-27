@@ -116,7 +116,7 @@ export default function LoginPage() {
                     ].map((f) => (
                         <div key={f.label} className="flex items-start gap-3">
                             <div
-                                className="w-8 h-8 rounded-lg border border-white/20 flex items-center justify-center flex-shrink-0"
+                                className="w-8 h-8 rounded-lg border border-white/20 flex items-center justify-center shrink-0"
                                 style={{ color: '#14b8b3' }}
                             >
                                 {f.icon}
@@ -230,7 +230,7 @@ export default function LoginPage() {
                                 className="w-full flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all text-left disabled:opacity-50"
                             >
                                 <div
-                                    className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                                    className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
                                     style={{ backgroundColor: '#0e7490' }}
                                 >
                                     {acct.initials}
@@ -244,7 +244,7 @@ export default function LoginPage() {
                                     </div>
                                 </div>
                                 <svg
-                                    className="text-slate-300 flex-shrink-0"
+                                    className="text-slate-300 shrink-0"
                                     width="16" height="16"
                                     viewBox="0 0 24 24"
                                     fill="none"
