@@ -7,9 +7,9 @@ export interface User {
   fullName: string;
   role:
     | "provider"
-    | "referral_coordinator"
-    | "registered_nurse"
     | "organization_admin"
+    | "registered_nurse"
+    | "referral_coordinator"
     | "medical_assistant";
   organizationId: string;
   organizationName: string;
@@ -23,6 +23,9 @@ export type DocumentStatus =
   | "ocr_complete"
   | "classified"
   | "routed"
+  | "delivered"
+  | "rejected"
+  | "ocr_failed"
   | "delivered";
 export type DocumentType =
   | "referral"
@@ -113,12 +116,12 @@ export interface AIAnalysis {
 // ─── Organization ─────────────────────────────────────────────────────────────
 
 export interface Organization {
-  id: string
-  name: string
-  orgCode?: string
-  type: string
-  location?: string
-  createdAt?: string 
+  id: string;
+  name: string;
+  orgCode?: string;
+  type: string;
+  location?: string;
+  createdAt?: string;
 }
 
 // ─── Inbox ───────────────────────────────────────────────────────────────────
@@ -142,7 +145,6 @@ export interface InboxDocument {
   priority: DocumentPriority;
   isUnread: boolean;
 }
-
 
 export interface SendDocumentForm {
   selectedOrg: Organization | null;
