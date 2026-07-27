@@ -2,7 +2,7 @@ import json
 import unittest
 from pathlib import Path
 
-from workers.shared.events import parse_sns_message
+from shared.events import parse_sns_message
 
 
 class TestParseSnsMessage(unittest.TestCase):
