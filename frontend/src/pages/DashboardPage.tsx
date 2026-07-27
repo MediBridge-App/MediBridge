@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Send, Inbox, BrainCircuit, FileText, Clock, Activity, ArrowUpRight, Brain } from 'lucide-react'
 import StatCard from '../components/ui/StatCard'
 import Badge from '../components/ui/Badge'
 import ActivityChart from '../components/dashboard/ActivityChart'
 import DocTypesChart from '../components/dashboard/DocTypesChart'
+import { dashboardApi } from '../api'
 import {
     MOCK_STATS,
     MOCK_ACTIVITY,
@@ -14,12 +15,48 @@ import {
 
 
 export default function DashboardPage() {
+    const [stats, setStats] = useState(MOCK_STATS)
+    const [recentDocs, setRecentDocs] = useState(MOCK_RECENT)
+    const [activityData, setActivityData] = useState(MOCK_ACTIVITY)
+    const [docTypes, setDocTypes] = useState(MOCK_DOC_TYPES)
+    const [isLoading, setIsLoading] = useState(true)
     const navigate = useNavigate()
     const [activityRange, setActivityRange] = useState<'7d' | '30d'>('7d')
 
     const hour = new Date().getHours()
     const greeting =
         hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const [statsData, activityData, docTypesData, recentData] = await Promise.all([
+                    dashboardApi.getStats(),
+                    dashboardApi.getActivity('7d'),
+                    dashboardApi.getDocumentTypes(),
+                    dashboardApi.getRecent(),
+                ])
+                setStats(statsData)
+                setActivityData(activityData)
+                setDocTypes(docTypesData)
+                setRecentDocs(recentData)
+            } catch (err) {
+                console.error('Dashboard fetch error:', err)
+                // keeps mock data as fallback
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchData()
+    }, [])
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500" />
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6 p-6">
@@ -50,29 +87,29 @@ export default function DashboardPage() {
             <div className="grid grid-cols-4 gap-4">
                 <StatCard
                     label="Documents Sent"
-                    value={MOCK_STATS.documentsSent}
-                    change={MOCK_STATS.sentChange}
+                    value={stats.documentsSent}
+                    change={stats.sentChange}
                     icon={<Send size={18} color="#0ea5a0" />}
                     iconBg="#f0fdf9"
                 />
                 <StatCard
                     label="Documents Received"
-                    value={MOCK_STATS.documentsReceived}
-                    change={MOCK_STATS.receivedChange}
+                    value={stats.documentsReceived}
+                    change={stats.receivedChange}
                     icon={<Inbox size={18} color="#0ea5a0" />}
                     iconBg="#f0fdf9"
                 />
                 <StatCard
                     label="Pending Review"
-                    value={MOCK_STATS.pendingReview}
-                    change={MOCK_STATS.pendingChange}
+                    value={stats.pendingReview}
+                    change={stats.pendingChange}
                     icon={<Clock size={18} color="#f59e0b" />}
                     iconBg="#fffbeb"
                 />
                 <StatCard
                     label="AI Processed"
-                    value={MOCK_STATS.aiProcessed}
-                    change={MOCK_STATS.aiChange}
+                    value={stats.aiProcessed}
+                    change={stats.aiChange}
                     icon={<BrainCircuit size={18} color="#7c3aed" />}
                     iconBg="#f5f3ff"
                 />
@@ -104,7 +141,7 @@ export default function DashboardPage() {
                             ))}
                         </div>
                     </div>
-                    <ActivityChart data={MOCK_ACTIVITY} />
+                    <ActivityChart data={activityData} />
                 </div>
 
                 <div className="bg-white rounded-xl border border-slate-200 p-6">
@@ -112,7 +149,7 @@ export default function DashboardPage() {
                         <h3 className="font-semibold text-slate-800">Document Types</h3>
                         <p className="text-xs text-slate-500 mt-0.5">This month</p>
                     </div>
-                    <DocTypesChart data={MOCK_DOC_TYPES} />
+                    <DocTypesChart data={docTypes} />
                 </div>
             </div>
 
@@ -132,7 +169,7 @@ export default function DashboardPage() {
                     </button>
                 </div>
                 <div className="divide-y divide-slate-100">
-                    {MOCK_RECENT.map((item) => (
+                    {recentDocs.map((item) => (
                         <div
                             key={item.id}
                             className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer"
