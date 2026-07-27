@@ -88,6 +88,17 @@ data "aws_iam_policy_document" "task" {
     actions   = ["secretsmanager:GetSecretValue"]
     resources = [var.db_secret_arn, var.app_secrets_arn]
   }
+
+  # Publish document.sent events to the SNS topic that feeds the OCR/AI
+  # pipeline. Only granted when a topic ARN is wired in.
+  dynamic "statement" {
+    for_each = var.events_topic_arn == "" ? [] : [1]
+    content {
+      sid       = "PublishDocumentEvents"
+      actions   = ["sns:Publish"]
+      resources = [var.events_topic_arn]
+    }
+  }
 }
 
 resource "aws_iam_role_policy" "task" {
@@ -128,6 +139,7 @@ resource "aws_ecs_task_definition" "backend" {
       { name = "DB_SECRET_ARN", value = var.db_secret_arn },
       { name = "APP_SECRETS_ARN", value = var.app_secrets_arn },
       { name = "APP_PORT", value = tostring(var.app_port) },
+      { name = "EVENTS_TOPIC_ARN", value = var.events_topic_arn },
     ]
 
     logConfiguration = {
