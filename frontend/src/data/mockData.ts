@@ -1,4 +1,5 @@
 import type { DocumentType, DocumentStatus, DocumentPriority } from "../types";
+import type { Analysis } from '../components/ai/AIHistoryItem'
 
 export const MOCK_STATS = {
   documentsSent: 284,
@@ -367,3 +368,54 @@ export const MOCK_NOTIFICATIONS = [
     icon: "document",
   },
 ];
+
+export const MOCK_AI_ANALYSES: Analysis[] = [
+  {
+    txId: 'TX-8821',
+    type: 'Lab Report',
+    category: 'Laboratory',
+    summary: 'Routine CBC and CMP results. WBC within normal range (6.2 × 10³/µL). Hemoglobin slightly low at 11.4 g/dL — monitor for anemia.',
+    tags: ['Routine CBC', 'Metabolic Panel', 'Monitor Hemoglobin'],
+    confidence: 97,
+    urgencyFlag: false,
+    processingMs: 840,
+    model: 'Claude claude-haiku-4-5',
+    entities: ['WBC: 6.2', 'Hgb: 11.4', 'CMP: Normal'],
+  },
+  {
+    txId: 'TX-8820',
+    type: 'Referral',
+    category: 'Referral',
+    summary: 'Cardiology referral for 58-year-old male with new-onset chest pain and exertional dyspnea. Requesting stress echocardiogram.',
+    tags: ['Cardiology', 'Chest Pain', 'Echocardiogram Requested', 'Urgent'],
+    confidence: 99,
+    urgencyFlag: true,
+    processingMs: 1120,
+    model: 'Claude claude-haiku-4-5',
+    entities: ['Age: 58M', 'ST changes', 'Echocardiogram'],
+  },
+  {
+    txId: 'TX-8819',
+    type: 'Discharge Summary',
+    category: 'Discharge',
+    summary: 'Discharge following uncomplicated laparoscopic appendectomy. Day 2 post-op. Follow-up within 7 days.',
+    tags: ['Post-surgical', 'Follow-up Required', 'Appendectomy'],
+    confidence: 95,
+    urgencyFlag: false,
+    processingMs: 1340,
+    model: 'Claude claude-haiku-4-5',
+    entities: ['Appendectomy', 'Day 2 post-op', '7-day follow-up'],
+  },
+  {
+    txId: 'TX-8818',
+    type: 'Insurance Form',
+    category: 'Insurance',
+    summary: "Prior authorization for Adalimumab (Humira) 40mg. Crohn's disease diagnosis. Deadline June 17.",
+    tags: ['Pre-auth', 'Biologics', 'Action Required', 'Deadline'],
+    confidence: 92,
+    urgencyFlag: true,
+    processingMs: 980,
+    model: 'Claude claude-haiku-4-5',
+    entities: ["Adalimumab 40mg", "Crohn's disease", 'June 17 deadline'],
+  },
+]
