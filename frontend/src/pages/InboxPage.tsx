@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { InboxDocument } from '../types'
 import { MOCK_INBOX } from '../data/mockData'
+import { documentsApi } from '../api'
 import InboxToolbar from '../components/inbox/InboxToolbar'
 import InboxList from '../components/inbox/InboxList'
 import InboxDetail from '../components/inbox/InboxDetail'
@@ -9,10 +10,26 @@ export default function InboxPage() {
     const [selected, setSelected] = useState<InboxDocument | null>(null)
     const [search, setSearch] = useState('')
     const [filterStatus, setFilterStatus] = useState('all')
+    const [documents, setDocuments] = useState<InboxDocument[]>(MOCK_INBOX)
+    const [isLoading, setIsLoading] = useState(true)
 
-    const unreadCount = MOCK_INBOX.filter((d) => d.isUnread).length
+    useEffect(() => {
+        async function fetchInbox() {
+            try {
+                const data = await documentsApi.getInbox()
+                setDocuments(data)
+            } catch {
+                // API not ready yet — using mock data
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchInbox()
+    }, [])
 
-    const filtered = MOCK_INBOX.filter((doc) => {
+    const unreadCount = documents.filter((d) => d.isUnread).length
+
+    const filtered = documents.filter((doc) => {
         const matchSearch =
             doc.subject.toLowerCase().includes(search.toLowerCase()) ||
             doc.from.toLowerCase().includes(search.toLowerCase()) ||
@@ -31,9 +48,20 @@ export default function InboxPage() {
         setSelected(selected?.id === doc.id ? null : doc)
     }
 
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div
+                    className="animate-spin rounded-full h-8 w-8 border-b-2"
+                    style={{ borderColor: '#0e7490' }}
+                />
+            </div>
+        )
+    }
+
     return (
         <div
-            className="flex overflow-hidden rounded-xl border border-slate-200 bg-white "
+            className="flex overflow-hidden rounded-xl border border-slate-200 bg-white"
             style={{ height: 'calc(100vh - 120px)' }}
         >
             {/* Left panel */}
@@ -47,7 +75,7 @@ export default function InboxPage() {
                     filterStatus={filterStatus}
                     onFilterChange={setFilterStatus}
                     unreadCount={unreadCount}
-                    totalCount={MOCK_INBOX.length}
+                    totalCount={documents.length}
                 />
                 <InboxList
                     docs={filtered}

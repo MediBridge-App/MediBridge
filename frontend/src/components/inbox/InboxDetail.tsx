@@ -56,6 +56,11 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
                 URGENT
               </span>
             )}
+            {doc.urgencyFlag && doc.priority !== 'urgent' && (
+              <span className="rounded px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-600 flex items-center gap-1">
+                ⚡ AI flagged as potentially urgent
+              </span>
+            )}
           </div>
           <h2 className="text-sm font-bold text-slate-800 leading-snug">
             {doc.subject}

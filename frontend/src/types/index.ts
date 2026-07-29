@@ -144,6 +144,7 @@ export interface InboxDocument {
   documentType: DocumentType;
   priority: DocumentPriority;
   isUnread: boolean;
+  urgencyFlag?: boolean
 }
 
 export interface SendDocumentForm {

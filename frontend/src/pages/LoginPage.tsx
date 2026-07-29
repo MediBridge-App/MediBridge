@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Activity, Shield, Zap, ClipboardList, Eye, EyeOff } from 'lucide-react'
-import { signIn } from 'aws-amplify/auth'
+import { signIn, confirmSignIn } from 'aws-amplify/auth'
 
 const DEMO_ACCOUNTS = [
     {
@@ -31,15 +31,27 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [requiresNewPassword, setRequiresNewPassword] = useState(false)
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
-        if (!email || !password) return
         setError('')
         setIsLoading(true)
+
         try {
-            await signIn({ username: email, password })
-            navigate('/dashboard')
+            if (requiresNewPassword) {
+                // Handle new password challenge
+                await confirmSignIn({ challengeResponse: newPassword })
+                navigate('/dashboard')
+            } else {
+                const result = await signIn({ username: email, password })
+                if (result.nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+                    setRequiresNewPassword(true)
+                } else {
+                    navigate('/dashboard')
+                }
+            }
         } catch (err: unknown) {
             const error = err as { message?: string }
             setError(error.message || 'Invalid email or password')
@@ -211,6 +223,23 @@ export default function LoginPage() {
                                 </button>
                             </div>
                         </div>
+                        {requiresNewPassword && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Set New Password
+                                </label>
+                                <p className="text-xs text-slate-400 mb-2">
+                                    Please set a new password for your account
+                                </p>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Enter new password"
+                                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm outline-none"
+                                />
+                            </div>
+                        )}
 
                         {/* Error */}
                         {error && (

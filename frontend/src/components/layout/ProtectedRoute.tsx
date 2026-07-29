@@ -17,20 +17,19 @@ export default function ProtectedRoute() {
         checkAuth()
     }, [])
 
-    // Still checking
     if (isAuthenticated === null) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500" />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2"
+                    style={{ borderColor: '#0e7490' }}
+                />
             </div>
         )
     }
 
-    // Not authenticated → redirect to login
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />
     }
 
-    // Authenticated → show the page
     return <Outlet />
 }

@@ -162,6 +162,7 @@ export const MOCK_INBOX = [
     documentType: "imaging" as DocumentType,
     priority: "normal" as DocumentPriority,
     isUnread: false,
+    urgencyFlag: true,
   },
   {
     id: "TX-8816",
@@ -182,6 +183,7 @@ export const MOCK_INBOX = [
     documentType: "lab_result" as DocumentType,
     priority: "urgent" as DocumentPriority,
     isUnread: true,
+    urgencyFlag: true,
   },
 ];
 
