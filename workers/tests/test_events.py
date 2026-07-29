@@ -4,8 +4,11 @@ from pathlib import Path
 
 from jsonschema import ValidationError
 
-from shared.events import parse_sns_message, validate_document_sent
-
+from shared.events import (
+    parse_sns_message,
+    validate_document_analysis,
+    validate_document_sent,
+)
 
 class TestParseSnsMessage(unittest.TestCase):
     def test_parses_document_sent_event(self):
@@ -49,7 +52,37 @@ class TestParseSnsMessage(unittest.TestCase):
         with self.assertRaises(ValidationError):
             validate_document_sent(event)
 
+class TestValidateDocumentAnalysis(unittest.TestCase):
+    def setUp(self):
+        fixture_path = (
+            Path(__file__).parent
+            / "fixtures"
+            / "document-analysis.json"
+        )
+        self.analysis = json.loads(
+            fixture_path.read_text(encoding="utf-8")
+        )
 
+    def test_validates_document_analysis(self):
+        validated_analysis = validate_document_analysis(self.analysis)
+
+        self.assertEqual(validated_analysis, self.analysis)
+        self.assertEqual(
+            validated_analysis["document_type"],
+            "lab_result",
+        )
+
+    def test_rejects_analysis_missing_required_field(self):
+        self.analysis.pop("summary")
+
+        with self.assertRaises(ValidationError):
+            validate_document_analysis(self.analysis)
+
+    def test_rejects_confidence_above_100(self):
+        self.analysis["confidence_score"] = 101
+
+        with self.assertRaises(ValidationError):
+            validate_document_analysis(self.analysis)
 
 if __name__ == "__main__":
     unittest.main()
