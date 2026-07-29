@@ -17,15 +17,15 @@ db = SessionLocal()
 # ==================================================
 
 CLINIC_ID = uuid.UUID(
-    "11111111-1111-1111-1111-111111111111"
+    "a0000000-0000-4000-8000-000000000001"
 )
 
 HOSPITAL_ID = uuid.UUID(
-    "22222222-2222-2222-2222-222222222222"
+    "a0000000-0000-4000-8000-000000000002"
 )
 
 USER_ID = uuid.UUID(
-    "33333333-3333-3333-3333-333333333333"
+    "b0000000-0000-4000-8000-000000000001"
 )
 
 
@@ -103,8 +103,8 @@ try:
         user.email = "test@medibridge.com"
         user.full_name = "Test User"
         user.role = "provider"
-        user.specialty = "Cardiology"
-        user.npi_number = "1234567890"
+        # user.specialty = "Cardiology"
+        # user.npi_number = "1234567890"
 
 
     else:
@@ -116,8 +116,8 @@ try:
             email="test@medibridge.com",
             full_name="Test User",
             role="provider",
-            specialty="Cardiology",
-            npi_number="1234567890"
+            # specialty="Cardiology",
+            # npi_number="1234567890"
         )
 
         db.add(user)

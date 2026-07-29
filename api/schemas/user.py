@@ -10,6 +10,7 @@ class UserResponse(BaseModel):
     role: str
 
     specialty: str | None = None
+    npi_number: str | None = None 
 
     is_active: bool
     last_login: datetime | None = None

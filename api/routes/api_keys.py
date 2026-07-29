@@ -1,10 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException
+)
+
 from sqlalchemy.orm import Session
+
 from uuid import UUID
+
 import secrets
 import hashlib
 
+
 from database import get_db
+
+from dependencies.auth import get_current_user
 
 from models.api_key import APIKey
 
@@ -13,6 +23,7 @@ from schemas.api_key import (
     APIKeyResponse,
     APIKeyCreatedResponse
 )
+
 
 
 router = APIRouter(
@@ -32,22 +43,26 @@ router = APIRouter(
     response_model=list[APIKeyResponse]
 )
 def get_api_keys(
-    db: Session = Depends(get_db)
+
+    db: Session = Depends(get_db),
+
+    current_user = Depends(get_current_user)
+
 ):
 
-    # Temporary until authentication
-    current_org_id = UUID(
-        "22222222-2222-2222-2222-222222222222"
-    )
-
-
     return (
+
         db.query(APIKey)
+
         .filter(
-            APIKey.organization_id == current_org_id
+            APIKey.organization_id ==
+            current_user.organization_id
         )
+
         .all()
+
     )
+
 
 
 
@@ -61,14 +76,14 @@ def get_api_keys(
     response_model=APIKeyCreatedResponse
 )
 def create_api_key(
+
     body: APIKeyCreate,
-    db: Session = Depends(get_db)
+
+    db: Session = Depends(get_db),
+
+    current_user = Depends(get_current_user)
+
 ):
-
-    current_org_id = UUID(
-        "22222222-2222-2222-2222-222222222222"
-    )
-
 
     raw_key = (
         "mb_prod_"
@@ -81,15 +96,17 @@ def create_api_key(
     ).hexdigest()
 
 
+
     new_key = APIKey(
 
-        organization_id=current_org_id,
+        organization_id=current_user.organization_id,
 
         name=body.name,
 
         key_prefix="mb_prod_",
 
         key_hash=key_hash
+
     )
 
 
@@ -100,12 +117,19 @@ def create_api_key(
     db.refresh(new_key)
 
 
+
     return {
+
         "id": new_key.id,
+
         "name": new_key.name,
+
         "key": raw_key,
+
         "created_at": new_key.created_at
+
     }
+
 
 
 
@@ -118,23 +142,41 @@ def create_api_key(
     "/{key_id}"
 )
 def delete_api_key(
+
     key_id: UUID,
-    db: Session = Depends(get_db)
+
+    db: Session = Depends(get_db),
+
+    current_user = Depends(get_current_user)
+
 ):
 
     api_key = (
+
         db.query(APIKey)
+
         .filter(
-            APIKey.id == key_id
+
+            APIKey.id == key_id,
+
+            APIKey.organization_id ==
+            current_user.organization_id
+
         )
+
         .first()
+
     )
 
 
     if not api_key:
+
         raise HTTPException(
+
             status_code=404,
+
             detail="API key not found"
+
         )
 
 
@@ -145,5 +187,7 @@ def delete_api_key(
 
 
     return {
+
         "message": "key revoked"
+
     }

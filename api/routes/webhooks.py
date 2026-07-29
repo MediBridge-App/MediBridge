@@ -34,7 +34,7 @@ def get_webhooks(
 
     # Temporary until authentication
     current_org_id = UUID(
-        "22222222-2222-2222-2222-222222222222"
+        "a0000000-0000-4000-8000-000000000001"
     )
 
 
@@ -63,7 +63,7 @@ def create_webhook(
 ):
 
     current_org_id = UUID(
-        "22222222-2222-2222-2222-222222222222"
+        "a0000000-0000-4000-8000-000000000001"
     )
 
 

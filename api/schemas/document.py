@@ -46,6 +46,7 @@ class DocumentResponse(BaseModel):
 
     delivered_at: datetime | None
     read_at: datetime | None
+    urgency_detected: bool | None = None
 
 
     class Config:

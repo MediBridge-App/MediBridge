@@ -20,7 +20,7 @@ class User(Base):
     cognito_id = Column(
         String(255),
         unique=True,
-        nullable=False
+        nullable=False,
     )
 
     organization_id = Column(

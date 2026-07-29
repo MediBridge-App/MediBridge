@@ -14,7 +14,7 @@ def get_s3_client():
         "s3",
         region_name=os.getenv(
             "AWS_REGION",
-            "us-east-1"
+            "us-east-2"
         )
     )
 
@@ -35,11 +35,21 @@ def generate_presigned_upload_url(
         )
 
 
+    # Create UUID-based S3 key
+    # Do not expose original filename in S3 path
+    file_extension = ""
+
+    if "." in filename:
+        file_extension = filename.split(".")[-1]
+
+
     s3_key = (
         f"documents/"
-        f"{uuid.uuid4()}-"
-        f"{filename}"
+        f"{uuid.uuid4()}"
     )
+
+    if file_extension:
+        s3_key += f".{file_extension}"
 
 
     s3_client = get_s3_client()
@@ -50,13 +60,17 @@ def generate_presigned_upload_url(
         Params={
             "Bucket": bucket_name,
             "Key": s3_key,
-            "ContentType": content_type
+            "ContentType": content_type,
+
+            # Required because bucket enforces KMS encryption
+            "ServerSideEncryption": "aws:kms"
         },
-        ExpiresIn=3600
+        ExpiresIn=900  # 15 minutes
     )
 
 
     return {
         "upload_url": upload_url,
-        "s3_key": s3_key
+        "s3_key": s3_key,
+        "expires_in": 90000
     }

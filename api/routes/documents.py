@@ -5,7 +5,12 @@ from datetime import datetime
 import uuid
 
 from database import get_db
+
+from dependencies.auth import get_current_user
+
 from models.document import Document
+from models.ai_analysis import AIAnalysis
+
 from schemas.document import (
     DocumentCreate,
     DocumentResponse,
@@ -23,6 +28,7 @@ router = APIRouter(
 )
 
 
+
 # ==================================================
 # GET INBOX DOCUMENTS
 # GET /documents/inbox
@@ -37,54 +43,64 @@ def get_inbox(
     type: str | None = None,
     priority: str | None = None,
     search: str | None = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
 
-    # Temporary until authentication
-    current_org_id = UUID(
-        "22222222-2222-2222-2222-222222222222"
-    )
-
+    user = current_user
 
     query = (
-        db.query(Document)
+        db.query(
+            Document,
+            AIAnalysis.urgency_detected
+        )
+        .outerjoin(
+            AIAnalysis,
+            AIAnalysis.document_id == Document.id
+        )
         .filter(
-            Document.recipient_org_id == current_org_id
+            Document.recipient_org_id == user.organization_id
         )
     )
 
 
-    # Filter by status
     if status:
         query = query.filter(
             Document.status == status
         )
 
-
-    # Filter by document type
     if type:
         query = query.filter(
             Document.document_type == type
         )
 
-
-    # Filter by priority
     if priority:
         query = query.filter(
             Document.priority == priority
         )
 
-
-    # Search subject
     if search:
         query = query.filter(
-            Document.subject.ilike(
-                f"%{search}%"
-            )
+            Document.subject.ilike(f"%{search}%")
         )
 
 
-    return query.all()
+    results = query.all()
+
+
+    return [
+        {
+            **{
+                k:v
+                for k,v in document.__dict__.items()
+                if k != "_sa_instance_state"
+            },
+            "urgency_detected": urgency_detected
+        }
+
+        for document, urgency_detected in results
+    ]
+
 
 
 # ==================================================
@@ -97,27 +113,57 @@ def get_inbox(
     response_model=list[DocumentResponse]
 )
 def get_sent(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
 
-    # Temporary until authentication
-    current_org_id = UUID(
-        "11111111-1111-1111-1111-111111111111"
-    )
+    user = current_user
+
 
     return (
         db.query(Document)
         .filter(
-            Document.sender_org_id == current_org_id
+            Document.sender_org_id == user.organization_id
         )
         .all()
     )
 
 
+# ==================================================
+# SEARCH DOCUMENTS
+# GET /documents/search
+# ==================================================
+
+@router.get(
+    "/search",
+    response_model=list[DocumentResponse]
+)
+def search_documents(
+    q: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+
+    user = current_user
+
+
+    return (
+        db.query(Document)
+        .filter(
+            (
+                (Document.recipient_org_id == user.organization_id)
+                |
+                (Document.sender_org_id == user.organization_id)
+            ),
+            Document.subject.isnot(None),
+            Document.subject.ilike(f"%{q}%")
+        )
+        .all()
+    )
 
 # ==================================================
 # GET SINGLE DOCUMENT
-# GET /documents/{id}
+# GET /documents/{doc_id}
 # ==================================================
 
 @router.get(
@@ -126,22 +172,33 @@ def get_sent(
 )
 def get_document(
     doc_id: UUID,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
+
+    user = current_user
+
 
     document = (
         db.query(Document)
         .filter(
-            Document.id == doc_id
+            Document.id == doc_id,
+            (
+                (Document.sender_org_id == user.organization_id)
+                |
+                (Document.recipient_org_id == user.organization_id)
+            )
         )
         .first()
     )
 
+
     if not document:
         raise HTTPException(
             status_code=404,
-            detail="Document not found"
+            detail="Document not found or access denied"
         )
+
 
     return document
 
@@ -158,28 +215,22 @@ def get_document(
 )
 def send_document(
     document: DocumentCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
 
-    # Temporary until authentication
-    sender_org_id = UUID(
-        "11111111-1111-1111-1111-111111111111"
-    )
-
-    uploaded_by_user_id = UUID(
-        "33333333-3333-3333-3333-333333333333"
-    )
+    user = current_user
 
 
     new_document = Document(
 
-        tx_ref=f"TX-{uuid.uuid4().hex[:4].upper()}",
+        tx_ref=f"TX-{uuid.uuid4().hex[:6].upper()}",
 
-        sender_org_id=sender_org_id,
+        sender_org_id=user.organization_id,
 
         recipient_org_id=document.recipient_org_id,
 
-        uploaded_by_user_id=uploaded_by_user_id,
+        uploaded_by_user_id=user.id,
 
         file_s3_key=document.file_s3_key,
 
@@ -206,7 +257,7 @@ def send_document(
     db.refresh(new_document)
 
 
-    # Create audit event
+
     create_audit_log(
 
         db=db,
@@ -217,13 +268,13 @@ def send_document(
 
         document_id=new_document.id,
 
-        user_id=uploaded_by_user_id,
+        user_id=user.id,
 
-        organization_id=sender_org_id,
+        organization_id=user.organization_id,
 
         details={
-            "document_type": new_document.document_type or "unknown",
-            "subject": new_document.subject or "unknown"
+            "document_type": new_document.document_type,
+            "subject": new_document.subject
         }
     )
 
@@ -237,7 +288,7 @@ def send_document(
 
 # ==================================================
 # UPDATE DOCUMENT STATUS
-# PUT /documents/{id}/status
+# PUT /documents/{doc_id}/status
 # ==================================================
 
 @router.put(
@@ -247,8 +298,12 @@ def send_document(
 def update_document_status(
     doc_id: UUID,
     body: DocumentStatusUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
+
+    user = current_user
+
 
     document = (
         db.query(Document)
@@ -269,6 +324,7 @@ def update_document_status(
     allowed_statuses = [
         "uploaded",
         "ocr_complete",
+        "ocr_failed",
         "classified",
         "routed",
         "delivered"
@@ -281,7 +337,9 @@ def update_document_status(
             detail="Invalid document status"
         )
 
+
     old_status = document.status
+
 
     document.status = body.status
 
@@ -290,27 +348,26 @@ def update_document_status(
         document.delivered_at = datetime.utcnow()
 
 
+
     create_audit_log(
 
-    db=db,
+        db=db,
 
-    event_type="document_status_changed",
+        event_type="document_status_changed",
 
-    action="Document status updated",
+        action="Document status updated",
 
-    document_id=document.id,
+        document_id=document.id,
 
-    user_id=UUID(
-        "33333333-3333-3333-3333-333333333333"
-    ),
+        user_id=user.id,
 
-    organization_id=document.recipient_org_id,
+        organization_id=user.organization_id,
 
-    details={
-        "old_status": old_status,
-        "new_status": body.status
-    }
-)
+        details={
+            "old_status": old_status,
+            "new_status": body.status
+        }
+    )
 
 
     db.commit()
@@ -322,14 +379,18 @@ def update_document_status(
 
 
 
+
 # ==================================================
 # CREATE S3 UPLOAD URL
 # POST /documents/upload-url
 # ==================================================
 
-@router.post("/upload-url")
+@router.post(
+    "/upload-url"
+)
 def create_upload_url(
-    request: UploadURLRequest
+    request: UploadURLRequest,
+    current_user = Depends(get_current_user)
 ):
 
     return generate_presigned_upload_url(
@@ -338,28 +399,3 @@ def create_upload_url(
     )
 
 
-
-# ==================================================
-# SEARCH DOCUMENTS
-# GET /documents/search?q=value
-# ==================================================
-
-@router.get(
-    "/search",
-    response_model=list[DocumentResponse]
-)
-def search_documents(
-    q: str,
-    db: Session = Depends(get_db)
-):
-
-    return (
-        db.query(Document)
-        .filter(
-            Document.subject.isnot(None), 
-            Document.subject.ilike(
-                f"%{q}%"
-            )
-        )
-        .all()
-    )
