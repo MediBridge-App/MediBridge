@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Document Sent Event",
+  "description": "Event published after a document is sent to another organization.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "event_type": {
+      "type": "string",
+      "const": "document.sent"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "document_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sender_organization_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "recipient_organization_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "actor_user_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "s3_bucket": {
+      "type": "string",
+      "minLength": 1
+    },
+    "s3_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  },
+  "required": [
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "document_id",
+    "sender_organization_id",
+    "recipient_organization_id",
+    "actor_user_id",
+    "s3_bucket",
+    "s3_key",
+    "correlation_id"
+  ],
+  "additionalProperties": false
+}

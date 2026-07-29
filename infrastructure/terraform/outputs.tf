@@ -38,9 +38,15 @@ output "kms_key_arn" {
   value       = module.kms.key_arn
 }
 
-# output "rds_endpoint" {
-#   value = module.rds.endpoint
-# }
+output "rds_endpoint" {
+  description = "Database hostname for Raissa's migrations and Bella's backend. Reachable only from inside the VPC."
+  value       = module.rds.endpoint
+}
+
+output "rds_port" {
+  description = "Database port (5432)."
+  value       = module.rds.port
+}
 
 output "db_secret_arn" {
   description = "Secrets Manager ARN holding DB credentials. Safe to share — IAM controls who can read the value."
@@ -52,13 +58,15 @@ output "app_secrets_arn" {
   value       = module.secrets.app_secrets_arn
 }
 
-# output "cognito_user_pool_id" {
-#   value = module.cognito.user_pool_id
-# }
+output "cognito_user_pool_id" {
+  description = "User pool ID — for Vida's login UI and Bella's token validation."
+  value       = module.cognito.user_pool_id
+}
 
-# output "cognito_client_id" {
-#   value = module.cognito.client_id
-# }
+output "cognito_client_id" {
+  description = "Web app client ID — public, needed by Vida and Bella."
+  value       = module.cognito.client_id
+}
 
 output "ecr_backend_url" {
   description = "Bella pushes the FastAPI image here."
@@ -85,6 +93,22 @@ output "ecs_service_name" {
   value       = module.ecs.service_name
 }
 
-# output "processing_queue_url" {
-#   value = module.sqs.processing_queue_url
-# }
+output "db_jump_instance_id" {
+  description = "SSM jump host ID — the target for the DB port-forwarding command."
+  value       = module.db_access.instance_id
+}
+
+output "events_topic_arn" {
+  description = "SNS topic Bella's backend publishes document.sent events to. This is the enqueue target."
+  value       = module.sqs.topic_arn
+}
+
+output "processing_queue_url" {
+  description = "Internal pipeline queue (SNS delivers here, Lambda consumes). Backend publishes to the topic, not this."
+  value       = module.sqs.processing_queue_url
+}
+
+output "worker_function_name" {
+  description = "Lambda worker — Ayesha deploys her handler here with `aws lambda update-function-code`."
+  value       = module.lambda.function_name
+}

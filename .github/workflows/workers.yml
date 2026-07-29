@@ -51,4 +51,4 @@ jobs:
 
       - name: Test (pytest)
         if: steps.check.outputs.ready == 'true'
-        run: pytest
+        run: python -m pytest

@@ -21,11 +21,11 @@ terraform {
   #   2. Uncomment and fill the block below.
   #   3. Run: terraform init -migrate-state
   #
-  # backend "s3" {
-  #   bucket         = "medibridge-dev-tfstate"
-  #   key            = "dev/terraform.tfstate"
-  #   region         = "us-east-2"
-  #   dynamodb_table = "medibridge-dev-tflock"
-  #   encrypt        = true
-  # }
+  backend "s3" {
+    bucket         = "medibridge-dev-tfstate"
+    key            = "dev/terraform.tfstate"
+    region         = "us-east-2"
+    dynamodb_table = "medibridge-dev-tflock"
+    encrypt        = true
+  }
 }
