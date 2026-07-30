@@ -3,12 +3,12 @@ import unittest
 from pathlib import Path
 
 from jsonschema import ValidationError
-
 from shared.events import (
     parse_sns_message,
     validate_document_analysis,
     validate_document_sent,
 )
+
 
 class TestParseSnsMessage(unittest.TestCase):
     def test_parses_document_sent_event(self):

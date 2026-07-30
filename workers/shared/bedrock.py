@@ -3,7 +3,6 @@ from typing import Any
 
 from shared.events import validate_document_analysis
 
-
 SYSTEM_PROMPT = """
 You analyze synthetic clinical documents for the MediBridge educational
 prototype.
