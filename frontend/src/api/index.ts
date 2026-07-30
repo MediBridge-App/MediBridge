@@ -116,4 +116,12 @@ export const authApi = {
   me: () => api.get("/auth/me").then((r) => r.data),
 };
 
+// ─── Security ─────────────────────────────────────────────────────────────────
+
+export const securityApi = {
+  getSettings: () => api.get("/security/settings").then((r) => r.data),
+  updateSettings: (data: object) =>
+    api.put("/security/settings", data).then((r) => r.data),
+};
+
 export default api;
