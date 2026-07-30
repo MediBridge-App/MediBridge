@@ -20,13 +20,14 @@ class AIAnalysis(Base):
 
 
     document_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey(
-            "documents.id",
-            ondelete="CASCADE"
-        ),
-        nullable=False
-    )
+    UUID(as_uuid=True),
+    ForeignKey(
+        "documents.id",
+        ondelete="CASCADE"
+    ),
+    unique=True,
+    nullable=False
+)   
 
 
     document_type = Column(
