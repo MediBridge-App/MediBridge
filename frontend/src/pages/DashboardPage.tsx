@@ -20,6 +20,7 @@ export default function DashboardPage() {
     const [activityData, setActivityData] = useState(MOCK_ACTIVITY)
     const [docTypes, setDocTypes] = useState(MOCK_DOC_TYPES)
     const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState(false)
     const navigate = useNavigate()
     const [activityRange, setActivityRange] = useState<'7d' | '30d'>('7d')
 
@@ -29,6 +30,7 @@ export default function DashboardPage() {
 
     useEffect(() => {
         async function fetchData() {
+            setIsLoading(true)
             try {
                 const [statsData, activityData, docTypesData, recentData] = await Promise.all([
                     dashboardApi.getStats(),
@@ -40,9 +42,9 @@ export default function DashboardPage() {
                 setActivityData(activityData)
                 setDocTypes(docTypesData)
                 setRecentDocs(recentData)
-            } catch (err) {
-                console.error('Dashboard fetch error:', err)
-                // keeps mock data as fallback
+                setError(false)
+            } catch {
+                setError(true)
             } finally {
                 setIsLoading(false)
             }
@@ -50,15 +52,26 @@ export default function DashboardPage() {
         fetchData()
     }, [])
 
-    if (isLoading) {
-        return (
+    return isLoading ? 
+        (
             <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500" />
             </div>
-        )
-    }
-
-    return (
+        ) : error ?
+           ( <div className="flex flex-col items-center justify-center h-64 gap-3">
+                <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center text-2xl">
+                    ⚠️
+                </div>
+                <p className="text-sm text-slate-600">Failed to load dashboard data</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="text-xs font-medium px-4 py-2 rounded-lg border border-slate-200"
+                    style={{ color: '#0e7490' }}
+                >
+                    Try again
+                </button>
+            </div>
+        ) : (
         <div className="space-y-6 p-6">
 
             {/* Header */}

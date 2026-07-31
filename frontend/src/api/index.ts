@@ -124,4 +124,19 @@ export const securityApi = {
     api.put("/security/settings", data).then((r) => r.data),
 };
 
+api.interceptors.request.use(async (req) => {
+  try {
+    const session = await fetchAuthSession();
+    const token = session.tokens?.accessToken?.toString();
+    const payload = session.tokens?.accessToken?.payload;
+    console.log("Token payload:", JSON.stringify(payload, null, 2));
+    console.log("Sub:", payload?.sub);
+    if (token) {
+      req.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch (err) {
+    console.log("Auth session error:", err);
+  }
+  return req;
+});
 export default api;
