@@ -77,12 +77,23 @@ class TestHandler(unittest.TestCase):
         textract_client = FakeTextractClient()
         bedrock_client = FakeBedrockClient(expected_analysis)
 
+        captured_backend = {}
+
+        def fake_backend_saver(payload, *, base_url, api_key):
+            captured_backend["payload"] = payload
+            captured_backend["base_url"] = base_url
+            captured_backend["api_key"] = api_key
+            return {"document_id": payload["document_id"]}
+
         result = handler(
             lambda_event,
             None,
             textract_client=textract_client,
             bedrock_client=bedrock_client,
             model_id="test-model",
+            backend_saver=fake_backend_saver,
+            backend_base_url="https://backend.test",
+            backend_api_key="test-api-key",
         )
 
         self.assertEqual(result["statusCode"], 200)
@@ -103,6 +114,30 @@ class TestHandler(unittest.TestCase):
         self.assertEqual(
             bedrock_client.request["messages"][0]["content"][0]["text"],
             "Synthetic lab result\nHemoglobin: 11.2",
+        )
+        self.assertEqual(
+            captured_backend["payload"],
+            {
+                "document_id": document_event["document_id"],
+                "document_type": expected_analysis["document_type"],
+                "summary": expected_analysis["summary"],
+                "tags": expected_analysis["tags"],
+                "recommendation_text": expected_analysis["recommendation_text"],
+                "recommendation_type": expected_analysis["recommendation_type"],
+                "urgency_detected": expected_analysis["urgency_detected"],
+                "confidence_score": expected_analysis["confidence_score"],
+                "processing_time_ms": expected_analysis.get("processing_time_ms"),
+                "model_used": "test-model",
+                "status": "complete",
+            },
+        )
+        self.assertEqual(
+            captured_backend["base_url"],
+            "https://backend.test",
+        )
+        self.assertEqual(
+            captured_backend["api_key"],
+            "test-api-key",
         )
 
 
