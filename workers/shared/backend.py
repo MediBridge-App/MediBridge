@@ -29,4 +29,3 @@ def save_analysis(
 
     with opener(request, timeout=timeout) as response:
         return json.loads(response.read().decode("utf-8"))
-    
