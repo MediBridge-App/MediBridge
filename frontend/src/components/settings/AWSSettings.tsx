@@ -43,7 +43,7 @@ export default function AWSSettings() {
                         className="flex items-center gap-2 p-3 rounded-xl bg-white border border-slate-200"
                     >
                         <span
-                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            className="w-2 h-2 rounded-full shrink-0"
                             style={{ backgroundColor: '#059669' }}
                         />
                         <div>
@@ -71,7 +71,7 @@ export default function AWSSettings() {
                             </span>
                             <CheckCircle2
                                 size={13}
-                                className="ml-auto flex-shrink-0"
+                                className="ml-auto shrink-0"
                                 style={{ color: '#059669' }}
                             />
                         </div>

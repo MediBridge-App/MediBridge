@@ -43,7 +43,7 @@ function Toggle({ enabled, onChange }: ToggleProps) {
     return (
         <button
             onClick={() => onChange(!enabled)}
-            className="relative inline-flex items-center rounded-full transition-colors flex-shrink-0"
+            className="relative inline-flex items-center rounded-full transition-colors shrink-0"
             style={{
                 width: 44,
                 height: 24,

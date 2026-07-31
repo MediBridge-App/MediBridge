@@ -87,7 +87,7 @@ export default function ReviewStep({
                             key={row.label}
                             className="flex items-start gap-4 py-2 border-b border-slate-100"
                         >
-                            <span className="w-28 flex-shrink-0 text-xs text-slate-400 font-mono uppercase tracking-wide">
+                            <span className="w-28 shrink-0 text-xs text-slate-400 font-mono uppercase tracking-wide">
                                 {row.label}
                             </span>
                             <span className="text-sm font-medium text-slate-800">

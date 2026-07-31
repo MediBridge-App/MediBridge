@@ -56,13 +56,18 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
                 URGENT
               </span>
             )}
+            {doc.urgencyFlag && doc.priority !== 'urgent' && (
+              <span className="rounded px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-600 flex items-center gap-1">
+                ⚡ AI flagged as potentially urgent
+              </span>
+            )}
           </div>
           <h2 className="text-sm font-bold text-slate-800 leading-snug">
             {doc.subject}
           </h2>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors">
             <Download size={13} /> Download
           </button>
@@ -168,7 +173,7 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
             {timeline.map((ev, i) => (
               <div key={i} className="flex items-center gap-3 py-1">
                 <div
-                  className="rounded-full flex items-center justify-center flex-shrink-0"
+                  className="rounded-full flex items-center justify-center shrink-0"
                   style={{
                     width: 18,
                     height: 18,

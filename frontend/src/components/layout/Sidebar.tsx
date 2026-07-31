@@ -13,6 +13,7 @@ import {
 import { clsx } from 'clsx'
 import { useInbox } from '../../hooks/useInbox';
 import { useNotifications } from '../../hooks/useNotifications'
+import { useAuth } from '../../hooks/useAuth'
 
 const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -35,6 +36,7 @@ interface SidebarProps {
 export default function Sidebar({ onProfileClick }: SidebarProps) {
     const { unreadCount } = useInbox()
     const { unreadCount: notifCount } = useNotifications()
+    const { user } = useAuth()
 
 
     return (
@@ -147,14 +149,14 @@ export default function Sidebar({ onProfileClick }: SidebarProps) {
                     className="flex items-center gap-3 px-2 py-1.5 w-full rounded-lg hover:bg-white/5 transition-colors"
                 >
                     <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
                         style={{ backgroundColor: '#0ea5a0' }}
                     >
-                        JR
+                        {user?.initials || '??'}
                     </div>
                     <div className="text-left">
-                        <div className="text-white text-sm font-medium">Dr. James Rivera</div>
-                        <div className="text-xs" style={{ color: '#64748b' }}>provider</div>
+                        <div className="text-white text-sm font-medium">{user?.name || 'Loading...'}</div>
+                        <div className="text-xs" style={{ color: '#64748b' }}>{user?.email || ''}</div>
                     </div>
                 </button>
             </div>

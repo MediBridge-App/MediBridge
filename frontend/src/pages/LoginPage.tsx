@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Activity, Shield, Zap, ClipboardList, Eye, EyeOff } from 'lucide-react'
+import { signIn, confirmSignIn } from 'aws-amplify/auth'
 
 const DEMO_ACCOUNTS = [
     {
@@ -30,29 +31,57 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [requiresNewPassword, setRequiresNewPassword] = useState(false)
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
-        if (!email || !password) return
         setError('')
         setIsLoading(true)
-        setTimeout(() => {
-            setIsLoading(false)
-            if (email && password) {
+
+        try {
+            if (requiresNewPassword) {
+                // Handle new password challenge
+                await confirmSignIn({ challengeResponse: newPassword })
                 navigate('/dashboard')
             } else {
-                setError('Invalid email or password')
+                const result = await signIn({ username: email, password })
+                if (result.nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+                    setRequiresNewPassword(true)
+                } else {
+                    navigate('/dashboard')
+                }
             }
-        }, 1000)
+        } catch (err: unknown) {
+            const error = err as { message?: string }
+            setError(error.message || 'Invalid email or password')
+        } finally {
+            setIsLoading(false)
+        }
     }
 
-    function handleDemoLogin(initials: string) {
+    async function handleDemoLogin(initials: string) {
+        setError('')
         setIsLoading(true)
-        setTimeout(() => {
-            setIsLoading(false)
+
+        const demoCredentials: Record<string, { email: string; password: string }> = {
+            JR: { email: 'j.rivera@stmercy.org', password: 'Demo1234!Pass' },
+            SC: { email: 'sarah.chen@riverside.org', password: 'Demo1234!Pass' },
+            MS: { email: 'maria.santos@stmercy.org', password: 'Demo1234!Pass' },
+        }
+
+        const creds = demoCredentials[initials]
+        if (!creds) return
+
+        try {
+            await signIn({ username: creds.email, password: creds.password })
             navigate('/dashboard')
-        }, 800)
-        console.log('Demo login:', initials)
+        } catch (err: unknown) {
+            const error = err as { message?: string }
+            setError(error.message || 'Demo login failed')
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
@@ -116,7 +145,7 @@ export default function LoginPage() {
                     ].map((f) => (
                         <div key={f.label} className="flex items-start gap-3">
                             <div
-                                className="w-8 h-8 rounded-lg border border-white/20 flex items-center justify-center flex-shrink-0"
+                                className="w-8 h-8 rounded-lg border border-white/20 flex items-center justify-center shrink-0"
                                 style={{ color: '#14b8b3' }}
                             >
                                 {f.icon}
@@ -157,6 +186,7 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="you@hospital.org"
+                                autoComplete="email"
                                 className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-teal-500"
                             />
                         </div>
@@ -181,6 +211,7 @@ export default function LoginPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
+                                    autoComplete="new-password"
                                     className="w-full px-4 py-3 pr-10 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-teal-500"
                                 />
                                 <button
@@ -192,6 +223,23 @@ export default function LoginPage() {
                                 </button>
                             </div>
                         </div>
+                        {requiresNewPassword && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Set New Password
+                                </label>
+                                <p className="text-xs text-slate-400 mb-2">
+                                    Please set a new password for your account
+                                </p>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Enter new password"
+                                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm outline-none"
+                                />
+                            </div>
+                        )}
 
                         {/* Error */}
                         {error && (
@@ -230,7 +278,7 @@ export default function LoginPage() {
                                 className="w-full flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all text-left disabled:opacity-50"
                             >
                                 <div
-                                    className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                                    className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
                                     style={{ backgroundColor: '#0e7490' }}
                                 >
                                     {acct.initials}
@@ -244,7 +292,7 @@ export default function LoginPage() {
                                     </div>
                                 </div>
                                 <svg
-                                    className="text-slate-300 flex-shrink-0"
+                                    className="text-slate-300 shrink-0"
                                     width="16" height="16"
                                     viewBox="0 0 24 24"
                                     fill="none"

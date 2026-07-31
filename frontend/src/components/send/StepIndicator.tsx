@@ -22,7 +22,7 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
                         <div className="flex items-center gap-2">
                             {/* Circle */}
                             <div
-                                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                                 style={{
                                     backgroundColor:
                                         isDone ? '#059669' : isActive ? '#0e7490' : '#e2e8f0',

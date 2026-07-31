@@ -76,7 +76,7 @@ export default function InboxItem({ doc, isActive, onClick }: InboxItemProps) {
             }}
         >
             {/* Unread dot */}
-            <div className="mt-2 flex-shrink-0" style={{ width: 7 }}>
+            <div className="mt-2 shrink-0" style={{ width: 7 }}>
                 {doc.isUnread && (
                     <span
                         className="block rounded-full"

@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { X, Camera, Send, Inbox, Activity, Edit2, LogOut } from 'lucide-react'
+import { X, Camera, Send, Inbox, Activity, Edit2, LogOut, UserCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { signOut } from 'aws-amplify/auth'
+import { useAuth } from '../../hooks/useAuth'
 
 interface ProfilePanelProps {
     onClose: () => void
@@ -11,32 +13,32 @@ type Tab = typeof TABS[number]
 
 export default function ProfilePanel({ onClose }: ProfilePanelProps) {
     const navigate = useNavigate()
+    const { user } = useAuth()
     const [activeTab, setActiveTab] = useState<Tab>('Profile')
 
-    function handleSignOut() {
+    async function handleSignOut() {
+        try {
+            await signOut()
+        } catch (err) {
+            console.error('Sign out error:', err)
+        }
+        onClose()
         navigate('/login')
     }
 
     return (
         <div
             className="fixed inset-0 z-50 flex justify-end"
-            style={{ zIndex: 9999 }}
             onClick={onClose}
+            style={{ zIndex: 9999 }}
         >
             {/* Backdrop */}
-            <div className="fixed inset-0"
-                style={{ background: "rgba(13,27,42,0.45)", backdropFilter: "blur(2px)" }} />
+            <div className="absolute inset-0 bg-black/20" />
 
             {/* Panel */}
             <div
-                className="fixed right-0 top-0 bottom-0 z-50 flex flex-col overflow-hidden"
-                style={{
-                    width: 420,
-                    background: "#ffffff",
-                    borderLeft: "1px solid rgba(14, 116, 144, 0.12)",
-                    boxShadow: "-12px 0 40px rgba(13,27,42,0.18)",
-                    fontFamily: "'Inter', sans-serif",
-                }}
+                className="relative flex flex-col bg-white shadow-2xl overflow-hidden"
+                style={{ width: 380 }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -57,7 +59,10 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                             className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold"
                             style={{ backgroundColor: '#0e7490' }}
                         >
-                            JR
+                            {user?.initials
+                                ? user.initials
+                                : <UserCircle size={40} className="text-white" />
+                            }
                         </div>
                         <button
                             className="absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center text-white"
@@ -66,7 +71,9 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                             <Camera size={12} />
                         </button>
                     </div>
-                    <div className="text-sm font-bold text-slate-900">Dr. James Rivera</div>
+                    <div className="text-sm font-bold text-slate-900">
+                        {user?.name || 'Loading...'}
+                    </div>
                     <div className="text-xs text-slate-500 mt-0.5">
                         Physician · Internal Medicine
                     </div>
@@ -132,8 +139,8 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                             </div>
 
                             {[
-                                { label: 'Full Name', value: 'Dr. James Rivera' },
-                                { label: 'Work Email', value: 'j.rivera@stmercy.org' },
+                                { label: 'Full Name', value: user?.name || '...' },
+                                { label: 'Work Email', value: user?.email || '...' },
                                 { label: 'Role', value: 'Physician' },
                                 { label: 'Organization', value: 'St. Mercy General' },
                                 { label: 'Specialty', value: 'Internal Medicine' },
@@ -153,9 +160,7 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                                 </div>
                             ))}
 
-                            <div
-                                className="text-xs text-slate-400 font-mono py-2"
-                            >
+                            <div className="text-xs text-slate-400 font-mono py-2">
                                 Last login: Today, 08:30 AM · IP 10.0.1.44
                             </div>
                         </div>
