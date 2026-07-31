@@ -4,6 +4,8 @@ from uuid import UUID
 
 from database import get_db
 
+from dependencies.auth import get_current_user
+
 from models.webhook import Webhook
 
 from schemas.webhook import (
@@ -29,19 +31,17 @@ router = APIRouter(
     response_model=list[WebhookResponse]
 )
 def get_webhooks(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
 
-    # Temporary until authentication
-    current_org_id = UUID(
-        "a0000000-0000-4000-8000-000000000001"
-    )
+    user = current_user
 
 
     return (
         db.query(Webhook)
         .filter(
-            Webhook.organization_id == current_org_id
+            Webhook.organization_id == user.organization_id
         )
         .all()
     )
@@ -59,23 +59,23 @@ def get_webhooks(
 )
 def create_webhook(
     body: WebhookCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
 
-    current_org_id = UUID(
-        "a0000000-0000-4000-8000-000000000001"
-    )
+    user = current_user
 
 
     webhook = Webhook(
 
-        organization_id=current_org_id,
+        organization_id=user.organization_id,
 
         name=body.name,
 
         url=body.url,
 
         events=body.events
+
     )
 
 
@@ -100,13 +100,18 @@ def create_webhook(
 )
 def delete_webhook(
     webhook_id: UUID,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
+
+    user = current_user
+
 
     webhook = (
         db.query(Webhook)
         .filter(
-            Webhook.id == webhook_id
+            Webhook.id == webhook_id,
+            Webhook.organization_id == user.organization_id
         )
         .first()
     )
