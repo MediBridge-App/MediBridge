@@ -6,6 +6,7 @@ import boto3
 from shared.backend import save_analysis
 from shared.bedrock import analyze_document_text
 from shared.events import parse_sns_message, validate_document_sent
+from shared.secrets import get_internal_api_key
 from shared.textract import extract_document_text
 
 
@@ -24,8 +25,9 @@ def handler(
     bedrock_client = bedrock_client or boto3.client("bedrock-runtime")
     model_id = model_id or os.environ["BEDROCK_MODEL_ID"]
     backend_base_url = backend_base_url or os.environ["BACKEND_API_URL"]
-    backend_api_key = backend_api_key or os.environ["AI_INTERNAL_API_KEY"]
-
+    backend_api_key = backend_api_key or get_internal_api_key(
+        os.environ["APP_SECRETS_ARN"]
+    )
     analyses = []
 
     for record in event["Records"]:
