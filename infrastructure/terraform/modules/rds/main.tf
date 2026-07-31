@@ -16,20 +16,23 @@ resource "aws_db_subnet_group" "this" {
 }
 
 # ---------------------------------------------------------------------------
-# Security group — only allow 5432 from the ECS task security group
+# Security group — 5432 restricted to approved sources.
+#
+# Ingress rules are SEPARATE resources, not an inline `ingress` block, on
+# purpose. Other modules (db-access adds the SSM jump host) attach their own
+# ingress rules to this group. An inline block "owns" the whole rule list and
+# silently deletes those external rules on every apply — the flip-flop that
+# kept breaking the jump host's access. Keep all ingress external so the rules
+# coexist. It also means a manually-added rule (e.g. someone opening the DB to
+# a home IP in the console) still gets removed on the next apply, which is the
+# correct behaviour — direct DB access should go through the SSM tunnel.
 # ---------------------------------------------------------------------------
 resource "aws_security_group" "this" {
-  name        = "${var.name_prefix}-rds-module-sg"
+  name = "${var.name_prefix}-rds-module-sg"
+  # Keep this description byte-for-byte — AWS freezes SG descriptions at
+  # creation, so editing it forces a destroy-and-recreate of the whole group.
   description = "Allow PostgreSQL access from the ECS backend only"
   vpc_id      = var.vpc_id
-
-  ingress {
-    description     = "PostgreSQL from ECS tasks"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [var.allowed_source_sg]
-  }
 
   egress {
     from_port   = 0
@@ -41,6 +44,15 @@ resource "aws_security_group" "this" {
   tags = {
     Name = "${var.name_prefix}-rds-module-sg"
   }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "ecs" {
+  security_group_id            = aws_security_group.this.id
+  referenced_security_group_id = var.allowed_source_sg
+  from_port                    = 5432
+  to_port                      = 5432
+  ip_protocol                  = "tcp"
+  description                  = "PostgreSQL from ECS tasks"
 }
 
 # ---------------------------------------------------------------------------

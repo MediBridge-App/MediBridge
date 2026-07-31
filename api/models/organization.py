@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 
@@ -63,3 +64,8 @@ class Organization(Base):
         DateTime,
         default=datetime.utcnow
     )
+
+    users = relationship(
+    "User",
+    back_populates="organization"
+)

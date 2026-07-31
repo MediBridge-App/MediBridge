@@ -69,9 +69,7 @@ def login(
         )
 
 
-        auth = response[
-            "AuthenticationResult"
-        ]
+        auth = response["AuthenticationResult"]
 
 
         db_user = (
@@ -103,7 +101,26 @@ def login(
 
             "token_type": "bearer",
 
-            "user": db_user
+            "user": {
+                "id": db_user.id,
+                "full_name": db_user.full_name,
+                "email": db_user.email,
+                "role": db_user.role,
+                "specialty": db_user.specialty,
+                "npi_number": db_user.npi_number,
+                "organization_id": db_user.organization_id,
+                "organization_name": (
+                    db_user.organization.name
+                    if db_user.organization
+                    else None
+                ),
+                "org_code": (
+                    db_user.organization.org_code
+                    if db_user.organization
+                    else None
+                ),
+                "last_login": db_user.last_login
+            }
 
         }
 
@@ -154,9 +171,7 @@ def login(
 def logout():
 
     return {
-
         "message": "Logged out"
-
     }
 
 
@@ -172,13 +187,41 @@ def logout():
     "/me"
 )
 def get_me(
-    current_user = Depends(
-        get_current_user
-    )
+    current_user = Depends(get_current_user)
 ):
 
     return {
 
-        "user": current_user
+        "user": {
+
+            "id": current_user.id,
+
+            "full_name": current_user.full_name,
+
+            "email": current_user.email,
+
+            "role": current_user.role,
+
+            "specialty": current_user.specialty,
+
+            "npi_number": current_user.npi_number,
+
+            "organization_id": current_user.organization_id,
+
+            "organization_name": (
+                current_user.organization.name
+                if current_user.organization
+                else None
+            ),
+
+            "org_code": (
+                current_user.organization.org_code
+                if current_user.organization
+                else None
+            ),
+
+            "last_login": current_user.last_login
+
+        }
 
     }
