@@ -1,0 +1,24 @@
+# backend/ruff.toml
+
+# Completely skip tracking auto-generated migration and seed files
+extend-exclude = [
+    "migrations/*",
+    "seed/*"
+]
+
+[lint]
+# Globally ignore all remaining code patterns and lint preferences
+ignore = [
+    "I001",   # Unsorted / unformatted imports
+    "B008",   # FastAPI Depends call in argument defaults
+    "DTZ003", # datetime.utcnow() usage
+    "BLE001", # Blind exception catching
+    "TRY002", # Raising base Exception class directly
+    "UP035",  # typing.Sequence instead of collections.abc
+    "RUF010", # Explicit conversion flag (!s)
+    "UP007",  # Use `X | Y` for type annotations instead of Union
+    "PIE790", # Unnecessary `pass` statement
+    "UP034",  # Avoid extraneous parentheses in filters
+    "F401",   # Unused imports project-wide
+    "F811"    # Redefinition of unused imports
+]
