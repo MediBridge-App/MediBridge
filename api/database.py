@@ -33,18 +33,19 @@ def get_database_credentials():
     )
 
 
-# Get database username/password from AWS Secrets Manager
+# Retrieve database credentials from AWS Secrets Manager
 secret = get_database_credentials()
 
+username = quote_plus(secret["username"])
+password = quote_plus(secret["password"])
 
-# Build PostgreSQL connection URL
 DATABASE_URL = (
     f"postgresql://"
-    f"{quote_plus(secret['username'])}:"
-    f"{quote_plus(secret['password'])}"
+    f"{username}:{password}"
     f"@{os.getenv('DB_HOST')}:"
     f"{os.getenv('DB_PORT', '5432')}/"
-    f"{os.getenv('DB_NAME')}?sslmode=require"
+    f"{os.getenv('DB_NAME')}"
+    f"?sslmode=require"
 )
 
 
