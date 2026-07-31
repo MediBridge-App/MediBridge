@@ -3,7 +3,6 @@ import unittest
 from pathlib import Path
 
 from jsonschema import ValidationError
-
 from shared.events import (
     parse_sns_message,
     validate_document_analysis,

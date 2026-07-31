@@ -2,7 +2,6 @@ import os
 from typing import Any
 
 import boto3
-
 from shared.bedrock import analyze_document_text
 from shared.events import parse_sns_message, validate_document_sent
 from shared.textract import extract_document_text
