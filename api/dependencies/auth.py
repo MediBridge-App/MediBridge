@@ -4,10 +4,20 @@ import requests
 from dotenv import load_dotenv
 from jose import jwt, JWTError
 
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import (
+    Depends,
+    HTTPException
+)
 
-from sqlalchemy.orm import Session
+from fastapi.security import (
+    HTTPBearer,
+    HTTPAuthorizationCredentials
+)
+
+from sqlalchemy.orm import (
+    Session,
+    joinedload
+)
 
 from database import get_db
 from models.user import User
@@ -16,7 +26,9 @@ from models.user import User
 load_dotenv()
 
 
-AWS_REGION = os.getenv("AWS_REGION")
+AWS_REGION = os.getenv(
+    "AWS_REGION"
+)
 
 COGNITO_USER_POOL_ID = os.getenv(
     "COGNITO_USER_POOL_ID"
@@ -48,9 +60,11 @@ def get_jwks():
         ".well-known/jwks.json"
     )
 
+
     response = requests.get(url)
 
     response.raise_for_status()
+
 
     return response.json()
 
@@ -60,7 +74,9 @@ def get_jwks():
 # Verify Cognito JWT
 # =====================================
 
-def verify_token(token: str):
+def verify_token(
+    token: str
+):
 
     try:
 
@@ -80,6 +96,7 @@ def verify_token(token: str):
             if key["kid"] == headers["kid"]:
 
                 rsa_key = key
+
                 break
 
 
@@ -97,16 +114,18 @@ def verify_token(token: str):
 
             rsa_key,
 
-            algorithms=["RS256"],
+            algorithms=[
+                "RS256"
+            ],
 
             audience=COGNITO_CLIENT_ID,
 
-            issuer=COGNITO_ISSUER,
+            issuer=COGNITO_ISSUER
 
         )
 
 
-        # Ensure this is an ACCESS token
+        # Ensure this is an access token
         if payload.get("token_use") != "access":
 
             raise HTTPException(
@@ -121,7 +140,11 @@ def verify_token(token: str):
 
     except JWTError as e:
 
-        print("JWT ERROR:", str(e))
+        print(
+            "JWT ERROR:",
+            str(e)
+        )
+
 
         raise HTTPException(
             status_code=401,
@@ -129,9 +152,14 @@ def verify_token(token: str):
         )
 
 
+
     except Exception as e:
 
-        print("AUTH ERROR:", str(e))
+        print(
+            "AUTH ERROR:",
+            str(e)
+        )
+
 
         raise HTTPException(
             status_code=401,
@@ -147,6 +175,7 @@ def verify_token(token: str):
 def get_current_user(
 
     credentials: HTTPAuthorizationCredentials = Depends(security),
+
     db: Session = Depends(get_db)
 
 ):
@@ -154,10 +183,14 @@ def get_current_user(
     token = credentials.credentials
 
 
-    payload = verify_token(token)
+    payload = verify_token(
+        token
+    )
 
 
-    cognito_id = payload.get("sub")
+    cognito_id = payload.get(
+        "sub"
+    )
 
 
     if not cognito_id:
@@ -168,10 +201,23 @@ def get_current_user(
         )
 
 
+
     user = (
+
         db.query(User)
-        .filter(User.cognito_id == cognito_id)
+
+        .options(
+            joinedload(
+                User.organization
+            )
+        )
+
+        .filter(
+            User.cognito_id == cognito_id
+        )
+
         .first()
+
     )
 
 

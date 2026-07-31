@@ -1,6 +1,19 @@
-from sqlalchemy import Column, String, DateTime, Integer, Text, Boolean, ForeignKey, Numeric, ARRAY
+from sqlalchemy import (
+    Column,
+    String,
+    DateTime,
+    Integer,
+    Text,
+    Boolean,
+    ForeignKey,
+    Numeric,
+    ARRAY
+)
+
 from sqlalchemy.dialects.postgresql import UUID
+
 from datetime import datetime
+
 import uuid
 
 from database import Base
@@ -25,7 +38,8 @@ class AIAnalysis(Base):
             "documents.id",
             ondelete="CASCADE"
         ),
-        nullable=False
+        nullable=False,
+        unique=True
     )
 
 
@@ -66,7 +80,7 @@ class AIAnalysis(Base):
 
 
     confidence_score = Column(
-        Numeric(5,2),
+        Numeric(5, 2),
         nullable=True
     )
 
