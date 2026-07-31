@@ -148,8 +148,8 @@ resource "aws_lambda_function" "worker" {
   environment {
     variables = {
       DOCUMENT_BUCKET = var.document_bucket
-      BACKEND_API_URL  = var.backend_api_url
-      APP_SECRETS_ARN  = var.app_secrets_arn
+      BACKEND_API_URL = var.backend_api_url
+      APP_SECRETS_ARN = var.app_secrets_arn
     }
   }
 
