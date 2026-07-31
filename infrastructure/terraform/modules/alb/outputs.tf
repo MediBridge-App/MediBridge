@@ -1,11 +1,11 @@
 output "dns_name" {
-  description = "Raw ALB hostname. This is the app URL — Vida points the frontend here."
+  description = "Raw ALB hostname. The DNS record app.<domain> points here."
   value       = aws_lb.this.dns_name
 }
 
 output "url" {
-  description = "Full app URL. http, not https — see the note in main.tf."
-  value       = "http://${aws_lb.this.dns_name}"
+  description = "Full app URL over HTTPS — this is what Vida points the frontend at."
+  value       = "https://${local.app_fqdn}"
 }
 
 output "target_group_arn" {
@@ -14,6 +14,6 @@ output "target_group_arn" {
 }
 
 output "listener_arn" {
-  description = "HTTP listener ARN. ECS service creation fails if no listener is attached to the target group."
-  value       = aws_lb_listener.http.arn
+  description = "HTTPS listener ARN — the ECS service depends on a listener being attached to the target group."
+  value       = aws_lb_listener.https.arn
 }
