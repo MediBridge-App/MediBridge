@@ -104,7 +104,7 @@ module "ecs" {
   # Start at 0 until Bella has pushed an image. With no image to pull the
   # service restart-loops and the ALB reports the target permanently unhealthy.
   # Raise to 1 once `docker push` has happened.
-  desired_count = 0
+  desired_count = 1
 
   # Creating a service against a target group with no listener attached fails.
   depends_on = [module.alb]
@@ -134,3 +134,8 @@ module "lambda" {
 #   name_prefix = local.name_prefix
 #   kms_key_arn = module.kms.key_arn
 # }
+
+module "frontend_hosting" {
+  source      = "./modules/frontend-hosting"
+  name_prefix = local.name_prefix
+}
