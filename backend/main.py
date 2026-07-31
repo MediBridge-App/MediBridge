@@ -66,11 +66,12 @@ app.add_exception_handler(
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://d17p405i1iil2n.cloudfront.net",
 ]
 
 frontend_url = os.getenv("FRONTEND_URL")
 
-if frontend_url:
+if frontend_url and frontend_url not in origins:
     origins.append(frontend_url)
 
 
