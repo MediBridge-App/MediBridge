@@ -122,11 +122,8 @@ module "lambda" {
   source_queue_arn = module.sqs.processing_queue_arn
   document_bucket  = module.s3.bucket_name
   kms_key_arn      = module.kms.key_arn
-
-  # Not in a VPC for now — reaches Textract/Bedrock/S3 over public AWS
-  # endpoints and updates status via the backend API. Pass the private app
-  # subnets here only if the worker needs to hit RDS directly.
-  app_subnet_ids = []
+  backend_api_url  = module.alb.url
+  app_secrets_arn  = module.secrets.app_secrets_arn
 }
 
 # module "observability" {

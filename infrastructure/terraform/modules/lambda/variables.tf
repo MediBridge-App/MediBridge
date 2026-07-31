@@ -23,3 +23,13 @@ variable "app_subnet_ids" {
   default     = []
   description = "Private app subnets, only if the function needs VPC/RDS access. Empty = not in a VPC."
 }
+
+variable "backend_api_url" {
+  type        = string
+  description = "Base HTTPS URL for the backend API."
+}
+
+variable "app_secrets_arn" {
+  type        = string
+  description = "ARN of the application secret containing AI_INTERNAL_API_KEY."
+}
