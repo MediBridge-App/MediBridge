@@ -120,7 +120,6 @@ export interface Organization {
   name: string;
   orgCode?: string;
   type: string;
-  location?: string;
   createdAt?: string;
 }
 

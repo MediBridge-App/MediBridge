@@ -12,14 +12,17 @@ export default function InboxPage() {
     const [filterStatus, setFilterStatus] = useState('all')
     const [documents, setDocuments] = useState<InboxDocument[]>(MOCK_INBOX)
     const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState(false)
 
     useEffect(() => {
         async function fetchInbox() {
+            setIsLoading(true)
             try {
                 const data = await documentsApi.getInbox()
                 setDocuments(data)
+                setError(false)
             } catch {
-                // API not ready yet — using mock data
+                setError(true)
             } finally {
                 setIsLoading(false)
             }
@@ -46,6 +49,18 @@ export default function InboxPage() {
 
     function handleSelect(doc: InboxDocument) {
         setSelected(selected?.id === doc.id ? null : doc)
+    }
+
+    function handleRetry() {
+        setIsLoading(true)
+        setError(false)
+        documentsApi.getInbox()
+            .then((data) => {
+                setDocuments(data)
+                setError(false)
+            })
+            .catch(() => setError(true))
+            .finally(() => setIsLoading(false))
     }
 
     if (isLoading) {
@@ -81,6 +96,8 @@ export default function InboxPage() {
                     docs={filtered}
                     selectedId={selected?.id ?? null}
                     onSelect={handleSelect}
+                    error={error}
+                    onRetry={handleRetry}
                 />
             </div>
 
