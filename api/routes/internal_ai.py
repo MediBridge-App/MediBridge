@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 
 from database import get_db
+
 from dependencies.internal_auth import verify_internal_api_key
 
 from models.ai_analysis import AIAnalysis
@@ -18,7 +20,6 @@ router = APIRouter(
 )
 
 
-
 @router.post("/analyses")
 def create_or_update_analysis(
     body: AIAnalysisCreate,
@@ -26,88 +27,108 @@ def create_or_update_analysis(
     _: bool = Depends(verify_internal_api_key)
 ):
 
-    document = (
-        db.query(Document)
-        .filter(
-            Document.id == body.document_id
-        )
-        .first()
-    )
+    try:
 
-
-    if not document:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Document not found"
+        document = (
+            db.query(Document)
+            .filter(
+                Document.id == body.document_id
+            )
+            .first()
         )
 
 
-    analysis = (
-        db.query(AIAnalysis)
-        .filter(
-            AIAnalysis.document_id == body.document_id
-        )
-        .first()
-    )
-
-
-    if analysis:
-
-        # update existing analysis
-
-        for field, value in body.model_dump().items():
-
-            setattr(
-                analysis,
-                field,
-                value
+        if not document:
+            raise HTTPException(
+                status_code=404,
+                detail="Document not found"
             )
 
 
-    else:
-
-        # create new analysis
-
-        analysis = AIAnalysis(
-            **body.model_dump()
+        analysis = (
+            db.query(AIAnalysis)
+            .filter(
+                AIAnalysis.document_id == body.document_id
+            )
+            .first()
         )
 
-        db.add(analysis)
+
+        if analysis:
+
+            # Update existing AI analysis
+            for field, value in body.model_dump().items():
+                setattr(
+                    analysis,
+                    field,
+                    value
+                )
+
+            action = "AI analysis updated by Lambda service"
+
+
+        else:
+
+            # Create new AI analysis
+            analysis = AIAnalysis(
+                **body.model_dump()
+            )
+
+            db.add(analysis)
+
+            action = "AI analysis created by Lambda service"
 
 
 
-    # update document status
-
-    document.status = "classified"
-
+        # Update document workflow status
+        document.status = "classified"
 
 
-    create_audit_log(
+        db.flush()
 
-        db=db,
 
-        event_type="ai_analysis_completed",
+        create_audit_log(
 
-        action="AI analysis saved by Lambda service",
+            db=db,
 
-        document_id=document.id,
+            event_type="ai_analysis_completed",
 
-        user_id=None,
+            action=action,
 
-        organization_id=document.recipient_org_id,
+            document_id=document.id,
 
-        details={
-            "source": "lambda",
-            "model": body.model_used
+            user_id=None,
+
+            organization_id=document.recipient_org_id,
+
+            details={
+                "source": "lambda",
+                "model": body.model_used
+            }
+
+        )
+
+
+        db.commit()
+
+        db.refresh(analysis)
+
+
+        return {
+            "message": "AI analysis saved successfully",
+            "analysis": analysis
         }
 
-    )
+
+    except HTTPException:
+        raise
 
 
-    db.commit()
+    except SQLAlchemyError:
 
-    db.refresh(analysis)
+        db.rollback()
 
-
-    return analysis
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to save AI analysis"
+        )
