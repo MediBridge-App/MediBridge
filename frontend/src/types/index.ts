@@ -121,6 +121,7 @@ export interface Organization {
   orgCode?: string;
   type: string;
   createdAt?: string;
+  location?: string;
 }
 
 // ─── Inbox ───────────────────────────────────────────────────────────────────
@@ -143,7 +144,7 @@ export interface InboxDocument {
   documentType: DocumentType;
   priority: DocumentPriority;
   isUnread: boolean;
-  urgencyFlag?: boolean
+  urgencyFlag?: boolean;
 }
 
 export interface SendDocumentForm {
