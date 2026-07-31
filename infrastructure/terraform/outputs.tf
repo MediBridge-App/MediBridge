@@ -112,3 +112,13 @@ output "worker_function_name" {
   description = "Lambda worker — Ayesha deploys her handler here with `aws lambda update-function-code`."
   value       = module.lambda.function_name
 }
+
+output "frontend_bucket_name" {
+  description = "S3 bucket for the frontend build. Vida uploads her dist/ files here."
+  value       = module.frontend_hosting.bucket_name
+}
+
+output "frontend_cloudfront_url" {
+  description = "Public HTTPS URL of the frontend (CloudFront)."
+  value       = module.frontend_hosting.cloudfront_url
+}

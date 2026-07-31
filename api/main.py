@@ -5,6 +5,14 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import SQLAlchemyError
+from fastapi.exceptions import RequestValidationError
+
+from exceptions import (
+    database_exception_handler,
+    general_exception_handler,
+    validation_exception_handler,
+)
 
 from routes import (
     documents,
@@ -28,6 +36,26 @@ app = FastAPI(
     title="MediBridge API",
     description="Digital Document Exchange Backend API",
     version="1.0.0"
+)
+
+
+# ==================================================
+# Exception Handlers
+# ==================================================
+
+app.add_exception_handler(
+    SQLAlchemyError,
+    database_exception_handler
+)
+
+app.add_exception_handler(
+    RequestValidationError,
+    validation_exception_handler
+)
+
+app.add_exception_handler(
+    Exception,
+    general_exception_handler
 )
 
 
@@ -84,4 +112,11 @@ def root():
     return {
         "status": "ok",
         "message": "MediBridge API is running"
+    }
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok"
     }
