@@ -61,10 +61,15 @@ resource "aws_cognito_user_pool_client" "web" {
 
   generate_secret = false
 
-  # SRP = passwords never cross the wire in the clear. The refresh flow lets
-  # the frontend get new access tokens without re-prompting.
+  # SRP = passwords never cross the wire in the clear (preferred). The refresh
+  # flow lets the frontend get new access tokens without re-prompting.
+  # USER_PASSWORD_AUTH is included because the frontend auth library needs it;
+  # it sends the password to Cognito over TLS rather than using SRP. Slightly
+  # less strict than SRP-only, but a common and acceptable dev choice. Revisit
+  # before production if we can move the frontend fully onto SRP.
   explicit_auth_flows = [
     "ALLOW_USER_SRP_AUTH",
+    "ALLOW_USER_PASSWORD_AUTH",
     "ALLOW_REFRESH_TOKEN_AUTH",
   ]
 

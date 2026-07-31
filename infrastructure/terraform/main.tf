@@ -81,6 +81,8 @@ module "alb" {
   vpc_id            = module.network.vpc_id
   public_subnet_ids = module.network.public_subnet_ids
   security_group_id = module.network.alb_security_group_id
+  domain_name       = var.domain_name
+  hosted_zone_id    = var.hosted_zone_id
 }
 
 module "ecs" {
