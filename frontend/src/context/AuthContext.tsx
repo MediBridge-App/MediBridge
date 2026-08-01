@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, type ReactNode } from 'react'
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth'
+import { Hub } from 'aws-amplify/utils'
 
 interface AuthUser {
     username: string
@@ -25,27 +26,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
                 await getCurrentUser()
                 const attributes = await fetchUserAttributes()
-                const name = attributes.name || attributes.email || 'User'
-                const initials = name
-                    .split(' ')
-                    .map((n) => n[0])
+                const email = attributes.email || ''
+                const name = attributes.name ||
+                    email.split('@')[0].split('.')
+                        .map((p: string) => p.charAt(0).toUpperCase() + p.slice(1))
+                        .join(' ')
+                const initials = name.split(' ')
+                    .map((n: string) => n[0])
                     .join('')
                     .toUpperCase()
                     .slice(0, 2)
 
-                setUser({
-                    username: attributes.sub || '',
-                    email: attributes.email || '',
-                    name,
-                    initials,
-                })
+                setUser({ username: attributes.sub || '', email, name, initials })
+                setIsLoading(false)
             } catch {
                 setUser(null)
-            } finally {
-                setIsLoading(false)
+                // Keep loading for 2 seconds to give Hub time to fire
+                setTimeout(() => setIsLoading(false), 2000)
             }
         }
+
         loadUser()
+
+        const unsubscribe = Hub.listen('auth', ({ payload }) => {
+            if (payload.event === 'signedIn') {
+                setTimeout(() => loadUser(), 100)
+            }
+            if (payload.event === 'signedOut') {
+                setTimeout(() => {
+                    setUser(null)
+                    setIsLoading(false)
+                }, 0)
+            }
+        })
+
+        return unsubscribe
     }, [])
 
     return (

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Activity, Shield, Zap, ClipboardList, Eye, EyeOff } from 'lucide-react'
 import { signIn, confirmSignIn } from 'aws-amplify/auth'
 
+
+
 const DEMO_ACCOUNTS = [
     {
         name: 'Dr. James Rivera, MD',
@@ -36,12 +38,11 @@ export default function LoginPage() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
+        if (!email || !password) return
         setError('')
         setIsLoading(true)
-
         try {
             if (requiresNewPassword) {
-                // Handle new password challenge
                 await confirmSignIn({ challengeResponse: newPassword })
                 navigate('/dashboard')
             } else {
@@ -49,7 +50,7 @@ export default function LoginPage() {
                 if (result.nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
                     setRequiresNewPassword(true)
                 } else {
-                    navigate('/dashboard')
+                    window.location.href = '/dashboard'  // ← use this instead of navigate()
                 }
             }
         } catch (err: unknown) {
