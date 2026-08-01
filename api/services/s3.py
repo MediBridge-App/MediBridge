@@ -72,5 +72,28 @@ def generate_presigned_upload_url(
     return {
         "upload_url": upload_url,
         "s3_key": s3_key,
-        "expires_in": 90000
+        "expires_in": 900
+    }
+
+def generate_presigned_download_url(s3_key: str):
+
+    bucket_name = os.getenv("S3_BUCKET_NAME")
+
+    if not bucket_name:
+        raise Exception("S3_BUCKET_NAME is not configured")
+
+    s3_client = get_s3_client()
+
+    download_url = s3_client.generate_presigned_url(
+        ClientMethod="get_object",
+        Params={
+            "Bucket": bucket_name,
+            "Key": s3_key,
+        },
+        ExpiresIn=900  # 15 minutes
+    )
+
+    return {
+        "download_url": download_url,
+        "expires_in": 900
     }
