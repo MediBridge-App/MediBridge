@@ -26,9 +26,7 @@ api.interceptors.request.use(async (req) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
-      window.location.href = "/login";
-    }
+    // Don't auto-redirect on 401
     return Promise.reject(err);
   },
 );
@@ -124,19 +122,11 @@ export const securityApi = {
     api.put("/security/settings", data).then((r) => r.data),
 };
 
-api.interceptors.request.use(async (req) => {
-  try {
-    const session = await fetchAuthSession();
-    const token = session.tokens?.accessToken?.toString();
-    const payload = session.tokens?.accessToken?.payload;
-    console.log("Token payload:", JSON.stringify(payload, null, 2));
-    console.log("Sub:", payload?.sub);
-    if (token) {
-      req.headers.Authorization = `Bearer ${token}`;
-    }
-  } catch (err) {
-    console.log("Auth session error:", err);
-  }
-  return req;
-});
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    // Don't auto-redirect on 401 — let each page handle it
+    return Promise.reject(err);
+  },
+);
 export default api;
