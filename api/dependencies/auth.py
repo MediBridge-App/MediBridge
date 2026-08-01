@@ -2,7 +2,7 @@ import os
 import requests
 
 from dotenv import load_dotenv
-from jose import jwt, JWTError
+from jose import jwt
 
 from fastapi import (
     Depends,
@@ -26,17 +26,32 @@ from models.user import User
 load_dotenv()
 
 
-AWS_REGION = os.getenv(
-    "AWS_REGION"
-)
-
+AWS_REGION = os.getenv("AWS_REGION")
 COGNITO_USER_POOL_ID = os.getenv(
     "COGNITO_USER_POOL_ID"
 )
-
 COGNITO_CLIENT_ID = os.getenv(
     "COGNITO_CLIENT_ID"
 )
+
+
+if not AWS_REGION:
+    raise Exception(
+        "AWS_REGION missing"
+    )
+
+
+if not COGNITO_USER_POOL_ID:
+    raise Exception(
+        "COGNITO_USER_POOL_ID missing"
+    )
+
+
+if not COGNITO_CLIENT_ID:
+    raise Exception(
+        "COGNITO_CLIENT_ID missing"
+    )
+
 
 
 COGNITO_ISSUER = (
@@ -49,9 +64,9 @@ security = HTTPBearer()
 
 
 
-# =====================================
-# Get Cognito JWKS keys
-# =====================================
+# ==================================================
+# Get Cognito JWKS
+# ==================================================
 
 def get_jwks():
 
@@ -61,22 +76,22 @@ def get_jwks():
     )
 
 
-    response = requests.get(url)
+    response = requests.get(
+        url,
+        timeout=10
+    )
 
     response.raise_for_status()
-
 
     return response.json()
 
 
 
-# =====================================
-# Verify Cognito JWT
-# =====================================
+# ==================================================
+# Verify Cognito ID Token
+# ==================================================
 
-def verify_token(
-    token: str
-):
+def verify_token(token: str):
 
     try:
 
@@ -88,49 +103,30 @@ def verify_token(
         )
 
 
-        rsa_key = None
-
-
-        for key in jwks["keys"]:
-
-            if key["kid"] == headers["kid"]:
-
-                rsa_key = key
-
-                break
-
-
-        if not rsa_key:
-
-            raise HTTPException(
-                status_code=401,
-                detail="Public key not found"
-            )
-
-
-        payload = jwt.decode(
-
-            token,
-
-            rsa_key,
-
-            algorithms=[
-                "RS256"
-            ],
-
-            audience=COGNITO_CLIENT_ID,
-
-            issuer=COGNITO_ISSUER
-
+        key = next(
+            key
+            for key in jwks["keys"]
+            if key["kid"] == headers["kid"]
         )
 
 
-        # Ensure this is an access token
-        if payload.get("token_use") != "access":
+        payload = jwt.decode(
+            token,
+            key,
+            algorithms=[
+                "RS256"
+            ],
+            audience=COGNITO_CLIENT_ID,
+            issuer=COGNITO_ISSUER
+        )
+
+
+        # Vida frontend sends ID token
+        if payload.get("token_use") != "id":
 
             raise HTTPException(
                 status_code=401,
-                detail="Access token required"
+                detail="ID token required"
             )
 
 
@@ -138,28 +134,16 @@ def verify_token(
 
 
 
-    except JWTError as e:
-
-        print(
-            "JWT ERROR:",
-            str(e)
-        )
-
-
-        raise HTTPException(
-            status_code=401,
-            detail=f"JWT validation failed: {str(e)}"
-        )
-
+    except HTTPException:
+        raise
 
 
     except Exception as e:
 
         print(
-            "AUTH ERROR:",
-            str(e)
+            "JWT ERROR:",
+            repr(e)
         )
-
 
         raise HTTPException(
             status_code=401,
@@ -168,9 +152,9 @@ def verify_token(
 
 
 
-# =====================================
-# FastAPI Authentication Dependency
-# =====================================
+# ==================================================
+# Current User Dependency
+# ==================================================
 
 def get_current_user(
 
