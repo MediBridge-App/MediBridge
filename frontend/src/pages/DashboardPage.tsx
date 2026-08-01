@@ -32,16 +32,37 @@ export default function DashboardPage() {
         async function fetchData() {
             setIsLoading(true)
             try {
-                const [statsData, activityData, docTypesData, recentData] = await Promise.all([
+                const [statsData, activityResult, docTypesResult, recentResult] = await Promise.all([
                     dashboardApi.getStats(),
-                    dashboardApi.getActivity('7d'),
+                    dashboardApi.getActivity(activityRange),
                     dashboardApi.getDocumentTypes(),
                     dashboardApi.getRecent(),
                 ])
-                setStats(statsData)
-                setActivityData(activityData)
-                setDocTypes(docTypesData)
-                setRecentDocs(recentData)
+
+                // Map snake_case API response to camelCase
+                setStats({
+                    documentsSent: statsData.documents_sent ?? 0,
+                    documentsReceived: statsData.documents_received ?? 0,
+                    pendingReview: statsData.pending_review ?? 0,
+                    aiProcessed: statsData.ai_processed ?? 0,
+                    sentChange: statsData.sent_change_pct ?? 0,
+                    receivedChange: statsData.received_change_pct ?? 0,
+                    pendingChange: statsData.pending_change_pct ?? 0,
+                    aiChange: statsData.ai_change_pct ?? 0,
+                })
+
+                if (activityResult && activityResult.length > 0) {
+                    setActivityData(activityResult)
+                }
+
+                if (docTypesResult && docTypesResult.length > 0) {
+                    setDocTypes(docTypesResult)
+                }
+
+                if (recentResult && recentResult.length > 0) {
+                    setRecentDocs(recentResult)
+                }
+
                 setError(false)
             } catch {
                 setError(true)
@@ -50,7 +71,7 @@ export default function DashboardPage() {
             }
         }
         fetchData()
-    }, [])
+    }, [activityRange])
 
     return isLoading ?
         (
