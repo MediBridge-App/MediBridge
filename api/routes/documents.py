@@ -20,8 +20,10 @@ from schemas.document import (
 )
 
 from services.audit import create_audit_log
-from services.s3 import generate_presigned_upload_url
-
+from services.s3 import (
+    generate_presigned_upload_url,
+    generate_presigned_download_url
+)
 
 router = APIRouter(
     prefix="/documents",
@@ -213,7 +215,52 @@ def get_document(
             detail="Unable to retrieve document"
         )
 
+@router.get("/{doc_id}/download-url")
+def get_download_url(
+    doc_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
 
+    try:
+
+        document = (
+            db.query(Document)
+            .filter(
+                Document.id == doc_id,
+                (
+                    (Document.sender_org_id == current_user.organization_id)
+                    |
+                    (Document.recipient_org_id == current_user.organization_id)
+                )
+            )
+            .first()
+        )
+
+        if not document:
+            raise HTTPException(
+                status_code=404,
+                detail="Document not found or access denied"
+            )
+
+        result = generate_presigned_download_url(
+            document.file_s3_key
+        )
+
+        return {
+            **result,
+            "filename": document.original_filename
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to generate download URL"
+        )
+    
 # ==================================================
 # SEND DOCUMENT
 # ==================================================
