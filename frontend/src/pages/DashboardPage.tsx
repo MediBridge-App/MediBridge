@@ -12,6 +12,7 @@ import {
     MOCK_DOC_TYPES,
     MOCK_RECENT,
 } from '../data/mockData'
+import type { DocumentType, DocumentStatus, DocumentPriority } from '../types'
 
 
 export default function DashboardPage() {
@@ -39,7 +40,7 @@ export default function DashboardPage() {
                     dashboardApi.getRecent(),
                 ])
 
-                // Map snake_case API response to camelCase
+                // Map stats
                 setStats({
                     documentsSent: statsData.documents_sent ?? 0,
                     documentsReceived: statsData.documents_received ?? 0,
@@ -51,16 +52,65 @@ export default function DashboardPage() {
                     aiChange: statsData.ai_change_pct ?? 0,
                 })
 
+                // Map activity — API returns documents, group by day
                 if (activityResult && activityResult.length > 0) {
-                    setActivityData(activityResult)
+                    const dayMap: Record<string, { sent: number; received: number }> = {}
+                    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                    days.forEach(d => { dayMap[d] = { sent: 0, received: 0 } })
+
+                    activityResult.forEach((item: { date: string; status: string }) => {
+                        const day = new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' })
+                        if (dayMap[day]) {
+                            if (item.status === 'delivered') {
+                                dayMap[day].received += 1
+                            } else {
+                                dayMap[day].sent += 1
+                            }
+                        }
+                    })
+
+                    const mapped = days.map(day => ({
+                        day,
+                        sent: dayMap[day].sent,
+                        received: dayMap[day].received,
+                    }))
+                    setActivityData(mapped)
                 }
 
+                // Map document types
                 if (docTypesResult && docTypesResult.length > 0) {
-                    setDocTypes(docTypesResult)
+                    const maxCount = Math.max(...docTypesResult.map((d: { count: number }) => d.count))
+                    const mapped = docTypesResult.map((item: { type: string; count: number }) => ({
+                        label: item.type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+                        value: item.count,
+                        max: maxCount || 1,
+                    }))
+                    setDocTypes(mapped)
                 }
 
+                // Map recent transmissions
                 if (recentResult && recentResult.length > 0) {
-                    setRecentDocs(recentResult)
+                    const mapped = recentResult.map((doc: {
+                        tx_ref: string
+                        document_type: string
+                        subject: string
+                        status: string
+                        priority: string
+                        created_at: string
+                    }) => ({
+                        id: doc.tx_ref || 'Unknown',
+                        txRef: doc.tx_ref || 'Unknown',
+                        documentType: doc.document_type as DocumentType,
+                        subject: doc.subject || 'Untitled',
+                        senderOrgName: 'Healthcare Org',
+                        status: doc.status as DocumentStatus,
+                        priority: doc.priority as DocumentPriority,
+                        timeAgo: new Date(doc.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                        }),
+                    }))
+                    setRecentDocs(mapped)
                 }
 
                 setError(false)
