@@ -1,10 +1,20 @@
 import { useState, useEffect } from 'react'
-import type { InboxDocument } from '../types'
 import { MOCK_INBOX } from '../data/mockData'
 import { documentsApi } from '../api'
 import InboxToolbar from '../components/inbox/InboxToolbar'
 import InboxList from '../components/inbox/InboxList'
 import InboxDetail from '../components/inbox/InboxDetail'
+import type { InboxDocument, DocumentStatus, DocumentType, DocumentPriority } from '../types'
+
+
+function formatTime(isoString: string): string {
+  const date = new Date(isoString)
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+}
 
 export default function InboxPage() {
     const [selected, setSelected] = useState<InboxDocument | null>(null)
@@ -14,12 +24,49 @@ export default function InboxPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(false)
 
+
     useEffect(() => {
         async function fetchInbox() {
             setIsLoading(true)
             try {
                 const data = await documentsApi.getInbox()
-                setDocuments(data)
+
+                // Map API snake_case to InboxDocument type
+                const mapped = data.map((doc: {
+                    id: string
+                    tx_ref: string
+                    sender_org_id: string
+                    recipient_org_id: string
+                    document_type: string
+                    subject: string
+                    priority: string
+                    status: string
+                    file_size: number | null
+                    created_at: string
+                    read_at: string | null
+                    urgency_detected: boolean | null
+                }) => ({
+                    id: doc.tx_ref,
+                    type: doc.document_type,
+                    subject: doc.subject,
+                    from: doc.sender_org_id,
+                    fromOrg: doc.sender_org_id,
+                    to: doc.recipient_org_id,
+                    toOrg: doc.recipient_org_id,
+                    status: doc.status as DocumentStatus,
+                    time: formatTime(doc.created_at),
+                    size: doc.file_size ? `${Math.round(doc.file_size / 1024)} KB` : 'Unknown',
+                    pages: 1,
+                    aiSummary: '',
+                    aiTags: [],
+                    aiCategory: doc.document_type,
+                    documentType: doc.document_type as DocumentType,
+                    priority: doc.priority as DocumentPriority,
+                    isUnread: !doc.read_at,
+                    urgencyFlag: doc.urgency_detected ?? false,
+                }))
+
+                setDocuments(mapped)
                 setError(false)
             } catch {
                 setError(true)
@@ -29,7 +76,6 @@ export default function InboxPage() {
         }
         fetchInbox()
     }, [])
-
     const unreadCount = documents.filter((d) => d.isUnread).length
 
     const filtered = documents.filter((doc) => {
