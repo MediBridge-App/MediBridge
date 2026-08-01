@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Activity, Shield, Zap, ClipboardList, Eye, EyeOff } from 'lucide-react'
 import { signIn, confirmSignIn } from 'aws-amplify/auth'
+import { useAuth } from '../hooks/useAuth'
 
 
 
@@ -35,6 +36,13 @@ export default function LoginPage() {
     const [error, setError] = useState('')
     const [newPassword, setNewPassword] = useState('')
     const [requiresNewPassword, setRequiresNewPassword] = useState(false)
+    const { user, isLoading: authLoading } = useAuth()
+
+    useEffect(() => {
+        if (!authLoading && user) {
+            navigate('/dashboard', { replace: true })
+        }
+    }, [user, authLoading, navigate])
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
