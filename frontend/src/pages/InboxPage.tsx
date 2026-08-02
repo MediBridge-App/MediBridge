@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { InboxDocument, DocumentStatus, DocumentType, DocumentPriority } from '../types'
 import { MOCK_INBOX } from '../data/mockData'
-import { documentsApi } from '../api'
+import { documentsApi, organizationsApi } from '../api'
 import InboxToolbar from '../components/inbox/InboxToolbar'
 import InboxList from '../components/inbox/InboxList'
 import InboxDetail from '../components/inbox/InboxDetail'
@@ -37,15 +37,27 @@ type ApiDoc = {
     urgency_detected: boolean | null
 }
 
-function mapDoc(doc: ApiDoc): InboxDocument {
+// Shape of a single org from GET /organizations — using "name" per the
+// OpenAPI schema. Not yet verified against a real response; if org names
+// don't show up correctly, check the actual field name in Swagger and
+// adjust orgMap below.
+type ApiOrganization = {
+    id: string
+    name: string
+}
+
+// orgMap: id -> display name, built once from GET /organizations.
+// Falls back to the raw UUID if an org isn't found in the map (e.g. org
+// list fetch failed, or an org_id doesn't match anything returned).
+function mapDoc(doc: ApiDoc, orgMap: Record<string, string>): InboxDocument {
     return {
         id: doc.tx_ref,
         docId: doc.id,
         type: doc.document_type,
         subject: doc.subject,
-        from: 'Healthcare Organization',
+        from: orgMap[doc.sender_org_id] ?? doc.sender_org_id,
         fromOrg: doc.sender_org_id,
-        to: doc.recipient_org_id,
+        to: orgMap[doc.recipient_org_id] ?? doc.recipient_org_id,
         toOrg: doc.recipient_org_id,
         status: doc.status as DocumentStatus,
         time: formatTime(doc.created_at),
@@ -70,14 +82,22 @@ export default function InboxPage() {
     const [documents, setDocuments] = useState<InboxDocument[]>(MOCK_INBOX)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(false)
+    const [viewedDocIds, setViewedDocIds] = useState<Set<string>>(new Set())
     const { setUnreadCount } = useInbox()
 
     useEffect(() => {
         async function fetchInbox() {
             setIsLoading(true)
             try {
-                const data = await documentsApi.getInbox()
-                const mapped = data.map(mapDoc)
+                const [inboxData, orgsData]: [ApiDoc[], ApiOrganization[]] = await Promise.all([
+                    documentsApi.getInbox(),
+                    organizationsApi.getAll(),
+                ])
+                const builtOrgMap: Record<string, string> = {}
+                for (const org of orgsData ?? []) {
+                    builtOrgMap[org.id] = org.name
+                }
+                const mapped = inboxData.map((d) => mapDoc(d, builtOrgMap))
                 setDocuments(mapped)
                 const unread = mapped.filter((d: InboxDocument) => d.isUnread).length
                 setUnreadCount(unread)
@@ -135,12 +155,27 @@ export default function InboxPage() {
         }
     }
 
+    function handleMarkViewed(docId: string) {
+        setViewedDocIds((prev) => {
+            const next = new Set(prev)
+            next.add(docId)
+            return next
+        })
+    }
+
     function handleRetry() {
         setIsLoading(true)
         setError(false)
-        documentsApi.getInbox()
-            .then((data) => {
-                const mapped = data.map(mapDoc)
+        Promise.all([
+            documentsApi.getInbox(),
+            organizationsApi.getAll(),
+        ])
+            .then(([inboxData, orgsData]: [ApiDoc[], ApiOrganization[]]) => {
+                const builtOrgMap: Record<string, string> = {}
+                for (const org of orgsData ?? []) {
+                    builtOrgMap[org.id] = org.name
+                }
+                const mapped = inboxData.map((d) => mapDoc(d, builtOrgMap))
                 setDocuments(mapped)
                 const unread = mapped.filter((d: InboxDocument) => d.isUnread).length
                 setUnreadCount(unread)
@@ -193,6 +228,8 @@ export default function InboxPage() {
                 <InboxDetail
                     doc={selected}
                     onClose={() => setSelected(null)}
+                    hasBeenViewed={viewedDocIds.has(selected.docId)}
+                    onViewed={() => handleMarkViewed(selected.docId)}
                 />
             )}
         </div>

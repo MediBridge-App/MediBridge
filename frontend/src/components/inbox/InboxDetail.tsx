@@ -1,6 +1,5 @@
 import {
   Download,
-  Eye,
   X,
   Building2,
   Calendar,
@@ -11,12 +10,31 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import type { InboxDocument } from '../../types'
-import { useState } from 'react'
-import { documentsApi, extractDownloadUrl } from '../../api'
+import { useState, useEffect } from 'react'
+import { documentsApi, extractDownloadUrl, aiApi } from '../../api'
 
 interface InboxDetailProps {
   doc: InboxDocument
   onClose: () => void
+  hasBeenViewed: boolean
+  onViewed: () => void
+}
+
+// Shape returned by GET /ai/analyses/{document_id}
+type ApiAnalysis = {
+  id: string
+  document_id: string
+  document_type: string | null
+  summary: string | null
+  tags: string[] | null
+  recommendation_text: string | null
+  recommendation_type: string | null
+  urgency_detected: boolean
+  confidence_score: string | null
+  processing_time_ms: number | null
+  model_used: string | null
+  status: string
+  created_at: string
 }
 
 const categoryColors: Record<string, { color: string; bg: string }> = {
@@ -27,10 +45,32 @@ const categoryColors: Record<string, { color: string; bg: string }> = {
   Imaging: { color: '#0284c7', bg: '#dbeafe' },
 }
 
-export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
+export default function InboxDetail({ doc, onClose, hasBeenViewed, onViewed }: InboxDetailProps) {
   const cat = categoryColors[doc.aiCategory] ?? { color: '#64748b', bg: '#f1f5f9' }
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const [analysis, setAnalysis] = useState<ApiAnalysis | null>(null)
+  const [analysisLoading, setAnalysisLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function fetchAnalysis() {
+      setAnalysisLoading(true)
+      setAnalysis(null)
+      try {
+        const data: ApiAnalysis = await aiApi.getAnalysis(doc.docId)
+        if (!cancelled) setAnalysis(data)
+      } catch {
+        // 404 likely means AI processing hasn't completed yet for this doc —
+        // not a real error, just means no analysis exists yet.
+        if (!cancelled) setAnalysis(null)
+      } finally {
+        if (!cancelled) setAnalysisLoading(false)
+      }
+    }
+    fetchAnalysis()
+    return () => { cancelled = true }
+  }, [doc.docId])
 
   const timeline = [
     { event: 'Document Uploaded to S3', done: true },
@@ -49,6 +89,7 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
       const url = extractDownloadUrl(data)
       if (url) {
         window.open(url, '_blank')
+        onViewed()
       } else {
         console.error('Unrecognized download-url response shape:', data)
         setDownloadError('Could not read download link from server response.')
@@ -100,12 +141,15 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
             <Download size={13} />
             {downloading ? 'Downloading...' : 'Download'}
           </button>
-          <button
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#0e7490' }}
-          >
-            <Eye size={13} /> View
-          </button>
+          {hasBeenViewed && (
+            <span
+              className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg"
+              style={{ color: '#059669', backgroundColor: '#d1fae5' }}
+              title="You've already downloaded this document"
+            >
+              <CheckCircle2 size={12} /> Viewed
+            </span>
+          )}
           <button
             onClick={onClose}
             className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
@@ -171,7 +215,9 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
             </span>
           </div>
           <p className="text-sm leading-relaxed" style={{ color: '#3730a3' }}>
-            {doc.aiSummary}
+            {analysisLoading
+              ? 'Loading AI analysis...'
+              : analysis?.summary ?? 'AI analysis pending — document is still being processed.'}
           </p>
         </div>
 
@@ -184,15 +230,21 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {doc.aiTags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full px-3 py-1 text-xs font-medium border border-slate-200"
-                style={{ backgroundColor: '#f8fafc', color: '#0e7490' }}
-              >
-                {tag}
-              </span>
-            ))}
+            {analysis?.tags && analysis.tags.length > 0 ? (
+              analysis.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full px-3 py-1 text-xs font-medium border border-slate-200"
+                  style={{ backgroundColor: '#f8fafc', color: '#0e7490' }}
+                >
+                  {tag}
+                </span>
+              ))
+            ) : (
+              !analysisLoading && (
+                <span className="text-xs text-slate-400">No tags yet</span>
+              )
+            )}
           </div>
         </div>
 

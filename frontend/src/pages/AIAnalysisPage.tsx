@@ -9,22 +9,79 @@ import type { Analysis } from '../components/ai/AIHistoryItem'
 import { aiApi } from '../api'
 import { MOCK_AI_ANALYSES } from '../data/mockData'
 
+// Shape of a single analysis as it comes back from GET /ai/analyses
+// (matches the AIAnalysisResponse schema in the backend)
+type ApiAnalysis = {
+    id: string
+    document_id: string
+    document_type: string | null
+    summary: string | null
+    tags: string[] | null
+    recommendation_text: string | null
+    recommendation_type: string | null
+    urgency_detected: boolean
+    confidence_score: string | null // API sends this as a string, e.g. "0.97"
+    processing_time_ms: number | null
+    model_used: string | null
+    status: string
+    created_at: string
+}
+
+const categoryLabels: Record<string, string> = {
+    lab_result: 'Laboratory',
+    referral: 'Referral',
+    discharge_summary: 'Discharge',
+    insurance_form: 'Insurance',
+    imaging: 'Imaging',
+}
+
+// NOTE: the API doesn't send a tx_ref for analyses, only document_id (a UUID).
+// Same limitation as Inbox/Audit — showing the UUID for now. If we cross-reference
+// against inbox/sent document lists later we could resolve this to a real tx_ref.
+//
+// NOTE: the API also doesn't send "entities" at all — that field was mock-only.
+// Falling back to tags for now so AIHistoryItem doesn't break; revisit if Ayesha's
+// Lambda starts returning something entity-like under a different field name.
+//
+// Confirmed via Ayesha's document-analysis.schema.json: confidence_score is
+// already a 0-100 number from the Lambda. The backend's OpenAPI spec shows it
+// serialized as a string (likely a DB Decimal -> str conversion), so we just
+// parse it back to a number — no scaling needed.
+function mapAnalysis(a: ApiAnalysis): Analysis {
+    const confidencePct = a.confidence_score ? Math.round(parseFloat(a.confidence_score)) : 0
+
+    return {
+        txId: a.document_id,
+        type: a.document_type ?? 'unknown',
+        category: (a.document_type && categoryLabels[a.document_type]) ?? 'Other',
+        summary: a.summary ?? 'AI analysis pending — document is being processed.',
+        tags: a.tags ?? [],
+        confidence: confidencePct,
+        urgencyFlag: a.urgency_detected,
+        processingMs: a.processing_time_ms ?? 0,
+        model: a.model_used ?? 'Unknown',
+        entities: a.tags ?? [], // placeholder — see note above
+    }
+}
 
 export default function AIAnalysisPage() {
     const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview')
     const [selected, setSelected] = useState<Analysis | null>(null)
     const [analyses, setAnalyses] = useState<Analysis[]>(MOCK_AI_ANALYSES)
     const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState(false)
 
     useEffect(() => {
         async function fetchData() {
+            setIsLoading(true)
             try {
-                const data = await aiApi.getAnalyses()
+                const data: ApiAnalysis[] = await aiApi.getAnalyses()
                 if (data && data.length > 0) {
-                    setAnalyses(data)
+                    setAnalyses(data.map(mapAnalysis))
                 }
+                setError(false)
             } catch {
-                // API not ready yet — using mock data
+                setError(true)
             } finally {
                 setIsLoading(false)
             }
@@ -34,6 +91,20 @@ export default function AIAnalysisPage() {
 
     function handleSelect(doc: Analysis) {
         setSelected(selected?.txId === doc.txId ? null : doc)
+    }
+
+    function handleRetry() {
+        setIsLoading(true)
+        setError(false)
+        aiApi.getAnalyses()
+            .then((data: ApiAnalysis[]) => {
+                if (data && data.length > 0) {
+                    setAnalyses(data.map(mapAnalysis))
+                }
+                setError(false)
+            })
+            .catch(() => setError(true))
+            .finally(() => setIsLoading(false))
     }
 
     if (isLoading) {
@@ -67,16 +138,32 @@ export default function AIAnalysisPage() {
                 )}
 
                 {activeTab === 'history' && (
-                    <div className="space-y-3">
-                        {analyses.map((doc) => (
-                            <AIHistoryItem
-                                key={doc.txId}
-                                doc={doc}
-                                isActive={selected?.txId === doc.txId}
-                                onClick={() => handleSelect(doc)}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        {error && (
+                            <div className="flex flex-col items-center justify-center h-40 gap-3">
+                                <p className="text-sm text-slate-600">
+                                    Failed to load AI analyses — showing sample data.
+                                </p>
+                                <button
+                                    onClick={handleRetry}
+                                    className="text-xs font-medium px-4 py-2 rounded-lg border border-slate-200"
+                                    style={{ color: '#0e7490' }}
+                                >
+                                    Try again
+                                </button>
+                            </div>
+                        )}
+                        <div className="space-y-3">
+                            {analyses.map((doc) => (
+                                <AIHistoryItem
+                                    key={doc.txId}
+                                    doc={doc}
+                                    isActive={selected?.txId === doc.txId}
+                                    onClick={() => handleSelect(doc)}
+                                />
+                            ))}
+                        </div>
+                    </>
                 )}
             </div>
         </div>
