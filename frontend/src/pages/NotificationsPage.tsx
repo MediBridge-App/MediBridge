@@ -50,13 +50,15 @@ function formatTimeAgo(isoString: string): string {
 }
 
 function mapNotification(n: ApiNotification) {
+    const iconKey = iconKeyMap[n.type] ?? 'document'
     return {
         id: n.id,
-        type: iconKeyMap[n.type] ?? 'document',
+        type: iconKey,
         title: titleMap[n.type] ?? 'Notification',
         description: n.message,
         timeAgo: formatTimeAgo(n.created_at),
         isUnread: !n.is_read,
+        icon: iconKey,
     }
 }
 
