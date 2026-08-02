@@ -66,6 +66,7 @@ export const MOCK_RECENT = [
 export const MOCK_INBOX = [
   {
     id: "TX-8821",
+    docId: "mock-8821-0000-4000-8000-000000000001",
     type: "Lab Report",
     subject: "Complete Blood Count + Metabolic Panel",
     from: "City Lab Partners",
@@ -86,6 +87,7 @@ export const MOCK_INBOX = [
   },
   {
     id: "TX-8820",
+    docId: "mock-8820-0000-4000-8000-000000000002",
     type: "Referral",
     subject: "Cardiology Consult — Patient #P-94821",
     from: "Dr. Sarah Chen, MD",
@@ -106,6 +108,7 @@ export const MOCK_INBOX = [
   },
   {
     id: "TX-8819",
+    docId: "mock-8819-0000-4000-8000-000000000003",
     type: "Discharge Summary",
     subject: "Post-Surgical Discharge — Laparoscopic Appendectomy",
     from: "Riverside Medical Center",
@@ -126,6 +129,7 @@ export const MOCK_INBOX = [
   },
   {
     id: "TX-8818",
+    docId: "mock-8818-0000-4000-8000-000000000004",
     type: "Insurance Form",
     subject: "Prior Authorization — Adalimumab (Humira)",
     from: "BlueCross Admin",
@@ -146,6 +150,7 @@ export const MOCK_INBOX = [
   },
   {
     id: "TX-8817",
+    docId: "mock-8817-0000-4000-8000-000000000005",
     type: "Imaging Report",
     subject: "MRI Brain with Contrast — Routine Follow-up",
     from: "RadTech Imaging Center",
@@ -167,6 +172,7 @@ export const MOCK_INBOX = [
   },
   {
     id: "TX-8816",
+    docId: "mock-8816-0000-4000-8000-000000000006",
     type: "Lab Report",
     subject: "HbA1c + Lipid Panel — Diabetic Monitoring",
     from: "Quest Diagnostics",

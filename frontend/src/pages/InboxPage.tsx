@@ -1,19 +1,66 @@
 import { useState, useEffect } from 'react'
+import type { InboxDocument, DocumentStatus, DocumentType, DocumentPriority } from '../types'
 import { MOCK_INBOX } from '../data/mockData'
 import { documentsApi } from '../api'
 import InboxToolbar from '../components/inbox/InboxToolbar'
 import InboxList from '../components/inbox/InboxList'
 import InboxDetail from '../components/inbox/InboxDetail'
-import type { InboxDocument, DocumentStatus, DocumentType, DocumentPriority } from '../types'
-
+import { useInbox } from '../hooks/useInbox'
 
 function formatTime(isoString: string): string {
-  const date = new Date(isoString)
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
+    const date = new Date(isoString)
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    })
+}
+
+type ApiDoc = {
+    id: string
+    tx_ref: string
+    sender_org_id: string
+    recipient_org_id: string
+    document_type: string
+    subject: string
+    priority: string
+    status: string
+    file_size: number | null
+    original_filename: string | null
+    notes: string | null
+    created_at: string
+    delivered_at: string | null
+    read_at: string | null
+    urgency_detected: boolean | null
+}
+
+function mapDoc(doc: ApiDoc): InboxDocument {
+    return {
+        id: doc.tx_ref,
+        docId: doc.id,
+        type: doc.document_type,
+        subject: doc.subject,
+        from: 'Healthcare Organization',
+        fromOrg: doc.sender_org_id,
+        to: doc.recipient_org_id,
+        toOrg: doc.recipient_org_id,
+        status: doc.status as DocumentStatus,
+        time: formatTime(doc.created_at),
+        size: doc.file_size ? `${Math.round(doc.file_size / 1024)} KB` : 'Unknown',
+        pages: 1,
+        aiSummary: doc.notes || 'AI analysis pending — document is being processed.',
+        aiTags: [],
+        aiCategory: doc.document_type
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (c: string) => c.toUpperCase()),
+        documentType: doc.document_type as DocumentType,
+        priority: doc.priority as DocumentPriority,
+        isUnread: !doc.read_at,
+        urgencyFlag: doc.urgency_detected ?? false,
+    }
 }
 
 export default function InboxPage() {
@@ -23,50 +70,17 @@ export default function InboxPage() {
     const [documents, setDocuments] = useState<InboxDocument[]>(MOCK_INBOX)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(false)
-
+    const { setUnreadCount } = useInbox()
 
     useEffect(() => {
         async function fetchInbox() {
             setIsLoading(true)
             try {
                 const data = await documentsApi.getInbox()
-
-                // Map API snake_case to InboxDocument type
-                const mapped = data.map((doc: {
-                    id: string
-                    tx_ref: string
-                    sender_org_id: string
-                    recipient_org_id: string
-                    document_type: string
-                    subject: string
-                    priority: string
-                    status: string
-                    file_size: number | null
-                    created_at: string
-                    read_at: string | null
-                    urgency_detected: boolean | null
-                }) => ({
-                    id: doc.tx_ref,
-                    type: doc.document_type,
-                    subject: doc.subject,
-                    from: doc.sender_org_id,
-                    fromOrg: doc.sender_org_id,
-                    to: doc.recipient_org_id,
-                    toOrg: doc.recipient_org_id,
-                    status: doc.status as DocumentStatus,
-                    time: formatTime(doc.created_at),
-                    size: doc.file_size ? `${Math.round(doc.file_size / 1024)} KB` : 'Unknown',
-                    pages: 1,
-                    aiSummary: '',
-                    aiTags: [],
-                    aiCategory: doc.document_type,
-                    documentType: doc.document_type as DocumentType,
-                    priority: doc.priority as DocumentPriority,
-                    isUnread: !doc.read_at,
-                    urgencyFlag: doc.urgency_detected ?? false,
-                }))
-
+                const mapped = data.map(mapDoc)
                 setDocuments(mapped)
+                const unread = mapped.filter((d: InboxDocument) => d.isUnread).length
+                setUnreadCount(unread)
                 setError(false)
             } catch {
                 setError(true)
@@ -75,7 +89,8 @@ export default function InboxPage() {
             }
         }
         fetchInbox()
-    }, [])
+    }, [setUnreadCount])
+
     const unreadCount = documents.filter((d) => d.isUnread).length
 
     const filtered = documents.filter((doc) => {
@@ -93,8 +108,31 @@ export default function InboxPage() {
         return matchSearch && matchStatus
     })
 
+    async function handleMarkRead(id: string, docId: string) {
+        try {
+            await documentsApi.markAsRead(docId)
+        } catch {
+            // continue anyway
+        }
+        setDocuments((prev) =>
+            prev.map((doc) => doc.id === id ? { ...doc, isUnread: false } : doc)
+        )
+        const newUnread = documents.filter((d) => d.id !== id && d.isUnread).length
+        setUnreadCount(newUnread)
+        if (selected?.id === id) {
+            setSelected({ ...selected, isUnread: false })
+        }
+    }
+
     function handleSelect(doc: InboxDocument) {
-        setSelected(selected?.id === doc.id ? null : doc)
+        if (selected?.id === doc.id) {
+            setSelected(null)
+        } else {
+            setSelected(doc)
+            if (doc.isUnread) {
+                handleMarkRead(doc.id, doc.docId)
+            }
+        }
     }
 
     function handleRetry() {
@@ -102,7 +140,10 @@ export default function InboxPage() {
         setError(false)
         documentsApi.getInbox()
             .then((data) => {
-                setDocuments(data)
+                const mapped = data.map(mapDoc)
+                setDocuments(mapped)
+                const unread = mapped.filter((d: InboxDocument) => d.isUnread).length
+                setUnreadCount(unread)
                 setError(false)
             })
             .catch(() => setError(true))

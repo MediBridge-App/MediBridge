@@ -5,20 +5,79 @@ import { MOCK_NOTIFICATIONS } from '../data/mockData'
 import { useNotifications } from '../hooks/useNotifications'
 import { notificationsApi } from '../api'
 
+// Shape of a single notification as it comes back from GET /notifications
+// (matches the NotificationResponse schema in the backend)
+type ApiNotification = {
+    id: string
+    type: string
+    message: string
+    is_read: boolean
+    document_id: string | null
+    created_at: string
+}
+
+// Real API type values -> icon keys NotificationItem understands.
+// (NotificationItem's iconConfig only has: document, urgent, ai, delivery, security)
+const iconKeyMap: Record<string, string> = {
+    new_document: 'document',
+    urgent: 'urgent',
+    delivery_confirmed: 'delivery',
+    ai_complete: 'ai',
+    security_alert: 'security',
+}
+
+// Short display title per type, since the API only gives one text field (message)
+const titleMap: Record<string, string> = {
+    new_document: 'New document received',
+    urgent: 'Urgent document requires attention',
+    delivery_confirmed: 'Delivery confirmed',
+    ai_complete: 'AI analysis complete',
+    security_alert: 'Security alert',
+}
+
+function formatTimeAgo(isoString: string): string {
+    const date = new Date(isoString)
+    const diffMs = Date.now() - date.getTime()
+    const diffMin = Math.floor(diffMs / 60000)
+
+    if (diffMin < 1) return 'Just now'
+    if (diffMin < 60) return `${diffMin} min ago`
+    const diffHr = Math.floor(diffMin / 60)
+    if (diffHr < 24) return `${diffHr}h ago`
+    const diffDays = Math.floor(diffHr / 24)
+    if (diffDays === 1) return 'Yesterday'
+    return `${diffDays}d ago`
+}
+
+function mapNotification(n: ApiNotification) {
+    return {
+        id: n.id,
+        type: iconKeyMap[n.type] ?? 'document',
+        title: titleMap[n.type] ?? 'Notification',
+        description: n.message,
+        timeAgo: formatTimeAgo(n.created_at),
+        isUnread: !n.is_read,
+    }
+}
+
 export default function NotificationsPage() {
     const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS)
     const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState(false)
     const { setUnreadCount } = useNotifications()
 
     useEffect(() => {
         async function fetchNotifications() {
+            setIsLoading(true)
             try {
-                const data = await notificationsApi.getAll()
-                setNotifications(data)
-                const unread = data.filter((n: { isUnread: boolean }) => n.isUnread).length
+                const data: ApiNotification[] = await notificationsApi.getAll()
+                const mapped = data.map(mapNotification)
+                setNotifications(mapped)
+                const unread = mapped.filter((n) => n.isUnread).length
                 setUnreadCount(unread)
+                setError(false)
             } catch {
-                // API not ready yet — using mock data
+                setError(true)
             } finally {
                 setIsLoading(false)
             }
@@ -59,6 +118,21 @@ export default function NotificationsPage() {
         setUnreadCount(Math.max(0, unreadCount - 1))
     }
 
+    function handleRetry() {
+        setIsLoading(true)
+        setError(false)
+        notificationsApi.getAll()
+            .then((data: ApiNotification[]) => {
+                const mapped = data.map(mapNotification)
+                setNotifications(mapped)
+                const unread = mapped.filter((n) => n.isUnread).length
+                setUnreadCount(unread)
+                setError(false)
+            })
+            .catch(() => setError(true))
+            .finally(() => setIsLoading(false))
+    }
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -66,6 +140,24 @@ export default function NotificationsPage() {
                     className="animate-spin rounded-full h-8 w-8 border-b-2"
                     style={{ borderColor: '#0e7490' }}
                 />
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 gap-3">
+                <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center text-2xl">
+                    ⚠️
+                </div>
+                <p className="text-sm text-slate-600">Failed to load notifications</p>
+                <button
+                    onClick={handleRetry}
+                    className="text-xs font-medium px-4 py-2 rounded-lg border border-slate-200"
+                    style={{ color: '#0e7490' }}
+                >
+                    Try again
+                </button>
             </div>
         )
     }

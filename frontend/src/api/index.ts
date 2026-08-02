@@ -56,7 +56,29 @@ export const documentsApi = {
     api.post("/documents/upload-url", data).then((r) => r.data),
   search: (q: string) =>
     api.get("/documents/search", { params: { q } }).then((r) => r.data),
+  markAsRead: (id: string) =>
+    api
+      .put(`/documents/${id}/status`, { status: "delivered" })
+      .then((r) => r.data),
+  getDownloadUrl: (docId: string) =>
+    api.get(`/documents/${docId}/download-url`).then((r) => r.data),
 };
+
+// Helper: download-url endpoint has an untyped response in the
+// OpenAPI spec, so we don't yet know if it returns a plain string, or an
+// object like { download_url: "..." } or { url: "..." }. This function
+// checks the common shapes so InboxDetail doesn't break once the backend
+// starts returning real data — update/simplify once confirmed.
+export function extractDownloadUrl(data: unknown): string | null {
+  if (typeof data === "string") return data;
+  if (data && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    if (typeof obj.download_url === "string") return obj.download_url;
+    if (typeof obj.url === "string") return obj.url;
+    if (typeof obj.presigned_url === "string") return obj.presigned_url;
+  }
+  return null;
+}
 
 // ─── Audit ───────────────────────────────────────────────────────────────────
 
@@ -122,11 +144,4 @@ export const securityApi = {
     api.put("/security/settings", data).then((r) => r.data),
 };
 
-api.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    // Don't auto-redirect on 401 — let each page handle it
-    return Promise.reject(err);
-  },
-);
 export default api;

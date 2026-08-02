@@ -11,6 +11,8 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import type { InboxDocument } from '../../types'
+import { useState } from 'react'
+import { documentsApi, extractDownloadUrl } from '../../api'
 
 interface InboxDetailProps {
   doc: InboxDocument
@@ -27,6 +29,8 @@ const categoryColors: Record<string, { color: string; bg: string }> = {
 
 export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
   const cat = categoryColors[doc.aiCategory] ?? { color: '#64748b', bg: '#f1f5f9' }
+  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
   const timeline = [
     { event: 'Document Uploaded to S3', done: true },
@@ -36,6 +40,26 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
     { event: 'Recipient Notified', done: doc.status !== 'uploaded' },
     { event: 'Document Read by Recipient', done: !doc.isUnread },
   ]
+
+  async function handleDownload() {
+    setDownloading(true)
+    setDownloadError(null)
+    try {
+      const data = await documentsApi.getDownloadUrl(doc.docId)
+      const url = extractDownloadUrl(data)
+      if (url) {
+        window.open(url, '_blank')
+      } else {
+        console.error('Unrecognized download-url response shape:', data)
+        setDownloadError('Could not read download link from server response.')
+      }
+    } catch (err) {
+      console.error('Download failed', err)
+      setDownloadError('Download failed. Please try again.')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white border-l border-slate-200">
@@ -68,8 +92,13 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors">
-            <Download size={13} /> Download
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors disabled:opacity-50"
+          >
+            <Download size={13} />
+            {downloading ? 'Downloading...' : 'Download'}
           </button>
           <button
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white hover:opacity-90 transition-opacity"
@@ -85,6 +114,12 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
           </button>
         </div>
       </div>
+
+      {downloadError && (
+        <div className="px-6 py-2 text-xs font-medium text-red-600 bg-red-50 border-b border-red-100">
+          {downloadError}
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">

@@ -5,6 +5,48 @@ import AuditFooter from '../components/audit/AuditFooter'
 import { MOCK_AUDIT_LOGS } from '../data/mockData'
 import { auditApi } from '../api'
 
+// Shape of a single log entry as it comes back from GET /audit
+// (matches the AuditResponse schema in the backend)
+type ApiAuditLog = {
+    id: string
+    event_id: string
+    document_id: string | null
+    user_id: string | null
+    organization_id: string | null
+    event_type: string
+    action: string
+    details: Record<string, unknown> | null
+    ip_address: string | null
+    hash: string | null
+    created_at: string
+}
+
+function formatTimestamp(isoString: string): string {
+    const date = new Date(isoString)
+    return date.toLocaleString('sv-SE') // gives "YYYY-MM-DD HH:mm:ss" style, matches mock format
+}
+
+// NOTE: the backend only sends user_id and document_id as raw UUIDs — it
+// doesn't include a human-readable user name or a document's tx_ref.
+// For now we fall back to showing the UUID directly. If we want real names
+// and tx_refs later, we'd build lookup maps (e.g. fetch /users once for
+// userId -> full_name, and reuse inbox/sent data for documentId -> tx_ref)
+// and pass them into this mapper.
+function mapAuditLog(log: ApiAuditLog) {
+    return {
+        id: log.id,
+        eventId: log.event_id,
+        eventType: log.event_type,
+        user: log.user_id ?? 'System',
+        userId: log.user_id ?? '—',
+        action: log.action,
+        txRef: log.document_id ?? null,
+        ipAddress: log.ip_address ?? '—',
+        timestamp: formatTimestamp(log.created_at),
+        hash: log.hash ?? '—',
+    }
+}
+
 export default function AuditTrailPage() {
     const [search, setSearch] = useState('')
     const [typeFilter, setTypeFilter] = useState('all')
@@ -12,13 +54,12 @@ export default function AuditTrailPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(false)
 
-    // update useEffect:
     useEffect(() => {
         async function fetchLogs() {
             setIsLoading(true)
             try {
-                const data = await auditApi.getLogs()
-                setLogs(data)
+                const data: ApiAuditLog[] = await auditApi.getLogs()
+                setLogs(data.map(mapAuditLog))
                 setError(false)
             } catch {
                 setError(true)
@@ -42,6 +83,15 @@ export default function AuditTrailPage() {
         return matchSearch && matchType
     })
 
+    function handleRetry() {
+        setIsLoading(true)
+        setError(false)
+        auditApi.getLogs()
+            .then((data: ApiAuditLog[]) => setLogs(data.map(mapAuditLog)))
+            .catch(() => setError(true))
+            .finally(() => setIsLoading(false))
+    }
+
     return isLoading ? (
         <div className="flex items-center justify-center h-64">
             <div
@@ -56,14 +106,7 @@ export default function AuditTrailPage() {
             </div>
             <p className="text-sm text-slate-600">Failed to load audit logs</p>
             <button
-                onClick={() => {
-                    setError(false)
-                    setIsLoading(true)
-                    auditApi.getLogs()
-                        .then((data) => setLogs(data))
-                        .catch(() => setError(true))
-                        .finally(() => setIsLoading(false))
-                }}
+                onClick={handleRetry}
                 className="text-xs font-medium px-4 py-2 rounded-lg border border-slate-200"
                 style={{ color: '#0e7490' }}
             >
