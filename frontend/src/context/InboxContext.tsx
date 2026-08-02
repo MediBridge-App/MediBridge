@@ -9,7 +9,7 @@ interface InboxContextValue {
 export const InboxContext = createContext<InboxContextValue | null>(null)
 
 export function InboxProvider({ children }: { children: ReactNode }) {
-    const [unreadCount, setUnreadCount] = useState(3)
+    const [unreadCount, setUnreadCount] = useState(0)
 
     return (
         <InboxContext.Provider value={{ unreadCount, setUnreadCount }}>

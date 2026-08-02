@@ -127,7 +127,8 @@ export interface Organization {
 // ─── Inbox ───────────────────────────────────────────────────────────────────
 
 export interface InboxDocument {
-  id: string;
+  id: string; 
+  docId: string; // real UUID — used for API calls (download-url, mark-as-read, etc.)
   type: string;
   subject: string;
   from: string;
