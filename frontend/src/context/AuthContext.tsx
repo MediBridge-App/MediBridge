@@ -9,8 +9,12 @@ interface AuthUser {
     fullName: string
     initials: string
     role: string
+    organizationId: string
     organizationName: string
     orgCode: string
+    specialty: string | null
+    npiNumber: string | null
+    lastLogin: string | null
 }
 
 interface AuthContextValue {
@@ -48,8 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         fullName: profile.full_name,
                         initials,
                         role: profile.role,
+                        organizationId: profile.organization_id,
                         organizationName: profile.organization_name,
                         orgCode: profile.org_code,
+                        specialty: profile.specialty ?? null,
+                        npiNumber: profile.npi_number ?? null,
+                        lastLogin: profile.last_login ?? null,
                     })
                 } catch {
                     // Backend not ready — use Cognito attributes
@@ -70,8 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         fullName: name,
                         initials,
                         role: '',
+                        organizationId: '',
                         organizationName: '',
                         orgCode: '',
+                        specialty: null,
+                        npiNumber: null,
+                        lastLogin: null,
                     })
                 }
                 setIsLoading(false)

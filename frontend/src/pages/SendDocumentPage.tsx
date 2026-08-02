@@ -7,14 +7,16 @@ import FileUpload from '../components/send/FileUpload'
 import ReviewStep from '../components/send/ReviewStep'
 import SentStep from '../components/send/SentStep'
 import SendSidebar from '../components/send/SendSidebar'
+import { documentsApi } from '../api'
 import { Lock, Send } from 'lucide-react'
 
 type Step = 1 | 2 | 3
 
-interface FileData {
-    name: string
-    size: string
-    type: string
+// Shape returned by POST /documents/send (DocumentResponse)
+type SentDocument = {
+    id: string
+    tx_ref: string
+    status: string
 }
 
 export default function SendDocumentPage() {
@@ -24,17 +26,69 @@ export default function SendDocumentPage() {
     const [subject, setSubject] = useState('')
     const [priority, setPriority] = useState('normal')
     const [notes, setNotes] = useState('')
-    const [file, setFile] = useState<FileData | null>(null)
+    const [file, setFile] = useState<File | null>(null)
     const [sending, setSending] = useState(false)
+    const [sendError, setSendError] = useState<string | null>(null)
+    const [sentDocument, setSentDocument] = useState<SentDocument | null>(null)
 
     const canProceed = selectedOrg && docType && subject && file
 
-    function handleSend() {
+    async function handleSend() {
+        if (!selectedOrg || !file) return
         setSending(true)
-        setTimeout(() => {
-            setSending(false)
+        setSendError(null)
+
+        try {
+            // Step 1: get a presigned upload URL for this file
+            const uploadData = await documentsApi.getUploadUrl({
+                filename: file.name,
+                content_type: file.type || 'application/octet-stream',
+            })
+            const { upload_url, s3_key } = uploadData
+
+            // Step 2: PUT the actual file bytes to S3.
+            // Headers here must match exactly what the backend signed the
+            // URL with (Content-Type + ServerSideEncryption), or S3 will
+            // reject the upload with a signature mismatch — this is a
+            // direct-to-S3 request, not through our API client, since it
+            // needs no auth header and a different base URL.
+            const uploadResponse = await fetch(upload_url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': file.type || 'application/octet-stream',
+                    'x-amz-server-side-encryption': 'aws:kms',
+                },
+                body: file,
+            })
+
+            if (!uploadResponse.ok) {
+                throw new Error(`S3 upload failed with status ${uploadResponse.status}`)
+            }
+
+            // Step 3: create the document record now that the file exists in S3
+            const document: SentDocument = await documentsApi.send({
+                recipient_org_id: selectedOrg.id,
+                file_s3_key: s3_key,
+                original_filename: file.name,
+                file_size: file.size,
+                document_type: docType,
+                subject,
+                priority,
+                notes: notes || null,
+            })
+
+            setSentDocument(document)
             setStep(3)
-        }, 2200)
+        } catch (err) {
+            console.error('Send document failed:', err)
+            setSendError(
+                err instanceof Error
+                    ? `Failed to send document: ${err.message}`
+                    : 'Failed to send document. Please try again.'
+            )
+        } finally {
+            setSending(false)
+        }
     }
 
     function handleReset() {
@@ -45,13 +99,15 @@ export default function SendDocumentPage() {
         setPriority('normal')
         setNotes('')
         setFile(null)
+        setSendError(null)
+        setSentDocument(null)
     }
 
     return (
         <div className="flex h-full">
 
             {/* Left — Form */}
-            <div className="flex-1 overflow-y-auto p-6 " style={{background: "#f0f4f8"}}>
+            <div className="flex-1 overflow-y-auto p-6 " style={{ background: "#f0f4f8" }}>
                 <div className="max-w-2xl space-y-5">
 
                     {/* Header */}
@@ -120,24 +176,32 @@ export default function SendDocumentPage() {
 
                     {/* Step 2 — Review */}
                     {step === 2 && selectedOrg && file && (
-                        <ReviewStep
-                            selectedOrg={selectedOrg}
-                            docType={docType}
-                            subject={subject}
-                            priority={priority}
-                            file={file}
-                            sending={sending}
-                            onBack={() => setStep(1)}
-                            onConfirm={handleSend}
-                        />
+                        <>
+                            {sendError && (
+                                <div className="rounded-xl px-4 py-3 bg-red-50 border border-red-200 text-sm text-red-700">
+                                    {sendError}
+                                </div>
+                            )}
+                            <ReviewStep
+                                selectedOrg={selectedOrg}
+                                docType={docType}
+                                subject={subject}
+                                priority={priority}
+                                file={file}
+                                sending={sending}
+                                onBack={() => setStep(1)}
+                                onConfirm={handleSend}
+                            />
+                        </>
                     )}
 
                     {/* Step 3 — Sent */}
-                    {step === 3 && selectedOrg && (
+                    {step === 3 && selectedOrg && sentDocument && (
                         <SentStep
                             selectedOrg={selectedOrg}
                             docType={docType}
                             priority={priority}
+                            txRef={sentDocument.tx_ref}
                             onReset={handleReset}
                         />
                     )}

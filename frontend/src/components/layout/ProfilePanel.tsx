@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Camera, Send, Inbox, Activity, Edit2, LogOut, UserCircle } from 'lucide-react'
+import { X, Camera, LogOut, UserCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { signOut } from 'aws-amplify/auth'
 import { useAuth } from '../../hooks/useAuth'
@@ -11,10 +11,33 @@ interface ProfilePanelProps {
 const TABS = ['Profile', 'Preferences', 'Security'] as const
 type Tab = typeof TABS[number]
 
+// Same role -> display label mapping used in Security's UserAccessList,
+// since the backend only sends the raw role value (e.g. "provider").
+const roleLabelMap: Record<string, string> = {
+    organization_admin: 'Administrator',
+    provider: 'Physician',
+    registered_nurse: 'Registered Nurse',
+    referral_coordinator: 'Referral Coordinator',
+    medical_assistant: 'Medical Assistant',
+}
+
+function formatLastLogin(isoString: string | null): string {
+    if (!isoString) return 'Not available'
+    const date = new Date(isoString)
+    return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    })
+}
+
 export default function ProfilePanel({ onClose }: ProfilePanelProps) {
     const navigate = useNavigate()
     const { user } = useAuth()
     const [activeTab, setActiveTab] = useState<Tab>('Profile')
+
+    const roleLabel = user?.role ? (roleLabelMap[user.role] ?? user.role) : '...'
 
     async function handleSignOut() {
         try {
@@ -75,31 +98,13 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                         {user?.fullName || 'Loading...'}
                     </div>
                     <div className="text-xs text-slate-500 mt-0.5">
-                        Physician · Internal Medicine
+                        {roleLabel}{user?.specialty ? ` · ${user.specialty}` : ''}
                     </div>
                     <div
                         className="text-xs font-medium mt-1"
                         style={{ color: '#0e7490' }}
                     >
-                        St. Mercy General
-                    </div>
-
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-3 w-full mt-4">
-                        {[
-                            { icon: <Send size={14} />, value: '284', label: 'Sent' },
-                            { icon: <Inbox size={14} />, value: '371', label: 'Received' },
-                            { icon: <Activity size={14} />, value: '47', label: 'This Month' },
-                        ].map((s) => (
-                            <div
-                                key={s.label}
-                                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-slate-100"
-                            >
-                                <span className="text-slate-400">{s.icon}</span>
-                                <span className="text-sm font-bold text-slate-800">{s.value}</span>
-                                <span className="text-xs text-slate-400">{s.label}</span>
-                            </div>
-                        ))}
+                        {user?.organizationName || '...'}
                     </div>
                 </div>
 
@@ -126,26 +131,18 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                 <div className="flex-1 overflow-y-auto p-5">
                     {activeTab === 'Profile' && (
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                                    Personal Information
-                                </h3>
-                                <button
-                                    className="flex items-center gap-1 text-xs font-medium"
-                                    style={{ color: '#0e7490' }}
-                                >
-                                    <Edit2 size={11} /> Edit
-                                </button>
-                            </div>
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                Personal Information
+                            </h3>
 
                             {[
                                 { label: 'Full Name', value: user?.fullName || '...' },
                                 { label: 'Work Email', value: user?.email || '...' },
-                                { label: 'Role', value: 'Physician' },
-                                { label: 'Organization', value: 'St. Mercy General' },
-                                { label: 'Specialty', value: 'Internal Medicine' },
-                                { label: 'NPI Number', value: '1234567890' },
-                                { label: 'Organization ID', value: 'ORG-00142' },
+                                { label: 'Role', value: roleLabel },
+                                { label: 'Organization', value: user?.organizationName || '...' },
+                                { label: 'Specialty', value: user?.specialty || 'Not specified' },
+                                { label: 'NPI Number', value: user?.npiNumber || 'Not on file' },
+                                { label: 'Organization ID', value: user?.orgCode || '...' },
                             ].map((field) => (
                                 <div key={field.label}>
                                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
@@ -161,7 +158,7 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                             ))}
 
                             <div className="text-xs text-slate-400 font-mono py-2">
-                                Last login: Today, 08:30 AM · IP 10.0.1.44
+                                Last login: {formatLastLogin(user?.lastLogin ?? null)}
                             </div>
                         </div>
                     )}

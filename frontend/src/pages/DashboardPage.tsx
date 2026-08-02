@@ -8,20 +8,39 @@ import DocTypesChart from '../components/dashboard/DocTypesChart'
 import { dashboardApi } from '../api'
 import { useAuth } from '../hooks/useAuth'
 import { useInbox } from '../hooks/useInbox'
-import {
-    MOCK_STATS,
-    MOCK_ACTIVITY,
-    MOCK_DOC_TYPES,
-    MOCK_RECENT,
-} from '../data/mockData'
 import type { DocumentType, DocumentStatus, DocumentPriority } from '../types'
 
+const EMPTY_STATS = {
+    documentsSent: 0,
+    documentsReceived: 0,
+    pendingReview: 0,
+    aiProcessed: 0,
+    sentChange: 0,
+    receivedChange: 0,
+    pendingChange: 0,
+    aiChange: 0,
+}
+
+const EMPTY_ACTIVITY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => ({
+    day,
+    sent: 0,
+    received: 0,
+}))
 
 export default function DashboardPage() {
-    const [stats, setStats] = useState(MOCK_STATS)
-    const [recentDocs, setRecentDocs] = useState(MOCK_RECENT)
-    const [activityData, setActivityData] = useState(MOCK_ACTIVITY)
-    const [docTypes, setDocTypes] = useState(MOCK_DOC_TYPES)
+    const [stats, setStats] = useState(EMPTY_STATS)
+    const [recentDocs, setRecentDocs] = useState<Array<{
+        id: string
+        txRef: string
+        documentType: DocumentType
+        subject: string
+        senderOrgName: string
+        status: DocumentStatus
+        priority: DocumentPriority
+        timeAgo: string
+    }>>([])
+    const [activityData, setActivityData] = useState(EMPTY_ACTIVITY)
+    const [docTypes, setDocTypes] = useState<Array<{ label: string; value: number; max: number }>>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(false)
     const navigate = useNavigate()

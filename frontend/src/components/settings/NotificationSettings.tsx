@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Save } from 'lucide-react'
+import { notificationPreferencesApi } from '../../api'
 
 const NOTIFICATION_SETTINGS = [
     {
@@ -59,18 +60,58 @@ function Toggle({ enabled, onChange }: ToggleProps) {
 }
 
 export default function NotificationSettings() {
-    const [settings, setSettings] = useState(
+    const [settings, setSettings] = useState<Record<string, boolean>>(
         Object.fromEntries(NOTIFICATION_SETTINGS.map((s) => [s.id, s.default]))
     )
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState(false)
+    const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
+
+    useEffect(() => {
+        async function fetchPreferences() {
+            setIsLoading(true)
+            try {
+                const data: Record<string, boolean> = await notificationPreferencesApi.get()
+                // Merge with defaults so a missing key from the backend
+                // doesn't wipe out that toggle's state.
+                setSettings((prev) => ({ ...prev, ...data }))
+                setError(false)
+            } catch {
+                setError(true)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchPreferences()
+    }, [])
 
     function handleToggle(id: string, val: boolean) {
         setSettings((prev) => ({ ...prev, [id]: val }))
     }
 
-    function handleSave() {
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2000)
+    async function handleSave() {
+        setSaving(true)
+        try {
+            await notificationPreferencesApi.update(settings)
+            setSaved(true)
+            setTimeout(() => setSaved(false), 2000)
+        } catch (err) {
+            console.error('Failed to save notification preferences:', err)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-40">
+                <div
+                    className="animate-spin rounded-full h-8 w-8 border-b-2"
+                    style={{ borderColor: '#0e7490' }}
+                />
+            </div>
+        )
     }
 
     return (
@@ -81,6 +122,12 @@ export default function NotificationSettings() {
                     Control which events trigger notifications
                 </p>
             </div>
+
+            {error && (
+                <div className="rounded-xl px-4 py-3 bg-red-50 border border-red-200 text-sm text-red-700">
+                    Couldn't load your saved preferences — showing defaults.
+                </div>
+            )}
 
             <div className="rounded-xl bg-white border border-slate-200 p-5">
                 <h3 className="text-sm font-semibold text-slate-800 mb-4">
@@ -107,11 +154,12 @@ export default function NotificationSettings() {
             <div className="flex justify-end">
                 <button
                     onClick={handleSave}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
+                    disabled={saving}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
                     style={{ backgroundColor: saved ? '#059669' : '#0e7490' }}
                 >
                     <Save size={14} />
-                    {saved ? 'Saved!' : 'Save Changes'}
+                    {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
                 </button>
             </div>
         </div>

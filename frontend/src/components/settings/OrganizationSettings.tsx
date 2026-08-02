@@ -1,22 +1,111 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Save } from 'lucide-react'
+import { organizationsApi } from '../../api'
+import { useAuth } from '../../hooks/useAuth'
 
-const ORG_TYPES = ['Hospital', 'Clinic', 'Laboratory', 'Imaging Center', 'Insurance', 'Other']
+const ORG_TYPES = ['hospital', 'clinic', 'laboratory', 'imaging_center', 'insurance', 'other']
+const ORG_TYPE_LABELS: Record<string, string> = {
+    hospital: 'Hospital',
+    clinic: 'Clinic',
+    laboratory: 'Laboratory',
+    imaging_center: 'Imaging Center',
+    insurance: 'Insurance',
+    other: 'Other',
+}
 const TIMEZONES = ['America/Chicago', 'America/New_York', 'America/Los_Angeles', 'America/Denver', 'UTC']
 const DATE_FORMATS = ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD']
 const LANGUAGES = ['English (US)', 'English (UK)', 'Spanish', 'French']
 
+// Confirmed via a real GET /organizations/{id} response — all these fields
+// are real, including timezone/date_format/language (initially assumed
+// these didn't exist and removed them; they're genuinely there).
+type ApiOrganization = {
+    id: string
+    name: string
+    org_code: string
+    type: string
+    timezone: string
+    date_format: string
+    language: string
+    created_at?: string
+}
+
+function getInitials(name: string): string {
+    return name
+        .split(' ')
+        .map((w) => w[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+}
+
 export default function OrganizationSettings() {
-    const [orgName, setOrgName] = useState('St. Mercy General')
-    const [orgType, setOrgType] = useState('Hospital')
+    const { user } = useAuth()
+    const [orgName, setOrgName] = useState('')
+    const [orgType, setOrgType] = useState('clinic')
+    const [orgCode, setOrgCode] = useState('')
     const [timezone, setTimezone] = useState('America/Chicago')
     const [dateFormat, setDateFormat] = useState('MM/DD/YYYY')
     const [language, setLanguage] = useState('English (US)')
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState(false)
+    const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
 
-    function handleSave() {
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2000)
+    useEffect(() => {
+        async function fetchOrg() {
+            if (!user?.organizationId) {
+                setIsLoading(false)
+                return
+            }
+            setIsLoading(true)
+            try {
+                const data: ApiOrganization = await organizationsApi.getById(user.organizationId)
+                setOrgName(data.name ?? '')
+                setOrgType(data.type ?? 'clinic')
+                setOrgCode(data.org_code ?? '')
+                setTimezone(data.timezone ?? 'America/Chicago')
+                setDateFormat(data.date_format ?? 'MM/DD/YYYY')
+                setLanguage(data.language ?? 'English (US)')
+                setError(false)
+            } catch {
+                setError(true)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchOrg()
+    }, [user?.organizationId])
+
+    async function handleSave() {
+        if (!user?.organizationId) return
+        setSaving(true)
+        try {
+            await organizationsApi.update(user.organizationId, {
+                name: orgName,
+                type: orgType,
+                timezone,
+                date_format: dateFormat,
+                language,
+            })
+            setSaved(true)
+            setTimeout(() => setSaved(false), 2000)
+        } catch (err) {
+            console.error('Failed to save organization settings:', err)
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-40">
+                <div
+                    className="animate-spin rounded-full h-8 w-8 border-b-2"
+                    style={{ borderColor: '#0e7490' }}
+                />
+            </div>
+        )
     }
 
     return (
@@ -28,6 +117,12 @@ export default function OrganizationSettings() {
                     Configure your organization's profile and regional settings
                 </p>
             </div>
+
+            {error && (
+                <div className="rounded-xl px-4 py-3 bg-red-50 border border-red-200 text-sm text-red-700">
+                    Couldn't load organization settings. Try refreshing the page.
+                </div>
+            )}
 
             {/* Organization Profile */}
             <div className="rounded-xl bg-white border border-slate-200 p-5 space-y-4">
@@ -41,13 +136,13 @@ export default function OrganizationSettings() {
                         className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-lg"
                         style={{ backgroundColor: '#0e7490' }}
                     >
-                        SM
+                        {orgName ? getInitials(orgName) : '...'}
                     </div>
                     <div>
                         <div className="text-sm font-bold text-slate-800">
-                            St. Mercy General
+                            {orgName || '...'}
                         </div>
-                        <div className="text-xs text-slate-400 font-mono">ORG-00142</div>
+                        <div className="text-xs text-slate-400 font-mono">{orgCode || '...'}</div>
                     </div>
                 </div>
 
@@ -74,7 +169,7 @@ export default function OrganizationSettings() {
                         className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-800 outline-none appearance-none cursor-pointer"
                     >
                         {ORG_TYPES.map((t) => (
-                            <option key={t} value={t}>{t}</option>
+                            <option key={t} value={t}>{ORG_TYPE_LABELS[t]}</option>
                         ))}
                     </select>
                 </div>
@@ -142,11 +237,12 @@ export default function OrganizationSettings() {
             <div className="flex justify-end">
                 <button
                     onClick={handleSave}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
+                    disabled={saving}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
                     style={{ backgroundColor: saved ? '#059669' : '#0e7490' }}
                 >
                     <Save size={14} />
-                    {saved ? 'Saved!' : 'Save Changes'}
+                    {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
                 </button>
             </div>
         </div>

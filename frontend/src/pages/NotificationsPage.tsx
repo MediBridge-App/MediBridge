@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { CheckCheck } from 'lucide-react'
 import NotificationList from '../components/notifications/NotificationList'
-import { MOCK_NOTIFICATIONS } from '../data/mockData'
 import { useNotifications } from '../hooks/useNotifications'
 import { notificationsApi } from '../api'
 
@@ -62,8 +61,11 @@ function mapNotification(n: ApiNotification) {
     }
 }
 
+// Shape after mapNotification runs — used to type the empty initial state below
+type DisplayNotification = ReturnType<typeof mapNotification>
+
 export default function NotificationsPage() {
-    const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS)
+    const [notifications, setNotifications] = useState<DisplayNotification[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(false)
     const { setUnreadCount } = useNotifications()
