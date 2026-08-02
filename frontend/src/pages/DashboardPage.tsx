@@ -6,28 +6,60 @@ import Badge from '../components/ui/Badge'
 import ActivityChart from '../components/dashboard/ActivityChart'
 import DocTypesChart from '../components/dashboard/DocTypesChart'
 import { dashboardApi } from '../api'
-import {
-    MOCK_STATS,
-    MOCK_ACTIVITY,
-    MOCK_DOC_TYPES,
-    MOCK_RECENT,
-} from '../data/mockData'
+import { useAuth } from '../hooks/useAuth'
+import { useInbox } from '../hooks/useInbox'
 import type { DocumentType, DocumentStatus, DocumentPriority } from '../types'
 
+const EMPTY_STATS = {
+    documentsSent: 0,
+    documentsReceived: 0,
+    pendingReview: 0,
+    aiProcessed: 0,
+    sentChange: 0,
+    receivedChange: 0,
+    pendingChange: 0,
+    aiChange: 0,
+}
+
+const EMPTY_ACTIVITY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => ({
+    day,
+    sent: 0,
+    received: 0,
+}))
 
 export default function DashboardPage() {
-    const [stats, setStats] = useState(MOCK_STATS)
-    const [recentDocs, setRecentDocs] = useState(MOCK_RECENT)
-    const [activityData, setActivityData] = useState(MOCK_ACTIVITY)
-    const [docTypes, setDocTypes] = useState(MOCK_DOC_TYPES)
+    const [stats, setStats] = useState(EMPTY_STATS)
+    const [recentDocs, setRecentDocs] = useState<Array<{
+        id: string
+        txRef: string
+        documentType: DocumentType
+        subject: string
+        senderOrgName: string
+        status: DocumentStatus
+        priority: DocumentPriority
+        timeAgo: string
+    }>>([])
+    const [activityData, setActivityData] = useState(EMPTY_ACTIVITY)
+    const [docTypes, setDocTypes] = useState<Array<{ label: string; value: number; max: number }>>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(false)
     const navigate = useNavigate()
     const [activityRange, setActivityRange] = useState<'7d' | '30d'>('7d')
+    const { user } = useAuth()
+    const { unreadCount } = useInbox()
 
     const hour = new Date().getHours()
     const greeting =
         hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
+    // Fall back to generic copy if user info isn't loaded yet — never show
+    // another user's name/org as a hardcoded default.
+    // AuthContext (context/AuthContext.tsx) maps the backend's /auth/me
+    // response into a camelCase AuthUser shape: { fullName, organizationName, ... }.
+    // Falls back to empty strings if the backend call fails, so treat both
+    // missing and empty as "don't show it" rather than erroring.
+    const greetingName = user?.fullName ? `, ${user.fullName}` : ''
+    const orgName = user?.organizationName || null
 
     useEffect(() => {
         async function fetchData() {
@@ -149,7 +181,7 @@ export default function DashboardPage() {
                     <div className="flex items-start justify-between">
                         <div>
                             <h2 className="text-2xl font-bold text-slate-900">
-                                {greeting}, Dr. Rivera
+                                {greeting}{greetingName}
                             </h2>
                             <p className="text-slate-500 text-sm mt-1">
                                 {new Date().toLocaleDateString('en-US', {
@@ -158,7 +190,7 @@ export default function DashboardPage() {
                                     month: 'long',
                                     day: 'numeric',
                                 })}
-                                {' · '}St. Mercy General Hospital
+                                {orgName && <> · {orgName}</>}
                             </p>
                         </div>
                         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-xs text-emerald-700 font-medium">
@@ -294,7 +326,9 @@ export default function DashboardPage() {
                             },
                             {
                                 label: 'View Inbox',
-                                desc: '5 unread documents',
+                                desc: unreadCount > 0
+                                    ? `${unreadCount} unread document${unreadCount === 1 ? '' : 's'}`
+                                    : 'No unread documents',
                                 icon: <Inbox size={18} />,
                                 color: '#06b6d4',
                                 path: '/inbox',

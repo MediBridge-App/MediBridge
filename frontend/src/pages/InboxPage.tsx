@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import type { InboxDocument, DocumentStatus, DocumentType, DocumentPriority } from '../types'
-import { MOCK_INBOX } from '../data/mockData'
 import { documentsApi, organizationsApi } from '../api'
 import InboxToolbar from '../components/inbox/InboxToolbar'
 import InboxList from '../components/inbox/InboxList'
@@ -79,7 +78,7 @@ export default function InboxPage() {
     const [selected, setSelected] = useState<InboxDocument | null>(null)
     const [search, setSearch] = useState('')
     const [filterStatus, setFilterStatus] = useState('all')
-    const [documents, setDocuments] = useState<InboxDocument[]>(MOCK_INBOX)
+    const [documents, setDocuments] = useState<InboxDocument[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(false)
     const [viewedDocIds, setViewedDocIds] = useState<Set<string>>(new Set())

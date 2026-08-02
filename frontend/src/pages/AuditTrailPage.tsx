@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import AuditToolbar from '../components/audit/AuditToolbar'
 import AuditTable from '../components/audit/AuditTable'
 import AuditFooter from '../components/audit/AuditFooter'
-import { MOCK_AUDIT_LOGS } from '../data/mockData'
 import { auditApi } from '../api'
 
 // Shape of a single log entry as it comes back from GET /audit
@@ -47,12 +46,17 @@ function mapAuditLog(log: ApiAuditLog) {
     }
 }
 
+// Shape after mapAuditLog runs — used to type the empty initial state below
+type DisplayAuditLog = ReturnType<typeof mapAuditLog>
+
 export default function AuditTrailPage() {
     const [search, setSearch] = useState('')
     const [typeFilter, setTypeFilter] = useState('all')
-    const [logs, setLogs] = useState(MOCK_AUDIT_LOGS)
+    const [logs, setLogs] = useState<DisplayAuditLog[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(false)
+    const [exporting, setExporting] = useState(false)
+    const [exportError, setExportError] = useState<string | null>(null)
 
     useEffect(() => {
         async function fetchLogs() {
@@ -82,6 +86,28 @@ export default function AuditTrailPage() {
 
         return matchSearch && matchType
     })
+
+    async function handleExport() {
+        setExporting(true)
+        setExportError(null)
+        try {
+            const blob: Blob = await auditApi.export()
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            const dateStamp = new Date().toISOString().slice(0, 10)
+            link.download = `audit-log-${dateStamp}.csv`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+        } catch (err) {
+            console.error('Failed to export audit log:', err)
+            setExportError('Failed to export audit log. Please try again.')
+        } finally {
+            setExporting(false)
+        }
+    }
 
     function handleRetry() {
         setIsLoading(true)
@@ -124,7 +150,14 @@ export default function AuditTrailPage() {
                 typeFilter={typeFilter}
                 onTypeFilterChange={setTypeFilter}
                 totalCount={logs.length}
+                onExport={handleExport}
+                exporting={exporting}
             />
+            {exportError && (
+                <div className="px-6 py-2 text-xs font-medium text-red-600 bg-red-50 border-b border-red-100">
+                    {exportError}
+                </div>
+            )}
             <AuditTable logs={filtered} />
             <AuditFooter
                 filteredCount={filtered.length}

@@ -7,7 +7,6 @@ import AIPipeline from '../components/ai/AIPipeline'
 import AIHistoryItem from '../components/ai/AIHistoryItem'
 import type { Analysis } from '../components/ai/AIHistoryItem'
 import { aiApi } from '../api'
-import { MOCK_AI_ANALYSES } from '../data/mockData'
 
 // Shape of a single analysis as it comes back from GET /ai/analyses
 // (matches the AIAnalysisResponse schema in the backend)
@@ -20,7 +19,7 @@ type ApiAnalysis = {
     recommendation_text: string | null
     recommendation_type: string | null
     urgency_detected: boolean
-    confidence_score: string | null // API sends this as a string, e.g. "0.97"
+    confidence_score: string | null // sent as a string, but represents 0-100 (e.g. "92.5"), confirmed via Ayesha's schema
     processing_time_ms: number | null
     model_used: string | null
     status: string
@@ -67,7 +66,7 @@ function mapAnalysis(a: ApiAnalysis): Analysis {
 export default function AIAnalysisPage() {
     const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview')
     const [selected, setSelected] = useState<Analysis | null>(null)
-    const [analyses, setAnalyses] = useState<Analysis[]>(MOCK_AI_ANALYSES)
+    const [analyses, setAnalyses] = useState<Analysis[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(false)
 
