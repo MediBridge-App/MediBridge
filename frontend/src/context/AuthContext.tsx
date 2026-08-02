@@ -6,7 +6,7 @@ import api from '../api'
 interface AuthUser {
     username: string
     email: string
-    name: string
+    fullName: string
     initials: string
     role: string
     organizationName: string
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setUser({
                         username: attributes.sub || '',
                         email: profile.email,
-                        name: profile.full_name,
+                        fullName: profile.full_name,
                         initials,
                         role: profile.role,
                         organizationName: profile.organization_name,
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setUser({
                         username: attributes.sub || '',
                         email,
-                        name,
+                        fullName: name,
                         initials,
                         role: '',
                         organizationName: '',

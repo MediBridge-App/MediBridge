@@ -72,7 +72,7 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                         </button>
                     </div>
                     <div className="text-sm font-bold text-slate-900">
-                        {user?.name || 'Loading...'}
+                        {user?.fullName || 'Loading...'}
                     </div>
                     <div className="text-xs text-slate-500 mt-0.5">
                         Physician · Internal Medicine
@@ -139,7 +139,7 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                             </div>
 
                             {[
-                                { label: 'Full Name', value: user?.name || '...' },
+                                { label: 'Full Name', value: user?.fullName || '...' },
                                 { label: 'Work Email', value: user?.email || '...' },
                                 { label: 'Role', value: 'Physician' },
                                 { label: 'Organization', value: 'St. Mercy General' },

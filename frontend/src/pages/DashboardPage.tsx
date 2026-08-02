@@ -6,6 +6,8 @@ import Badge from '../components/ui/Badge'
 import ActivityChart from '../components/dashboard/ActivityChart'
 import DocTypesChart from '../components/dashboard/DocTypesChart'
 import { dashboardApi } from '../api'
+import { useAuth } from '../hooks/useAuth'
+import { useInbox } from '../hooks/useInbox'
 import {
     MOCK_STATS,
     MOCK_ACTIVITY,
@@ -24,10 +26,21 @@ export default function DashboardPage() {
     const [error, setError] = useState(false)
     const navigate = useNavigate()
     const [activityRange, setActivityRange] = useState<'7d' | '30d'>('7d')
+    const { user } = useAuth()
+    const { unreadCount } = useInbox()
 
     const hour = new Date().getHours()
     const greeting =
         hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
+    // Fall back to generic copy if user info isn't loaded yet — never show
+    // another user's name/org as a hardcoded default.
+    // AuthContext (context/AuthContext.tsx) maps the backend's /auth/me
+    // response into a camelCase AuthUser shape: { fullName, organizationName, ... }.
+    // Falls back to empty strings if the backend call fails, so treat both
+    // missing and empty as "don't show it" rather than erroring.
+    const greetingName = user?.fullName ? `, ${user.fullName}` : ''
+    const orgName = user?.organizationName || null
 
     useEffect(() => {
         async function fetchData() {
@@ -149,7 +162,7 @@ export default function DashboardPage() {
                     <div className="flex items-start justify-between">
                         <div>
                             <h2 className="text-2xl font-bold text-slate-900">
-                                {greeting}, Dr. Rivera
+                                {greeting}{greetingName}
                             </h2>
                             <p className="text-slate-500 text-sm mt-1">
                                 {new Date().toLocaleDateString('en-US', {
@@ -158,7 +171,7 @@ export default function DashboardPage() {
                                     month: 'long',
                                     day: 'numeric',
                                 })}
-                                {' · '}St. Mercy General Hospital
+                                {orgName && <> · {orgName}</>}
                             </p>
                         </div>
                         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-xs text-emerald-700 font-medium">
@@ -294,7 +307,9 @@ export default function DashboardPage() {
                             },
                             {
                                 label: 'View Inbox',
-                                desc: '5 unread documents',
+                                desc: unreadCount > 0
+                                    ? `${unreadCount} unread document${unreadCount === 1 ? '' : 's'}`
+                                    : 'No unread documents',
                                 icon: <Inbox size={18} />,
                                 color: '#06b6d4',
                                 path: '/inbox',

@@ -157,7 +157,7 @@ export default function Sidebar({ onProfileClick }: SidebarProps) {
                             {user?.initials || '??'}
                         </div>
                         <div className="text-left">
-                            <div className="text-white text-sm font-medium">{user?.name ?? <span className="animate-pulse bg-slate-600 rounded h-3 w-24 block" />}</div>
+                            <div className="text-white text-sm font-medium">{user?.fullName ?? <span className="animate-pulse bg-slate-600 rounded h-3 w-24 block" />}</div>
                             <div className="text-xs" style={{ color: '#64748b' }}>{user?.email || ''}</div>
                         </div>
                     </button>
