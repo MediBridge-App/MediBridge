@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import { KeyRound, Globe, Clock } from 'lucide-react'
+import type { SecuritySettings } from '../../pages/SecurityPage'
 
 interface ToggleProps {
     enabled: boolean
@@ -27,11 +27,12 @@ function Toggle({ enabled, onChange }: ToggleProps) {
     )
 }
 
-export default function AuthControls() {
-    const [mfa, setMfa] = useState(true)
-    const [ipAllowlist, setIpAllowlist] = useState(false)
-    const [sessionTimeout, setSessionTimeout] = useState(30)
+interface AuthControlsProps {
+    settings: SecuritySettings
+    onChange: (patch: Partial<SecuritySettings>) => void
+}
 
+export default function AuthControls({ settings, onChange }: AuthControlsProps) {
     return (
         <div className="rounded-xl bg-white border border-slate-200 p-5">
             <h3 className="text-sm font-bold text-slate-800 mb-4">
@@ -45,7 +46,7 @@ export default function AuthControls() {
                         className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                         style={{ backgroundColor: '#f1f5f9' }}
                     >
-                        <KeyRound size={16} style={{ color: '#0e7490' }}  />
+                        <KeyRound size={16} style={{ color: '#0e7490' }} />
                     </div>
                     <div className="flex-1">
                         <div className="text-sm font-medium text-slate-800">
@@ -55,7 +56,10 @@ export default function AuthControls() {
                             Require MFA for all logins via Amazon Cognito
                         </div>
                     </div>
-                    <Toggle enabled={mfa} onChange={setMfa} />
+                    <Toggle
+                        enabled={settings.mfa_enabled}
+                        onChange={(val) => onChange({ mfa_enabled: val })}
+                    />
                 </div>
 
                 {/* IP Allowlisting */}
@@ -64,7 +68,7 @@ export default function AuthControls() {
                         className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                         style={{ backgroundColor: '#f1f5f9' }}
                     >
-                        <Globe size={16} style={{ color: '#0e7490' }}  />
+                        <Globe size={16} style={{ color: '#0e7490' }} />
                     </div>
                     <div className="flex-1">
                         <div className="text-sm font-medium text-slate-800">
@@ -74,7 +78,10 @@ export default function AuthControls() {
                             Restrict access to approved IP ranges only
                         </div>
                     </div>
-                    <Toggle enabled={ipAllowlist} onChange={setIpAllowlist} />
+                    <Toggle
+                        enabled={settings.ip_allowlisting_enabled}
+                        onChange={(val) => onChange({ ip_allowlisting_enabled: val })}
+                    />
                 </div>
 
                 {/* Session Timeout */}
@@ -83,7 +90,7 @@ export default function AuthControls() {
                         className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                         style={{ backgroundColor: '#f1f5f9' }}
                     >
-                        <Clock size={16} style={{ color: '#0e7490' }}  />
+                        <Clock size={16} style={{ color: '#0e7490' }} />
                     </div>
                     <div className="flex-1">
                         <div className="text-sm font-medium text-slate-800">
@@ -97,11 +104,11 @@ export default function AuthControls() {
                         {[15, 30, 60].map((t) => (
                             <button
                                 key={t}
-                                onClick={() => setSessionTimeout(t)}
+                                onClick={() => onChange({ session_timeout_minutes: t })}
                                 className="px-3 py-1.5 font-medium transition-colors"
                                 style={{
-                                    backgroundColor: sessionTimeout === t ? '#0d1b2a' : 'white',
-                                    color: sessionTimeout === t ? 'white' : '#64748b',
+                                    backgroundColor: settings.session_timeout_minutes === t ? '#0d1b2a' : 'white',
+                                    color: settings.session_timeout_minutes === t ? 'white' : '#64748b',
                                 }}
                             >
                                 {t}m
