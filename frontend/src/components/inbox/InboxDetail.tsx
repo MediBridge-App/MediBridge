@@ -10,31 +10,14 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import type { InboxDocument } from '../../types'
-import { useState, useEffect } from 'react'
-import { documentsApi, extractDownloadUrl, aiApi } from '../../api'
+import { useState } from 'react'
+import { documentsApi, extractDownloadUrl } from '../../api'
 
 interface InboxDetailProps {
   doc: InboxDocument
   onClose: () => void
   hasBeenViewed: boolean
   onViewed: () => void
-}
-
-// Shape returned by GET /ai/analyses/{document_id}
-type ApiAnalysis = {
-  id: string
-  document_id: string
-  document_type: string | null
-  summary: string | null
-  tags: string[] | null
-  recommendation_text: string | null
-  recommendation_type: string | null
-  urgency_detected: boolean
-  confidence_score: string | null
-  processing_time_ms: number | null
-  model_used: string | null
-  status: string
-  created_at: string
 }
 
 const categoryColors: Record<string, { color: string; bg: string }> = {
@@ -49,28 +32,6 @@ export default function InboxDetail({ doc, onClose, hasBeenViewed, onViewed }: I
   const cat = categoryColors[doc.aiCategory] ?? { color: '#64748b', bg: '#f1f5f9' }
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
-  const [analysis, setAnalysis] = useState<ApiAnalysis | null>(null)
-  const [analysisLoading, setAnalysisLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    async function fetchAnalysis() {
-      setAnalysisLoading(true)
-      setAnalysis(null)
-      try {
-        const data: ApiAnalysis = await aiApi.getAnalysis(doc.docId)
-        if (!cancelled) setAnalysis(data)
-      } catch {
-        // 404 likely means AI processing hasn't completed yet for this doc —
-        // not a real error, just means no analysis exists yet.
-        if (!cancelled) setAnalysis(null)
-      } finally {
-        if (!cancelled) setAnalysisLoading(false)
-      }
-    }
-    fetchAnalysis()
-    return () => { cancelled = true }
-  }, [doc.docId])
 
   const timeline = [
     { event: 'Document Uploaded to S3', done: true },
@@ -215,9 +176,7 @@ export default function InboxDetail({ doc, onClose, hasBeenViewed, onViewed }: I
             </span>
           </div>
           <p className="text-sm leading-relaxed" style={{ color: '#3730a3' }}>
-            {analysisLoading
-              ? 'Loading AI analysis...'
-              : analysis?.summary ?? 'AI analysis pending — document is still being processed.'}
+            {doc.aiSummary}
           </p>
         </div>
 
@@ -230,8 +189,8 @@ export default function InboxDetail({ doc, onClose, hasBeenViewed, onViewed }: I
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {analysis?.tags && analysis.tags.length > 0 ? (
-              analysis.tags.map((tag) => (
+            {doc.aiTags.length > 0 ? (
+              doc.aiTags.map((tag) => (
                 <span
                   key={tag}
                   className="rounded-full px-3 py-1 text-xs font-medium border border-slate-200"
@@ -241,9 +200,7 @@ export default function InboxDetail({ doc, onClose, hasBeenViewed, onViewed }: I
                 </span>
               ))
             ) : (
-              !analysisLoading && (
-                <span className="text-xs text-slate-400">No tags yet</span>
-              )
+              <span className="text-xs text-slate-400">No tags yet</span>
             )}
           </div>
         </div>

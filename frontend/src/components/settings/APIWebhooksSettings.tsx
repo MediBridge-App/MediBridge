@@ -34,6 +34,8 @@ export default function APIWebhooksSettings() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(false)
     const [actionError, setActionError] = useState<string | null>(null)
+    const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null)
+    const [copied, setCopied] = useState(false)
 
     useEffect(() => {
         fetchAll()
@@ -63,15 +65,29 @@ export default function APIWebhooksSettings() {
         try {
             const created = await apiKeysApi.create({ name })
             // APIKeyCreatedResponse likely includes the full raw key value,
-            // shown only once — surface it so the user can copy it now.
+            // shown only once — surface it in a real copyable modal instead
+            // of window.alert (alert text often isn't selectable at all,
+            // depending on browser/OS).
             const rawKey = created?.key ?? created?.api_key ?? created?.value
             if (rawKey) {
-                window.alert(`API key created. Copy it now — it won't be shown again:\n\n${rawKey}`)
+                setNewlyCreatedKey(rawKey)
             }
             fetchAll()
         } catch (err) {
             console.error('Failed to create API key:', err)
             setActionError('Failed to create API key. Please try again.')
+        }
+    }
+
+    async function handleCopyKey() {
+        if (!newlyCreatedKey) return
+        try {
+            await navigator.clipboard.writeText(newlyCreatedKey)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        } catch {
+            // Clipboard API can fail (e.g. insecure context, permissions) —
+            // the key is still selectable/copyable manually in the input.
         }
     }
 
@@ -247,6 +263,44 @@ export default function APIWebhooksSettings() {
                     Add Webhook
                 </button>
             </div>
+
+            {/* New API key modal — shown once, right after creation */}
+            {newlyCreatedKey && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{ backgroundColor: 'rgba(13, 27, 42, 0.5)' }}
+                >
+                    <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+                        <h3 className="text-sm font-bold text-slate-900 mb-2">
+                            API key created
+                        </h3>
+                        <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                            Copy this key now — for security, it won't be shown again.
+                        </p>
+                        <div className="flex items-center gap-2 mb-4">
+                            <input
+                                readOnly
+                                value={newlyCreatedKey}
+                                onFocus={(e) => e.target.select()}
+                                className="flex-1 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-mono text-slate-700 outline-none"
+                            />
+                            <button
+                                onClick={handleCopyKey}
+                                className="px-3 py-2 rounded-lg text-xs font-semibold text-white shrink-0"
+                                style={{ backgroundColor: copied ? '#059669' : '#0e7490' }}
+                            >
+                                {copied ? 'Copied!' : 'Copy'}
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => { setNewlyCreatedKey(null); setCopied(false) }}
+                            className="w-full py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                        >
+                            Done
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

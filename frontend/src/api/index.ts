@@ -56,10 +56,11 @@ export const documentsApi = {
     api.post("/documents/upload-url", data).then((r) => r.data),
   search: (q: string) =>
     api.get("/documents/search", { params: { q } }).then((r) => r.data),
+  // Real dedicated endpoint, confirmed live as of Aug 3 — replaces the old
+  // workaround that incorrectly called PUT /status with "delivered" (which
+  // risked corrupting the actual document workflow status).
   markAsRead: (id: string) =>
-    api
-      .put(`/documents/${id}/status`, { status: "delivered" })
-      .then((r) => r.data),
+    api.put(`/documents/${id}/read`).then((r) => r.data),
   // NOTE: real doc_id (UUID) required here, not tx_ref.
   // Response shape from Bella's endpoint isn't confirmed yet — currently
   // returns 500 ("Unable to generate download URL"), likely an S3/IAM issue

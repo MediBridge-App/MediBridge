@@ -12,6 +12,8 @@ type ApiAuditLog = {
     document_id: string | null
     user_id: string | null
     organization_id: string | null
+    user_name: string | null
+    org_name: string | null
     event_type: string
     action: string
     details: Record<string, unknown> | null
@@ -25,18 +27,17 @@ function formatTimestamp(isoString: string): string {
     return date.toLocaleString('sv-SE') // gives "YYYY-MM-DD HH:mm:ss" style, matches mock format
 }
 
-// NOTE: the backend only sends user_id and document_id as raw UUIDs — it
-// doesn't include a human-readable user name or a document's tx_ref.
-// For now we fall back to showing the UUID directly. If we want real names
-// and tx_refs later, we'd build lookup maps (e.g. fetch /users once for
-// userId -> full_name, and reuse inbox/sent data for documentId -> tx_ref)
-// and pass them into this mapper.
+// Bella added user_name and org_name directly to this response — confirmed
+// via a real GET /audit call. Falls back to the raw UUID only if a name is
+// somehow missing (e.g. a system-generated event with no user attached).
+// Note: document_id is still just a UUID, not a tx_ref — no fix for that
+// yet, still shows the raw id.
 function mapAuditLog(log: ApiAuditLog) {
     return {
         id: log.id,
         eventId: log.event_id,
         eventType: log.event_type,
-        user: log.user_id ?? 'System',
+        user: log.user_name ?? 'System',
         userId: log.user_id ?? '—',
         action: log.action,
         txRef: log.document_id ?? null,
