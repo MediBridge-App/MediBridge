@@ -21,10 +21,8 @@ class SecuritySettingsResponse(BaseModel):
 
     updated_at: datetime
 
-
     class Config:
         from_attributes = True
-
 
 
 class SecuritySettingsUpdate(BaseModel):

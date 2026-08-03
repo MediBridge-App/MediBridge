@@ -20,7 +20,7 @@ RESTART IDENTITY CASCADE;
 -- ORGANIZATIONS (3)
 -- ---------------------------------------------------------------------
 INSERT INTO organizations (id, name, org_code, type, created_at) VALUES
-  ('a0000000-0000-4000-8000-000000000001', 'St. Mercy Clinic',           'ORG-STMERCY',   'clinic',   now() - interval '30 days'),
+  ('a0000000-0000-4000-8000-000000000001', 'St. Mercy General',           'ORG-STMERCY',   'clinic',   now() - interval '30 days'),
   ('a0000000-0000-4000-8000-000000000002', 'Riverside Cardiology',       'ORG-RIVERSIDE', 'clinic',   now() - interval '28 days'),
   ('a0000000-0000-4000-8000-000000000003', 'Metro General Hospital',     'ORG-METRO',     'hospital', now() - interval '25 days');
 
@@ -29,9 +29,9 @@ INSERT INTO organizations (id, name, org_code, type, created_at) VALUES
 -- Roles: organization_admin, provider, registered_nurse, referral_coordinator, medical_assistant
 -- ---------------------------------------------------------------------
 INSERT INTO users (id, cognito_id, organization_id, email, full_name, role, is_active, last_login, created_at) VALUES
-  ('b0000000-0000-4000-8000-000000000001', 'cognito-sub-0001', 'a0000000-0000-4000-8000-000000000001', 'j.rivera@stmercy.org',         'Dr. James Rivera', 'provider',             true, now() - interval '1 day',   now() - interval '29 days'),
-  ('b0000000-0000-4000-8000-000000000002', 'cognito-sub-0002', 'a0000000-0000-4000-8000-000000000001', 'maria.santos@stmercy.org',     'Maria Santos',      'referral_coordinator', true, now() - interval '2 hours', now() - interval '29 days'),
-  ('b0000000-0000-4000-8000-000000000003', 'cognito-sub-0003', 'a0000000-0000-4000-8000-000000000002', 'sarah.chen@riverside.org',     'Dr. Sarah Chen',    'provider',             true, now() - interval '5 hours', now() - interval '27 days'),
+  ('b0000000-0000-4000-8000-000000000001', '113b4550-00a1-70c2-ceca-313cf37c143b', 'a0000000-0000-4000-8000-000000000001', 'j.rivera@stmercy.org',         'Dr. James Rivera', 'provider',             true, now() - interval '1 day',   now() - interval '29 days'),
+  ('b0000000-0000-4000-8000-000000000002', '41cb0530-d0f1-70ec-a89c-b95937dd1bbc', 'a0000000-0000-4000-8000-000000000001', 'maria.santos@stmercy.org',     'Maria Santos',      'referral_coordinator', true, now() - interval '2 hours', now() - interval '29 days'),
+  ('b0000000-0000-4000-8000-000000000003', '315bf5c0-20d1-705e-9d42-02d8f0acc467', 'a0000000-0000-4000-8000-000000000002', 'sarah.chen@riverside.org',     'Dr. Sarah Chen',    'provider',             true, now() - interval '5 hours', now() - interval '27 days'),
   ('b0000000-0000-4000-8000-000000000004', 'cognito-sub-0004', 'a0000000-0000-4000-8000-000000000002', 'emily.wong@riverside.org',     'Emily Wong',        'registered_nurse',     true, now() - interval '1 day',   now() - interval '27 days'),
   ('b0000000-0000-4000-8000-000000000005', 'cognito-sub-0005', 'a0000000-0000-4000-8000-000000000003', 'michael.osei@metrogeneral.org','Dr. Michael Osei', 'organization_admin',   true, now() - interval '3 hours', now() - interval '24 days'),
   ('b0000000-0000-4000-8000-000000000006', 'cognito-sub-0006', 'a0000000-0000-4000-8000-000000000003', 'linda.park@metrogeneral.org',  'Linda Park',        'medical_assistant',    true, now() - interval '6 hours', now() - interval '24 days');
@@ -142,7 +142,7 @@ INSERT INTO audit_logs (id, event_id, document_id, user_id, organization_id, eve
 -- NOTIFICATIONS — recipient-side alerts
 -- ---------------------------------------------------------------------
 INSERT INTO notifications (id, user_id, document_id, type, message, is_read, created_at) VALUES
-  ('22220000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000001', 'new_document',      'New referral received from St. Mercy Clinic.', true,  now() - interval '5 days' - interval '3 hours'),
+  ('22220000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000001', 'new_document',      'New referral received from St. Mercy General.', true,  now() - interval '5 days' - interval '3 hours'),
   ('22220000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002', 'c0000000-0000-4000-8000-000000000002', 'urgent',            'Urgent lab result received: Lipid panel flagged abnormal.', true, now() - interval '4 days' - interval '2 hours'),
   ('22220000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000005', 'c0000000-0000-4000-8000-000000000003', 'new_document',      'New discharge summary routed to your organization.', false, now() - interval '3 days'),
   ('22220000-0000-4000-8000-000000000004', 'b0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000004', 'new_document',      'New insurance form routed to your organization.', false, now() - interval '2 days' - interval '20 hours'),
@@ -190,7 +190,7 @@ INSERT INTO documents (id, tx_ref, sender_org_id, recipient_org_id, uploaded_by_
   ('c0000000-0000-4000-8000-000000000013', 'TX-1013',
     'a0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000004',
     'documents/TX-1013.pdf', 'discharge_summary_confidential.pdf', 187392, 'discharge_summary', 'Discharge summary — confidential, restricted access', 'normal', 'routed',
-    'Routed to Metro General only; unauthorized access attempt logged from St. Mercy Clinic.', now() - interval '1 day', NULL, NULL);
+    'Routed to Metro General only; unauthorized access attempt logged from St. Mercy General.', now() - interval '1 day', NULL, NULL);
 
 -- document_text: OCR completed for TX-1011 before rejection; failed OCR row
 -- for TX-1012 (no extracted text); completed OCR for TX-1013.

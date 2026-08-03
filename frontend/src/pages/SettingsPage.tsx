@@ -24,7 +24,6 @@ export default function SettingsPage() {
                 active={activeSection}
                 onChange={setActiveSection}
             />
-
             <div className="flex-1 min-w-0">
                 {activeSection === 'organization' && <OrganizationSettings />}
                 {activeSection === 'appearance' && <AppearanceSettings />}

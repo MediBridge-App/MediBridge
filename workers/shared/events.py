@@ -27,3 +27,18 @@ def validate_document_sent(event):
 
     validate(instance=event, schema=schema)
     return event
+
+
+def validate_document_analysis(
+    analysis: dict[str, Any],
+) -> dict[str, Any]:
+    schema_path = (
+        Path(__file__).resolve().parents[2]
+        / "contracts"
+        / "ai"
+        / "document-analysis.schema.json"
+    )
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+
+    validate(instance=analysis, schema=schema)
+    return analysis

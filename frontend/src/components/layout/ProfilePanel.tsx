@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { X, Camera, Send, Inbox, Activity, Edit2, LogOut } from 'lucide-react'
+import { X, Camera, LogOut, UserCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { signOut } from 'aws-amplify/auth'
+import { useAuth } from '../../hooks/useAuth'
 
 interface ProfilePanelProps {
     onClose: () => void
@@ -9,34 +11,57 @@ interface ProfilePanelProps {
 const TABS = ['Profile', 'Preferences', 'Security'] as const
 type Tab = typeof TABS[number]
 
+// Same role -> display label mapping used in Security's UserAccessList,
+// since the backend only sends the raw role value (e.g. "provider").
+const roleLabelMap: Record<string, string> = {
+    organization_admin: 'Administrator',
+    provider: 'Physician',
+    registered_nurse: 'Registered Nurse',
+    referral_coordinator: 'Referral Coordinator',
+    medical_assistant: 'Medical Assistant',
+}
+
+function formatLastLogin(isoString: string | null): string {
+    if (!isoString) return 'Not available'
+    const date = new Date(isoString)
+    return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    })
+}
+
 export default function ProfilePanel({ onClose }: ProfilePanelProps) {
     const navigate = useNavigate()
+    const { user } = useAuth()
     const [activeTab, setActiveTab] = useState<Tab>('Profile')
 
-    function handleSignOut() {
+    const roleLabel = user?.role ? (roleLabelMap[user.role] ?? user.role) : '...'
+
+    async function handleSignOut() {
+        try {
+            await signOut()
+        } catch (err) {
+            console.error('Sign out error:', err)
+        }
+        onClose()
         navigate('/login')
     }
 
     return (
         <div
             className="fixed inset-0 z-50 flex justify-end"
-            style={{ zIndex: 9999 }}
             onClick={onClose}
+            style={{ zIndex: 9999 }}
         >
             {/* Backdrop */}
-            <div className="fixed inset-0"
-                style={{ background: "rgba(13,27,42,0.45)", backdropFilter: "blur(2px)" }} />
+            <div className="absolute inset-0 bg-black/20" />
 
             {/* Panel */}
             <div
-                className="fixed right-0 top-0 bottom-0 z-50 flex flex-col overflow-hidden"
-                style={{
-                    width: 420,
-                    background: "#ffffff",
-                    borderLeft: "1px solid rgba(14, 116, 144, 0.12)",
-                    boxShadow: "-12px 0 40px rgba(13,27,42,0.18)",
-                    fontFamily: "'Inter', sans-serif",
-                }}
+                className="relative flex flex-col bg-white shadow-2xl overflow-hidden"
+                style={{ width: 380 }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -57,7 +82,10 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                             className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold"
                             style={{ backgroundColor: '#0e7490' }}
                         >
-                            JR
+                            {user?.initials
+                                ? user.initials
+                                : <UserCircle size={40} className="text-white" />
+                            }
                         </div>
                         <button
                             className="absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center text-white"
@@ -66,33 +94,17 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                             <Camera size={12} />
                         </button>
                     </div>
-                    <div className="text-sm font-bold text-slate-900">Dr. James Rivera</div>
+                    <div className="text-sm font-bold text-slate-900">
+                        {user?.fullName || 'Loading...'}
+                    </div>
                     <div className="text-xs text-slate-500 mt-0.5">
-                        Physician · Internal Medicine
+                        {roleLabel}{user?.specialty ? ` · ${user.specialty}` : ''}
                     </div>
                     <div
                         className="text-xs font-medium mt-1"
                         style={{ color: '#0e7490' }}
                     >
-                        St. Mercy General
-                    </div>
-
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-3 w-full mt-4">
-                        {[
-                            { icon: <Send size={14} />, value: '284', label: 'Sent' },
-                            { icon: <Inbox size={14} />, value: '371', label: 'Received' },
-                            { icon: <Activity size={14} />, value: '47', label: 'This Month' },
-                        ].map((s) => (
-                            <div
-                                key={s.label}
-                                className="flex flex-col items-center gap-1 p-2 rounded-lg border border-slate-100"
-                            >
-                                <span className="text-slate-400">{s.icon}</span>
-                                <span className="text-sm font-bold text-slate-800">{s.value}</span>
-                                <span className="text-xs text-slate-400">{s.label}</span>
-                            </div>
-                        ))}
+                        {user?.organizationName || '...'}
                     </div>
                 </div>
 
@@ -119,26 +131,18 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                 <div className="flex-1 overflow-y-auto p-5">
                     {activeTab === 'Profile' && (
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                                    Personal Information
-                                </h3>
-                                <button
-                                    className="flex items-center gap-1 text-xs font-medium"
-                                    style={{ color: '#0e7490' }}
-                                >
-                                    <Edit2 size={11} /> Edit
-                                </button>
-                            </div>
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                Personal Information
+                            </h3>
 
                             {[
-                                { label: 'Full Name', value: 'Dr. James Rivera' },
-                                { label: 'Work Email', value: 'j.rivera@stmercy.org' },
-                                { label: 'Role', value: 'Physician' },
-                                { label: 'Organization', value: 'St. Mercy General' },
-                                { label: 'Specialty', value: 'Internal Medicine' },
-                                { label: 'NPI Number', value: '1234567890' },
-                                { label: 'Organization ID', value: 'ORG-00142' },
+                                { label: 'Full Name', value: user?.fullName || '...' },
+                                { label: 'Work Email', value: user?.email || '...' },
+                                { label: 'Role', value: roleLabel },
+                                { label: 'Organization', value: user?.organizationName || '...' },
+                                { label: 'Specialty', value: user?.specialty || 'Not specified' },
+                                { label: 'NPI Number', value: user?.npiNumber || 'Not on file' },
+                                { label: 'Organization ID', value: user?.orgCode || '...' },
                             ].map((field) => (
                                 <div key={field.label}>
                                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
@@ -153,10 +157,8 @@ export default function ProfilePanel({ onClose }: ProfilePanelProps) {
                                 </div>
                             ))}
 
-                            <div
-                                className="text-xs text-slate-400 font-mono py-2"
-                            >
-                                Last login: Today, 08:30 AM · IP 10.0.1.44
+                            <div className="text-xs text-slate-400 font-mono py-2">
+                                Last login: {formatLastLogin(user?.lastLogin ?? null)}
                             </div>
                         </div>
                     )}

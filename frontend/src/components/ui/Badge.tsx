@@ -14,6 +14,8 @@ type BadgeVariant =
     | 'discharge_summary'
     | 'insurance_form'
     | 'imaging'
+    | 'rejected'
+    | 'ocr_failed'
 
 interface BadgeProps {
     label: string
@@ -39,6 +41,8 @@ const styles: Record<BadgeVariant, string> = {
     discharge_summary: 'bg-violet-50 text-violet-600 border border-violet-200',
     insurance_form: 'bg-violet-50 text-violet-600 border border-violet-200',
     imaging: 'bg-violet-50 text-violet-600 border border-violet-200',
+    rejected: 'bg-red-50 text-red-700 border border-red-200',
+    ocr_failed: 'bg-orange-50 text-orange-700 border border-orange-200',
 }
 
 const labels: Record<BadgeVariant, string> = {
@@ -55,6 +59,8 @@ const labels: Record<BadgeVariant, string> = {
     discharge_summary: 'Discharge',
     insurance_form: 'Insurance',
     imaging: 'Imaging',
+    rejected: 'Rejected',
+    ocr_failed: 'OCR Failed',
 }
 
 export default function Badge({ label, variant }: BadgeProps) {

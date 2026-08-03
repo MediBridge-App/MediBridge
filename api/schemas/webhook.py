@@ -12,7 +12,6 @@ class WebhookCreate(BaseModel):
     events: list[str]
 
 
-
 class WebhookResponse(BaseModel):
 
     id: UUID
@@ -26,7 +25,6 @@ class WebhookResponse(BaseModel):
     is_active: bool
 
     created_at: datetime
-
 
     class Config:
         from_attributes = True

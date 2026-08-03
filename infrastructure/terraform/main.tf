@@ -81,6 +81,8 @@ module "alb" {
   vpc_id            = module.network.vpc_id
   public_subnet_ids = module.network.public_subnet_ids
   security_group_id = module.network.alb_security_group_id
+  domain_name       = var.domain_name
+  hosted_zone_id    = var.hosted_zone_id
 }
 
 module "ecs" {
@@ -102,7 +104,7 @@ module "ecs" {
   # Start at 0 until Bella has pushed an image. With no image to pull the
   # service restart-loops and the ALB reports the target permanently unhealthy.
   # Raise to 1 once `docker push` has happened.
-  desired_count = 0
+  desired_count = 1
 
   # Creating a service against a target group with no listener attached fails.
   depends_on = [module.alb]
@@ -120,11 +122,8 @@ module "lambda" {
   source_queue_arn = module.sqs.processing_queue_arn
   document_bucket  = module.s3.bucket_name
   kms_key_arn      = module.kms.key_arn
-
-  # Not in a VPC for now — reaches Textract/Bedrock/S3 over public AWS
-  # endpoints and updates status via the backend API. Pass the private app
-  # subnets here only if the worker needs to hit RDS directly.
-  app_subnet_ids = []
+  backend_api_url  = module.alb.url
+  app_secrets_arn  = module.secrets.app_secrets_arn
 }
 
 # module "observability" {
@@ -132,3 +131,8 @@ module "lambda" {
 #   name_prefix = local.name_prefix
 #   kms_key_arn = module.kms.key_arn
 # }
+
+module "frontend_hosting" {
+  source      = "./modules/frontend-hosting"
+  name_prefix = local.name_prefix
+}

@@ -1,17 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Building2, X } from 'lucide-react'
 import type { Organization } from '../../types'
+import { organizationsApi } from '../../api'
 
-const MOCK_ORGANIZATIONS: Organization[] = [
-    { id: 'ORG-00307', name: 'City Lab Partners', type: 'Laboratory', location: 'Chicago, IL' },
-    { id: 'ORG-00291', name: 'Riverside Cardiology Group', type: 'Specialty Clinic', location: 'Evanston, IL' },
-    { id: 'ORG-00198', name: 'Riverside Medical Center', type: 'Hospital', location: 'Oak Park, IL' },
-    { id: 'ORG-00082', name: 'BlueCross Admin Services', type: 'Insurance', location: 'Downers Grove, IL' },
-    { id: 'ORG-00156', name: 'RadTech Imaging Center', type: 'Radiology', location: 'Naperville, IL' },
-    { id: 'ORG-00044', name: 'Quest Diagnostics', type: 'Laboratory', location: 'Schaumburg, IL' },
-    { id: 'ORG-00215', name: 'Northwestern Medicine', type: 'Hospital System', location: 'Chicago, IL' },
-    { id: 'ORG-00178', name: 'Advocate Aurora Health', type: 'Hospital System', location: 'Milwaukee, WI' },
-]
+// Shape of a single org from GET /organizations — field names per the
+// OpenAPI schema, not yet verified against a real response (same caveat
+// as the org lookup we built for Inbox). Adjust if real data differs.
+type ApiOrganization = {
+    id: string
+    name: string
+    org_code?: string
+    type?: string
+    location?: string
+}
+
+function mapOrg(o: ApiOrganization): Organization {
+    return {
+        id: o.id,
+        name: o.name,
+        orgCode: o.org_code,
+        type: o.type ?? 'Healthcare Organization',
+        location: o.location,
+    }
+}
 
 interface RecipientSearchProps {
     selected: Organization | null
@@ -21,8 +32,27 @@ interface RecipientSearchProps {
 export default function RecipientSearch({ selected, onSelect }: RecipientSearchProps) {
     const [search, setSearch] = useState('')
     const [isOpen, setIsOpen] = useState(false)
+    const [organizations, setOrganizations] = useState<Organization[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState(false)
 
-    const filtered = MOCK_ORGANIZATIONS.filter((o) =>
+    useEffect(() => {
+        async function fetchOrgs() {
+            setIsLoading(true)
+            try {
+                const data: ApiOrganization[] = await organizationsApi.getAll()
+                setOrganizations((data ?? []).map(mapOrg))
+                setError(false)
+            } catch {
+                setError(true)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchOrgs()
+    }, [])
+
+    const filtered = organizations.filter((o) =>
         o.name.toLowerCase().includes(search.toLowerCase()) ||
         o.id.toLowerCase().includes(search.toLowerCase())
     )
@@ -43,7 +73,9 @@ export default function RecipientSearch({ selected, onSelect }: RecipientSearchP
                     <div className="flex-1">
                         <div className="text-sm font-semibold text-slate-800">{selected.name}</div>
                         <div className="text-xs text-slate-400 font-mono">
-                            {selected.id} · {selected.type} · {selected.location}
+                            {selected.orgCode ?? selected.id}
+                            {selected.type ? ` · ${selected.type}` : ''}
+                            {selected.location ? ` · ${selected.location}` : ''}
                         </div>
                     </div>
                     <button onClick={() => onSelect(null)}>
@@ -54,7 +86,7 @@ export default function RecipientSearch({ selected, onSelect }: RecipientSearchP
                 // Search state
                 <div className="relative">
                     <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 bg-slate-50 border border-slate-200">
-                        <Search size={14} className="text-slate-400 flex-shrink-0" />
+                        <Search size={14} className="text-slate-400 shrink-0" />
                         <input
                             value={search}
                             onChange={(e) => {
@@ -63,14 +95,21 @@ export default function RecipientSearch({ selected, onSelect }: RecipientSearchP
                             }}
                             onFocus={() => setIsOpen(true)}
                             onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-                            placeholder="Search organizations by name or ID…"
+                            placeholder={isLoading ? 'Loading organizations…' : 'Search organizations by name or ID…'}
+                            disabled={isLoading}
                             className="flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder-slate-400"
                         />
                     </div>
 
+                    {error && (
+                        <p className="text-xs text-red-600 mt-1.5">
+                            Couldn't load organizations. Try refreshing the page.
+                        </p>
+                    )}
+
                     {/* Dropdown */}
-                    {isOpen && filtered.length > 0 && (
-                        <div className="absolute z-10 w-full rounded-xl mt-1 overflow-hidden bg-white border border-slate-200 shadow-lg">
+                    {isOpen && !isLoading && filtered.length > 0 && (
+                        <div className="absolute z-10 w-full rounded-xl mt-1 overflow-hidden bg-white border border-slate-200 shadow-lg max-h-64 overflow-y-auto">
                             {filtered.map((org) => (
                                 <button
                                     key={org.id}
@@ -85,7 +124,9 @@ export default function RecipientSearch({ selected, onSelect }: RecipientSearchP
                                     <div>
                                         <div className="text-sm font-medium text-slate-800">{org.name}</div>
                                         <div className="text-xs text-slate-400 font-mono">
-                                            {org.id} · {org.type} · {org.location}
+                                            {org.orgCode ?? org.id}
+                                            {org.type ? ` · ${org.type}` : ''}
+                                            {org.location ? ` · ${org.location}` : ''}
                                         </div>
                                     </div>
                                 </button>

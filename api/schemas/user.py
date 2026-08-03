@@ -10,21 +10,18 @@ class UserResponse(BaseModel):
     role: str
 
     specialty: str | None = None
-    npi_number: str | None = None 
+    npi_number: str | None = None
 
     is_active: bool
     last_login: datetime | None = None
-
 
     class Config:
         from_attributes = True
 
 
-
 class UserRoleUpdate(BaseModel):
 
     role: str
-
 
 
 class UserStatusUpdate(BaseModel):

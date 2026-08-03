@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AIHeader from '../components/ai/AIHeader'
 import AIStats from '../components/ai/AIStats'
 import AIDonutChart from '../components/ai/AIDonutChart'
@@ -6,70 +6,121 @@ import AICapabilities from '../components/ai/AICapabilities'
 import AIPipeline from '../components/ai/AIPipeline'
 import AIHistoryItem from '../components/ai/AIHistoryItem'
 import type { Analysis } from '../components/ai/AIHistoryItem'
+import { aiApi } from '../api'
 
-const RECENT_ANALYSES: Analysis[] = [
-    {
-        txId: 'TX-8821',
-        type: 'Lab Report',
-        category: 'Laboratory',
-        summary: 'Routine CBC and CMP results. WBC within normal range (6.2 × 10³/µL). Hemoglobin slightly low at 11.4 g/dL — monitor for anemia.',
-        tags: ['Routine CBC', 'Metabolic Panel', 'Monitor Hemoglobin'],
-        confidence: 97,
-        urgencyFlag: false,
-        processingMs: 840,
-        model: 'Claude claude-haiku-4-5',
-        entities: ['WBC: 6.2', 'Hgb: 11.4', 'CMP: Normal'],
-    },
-    {
-        txId: 'TX-8820',
-        type: 'Referral',
-        category: 'Referral',
-        summary: 'Cardiology referral for 58-year-old male with new-onset chest pain and exertional dyspnea. Requesting stress echocardiogram. ECG shows minor ST changes.',
-        tags: ['Cardiology', 'Chest Pain', 'Echocardiogram Requested', 'Urgent'],
-        confidence: 99,
-        urgencyFlag: true,
-        processingMs: 1120,
-        model: 'Claude claude-haiku-4-5',
-        entities: ['Age: 58M', 'ST changes', 'Echocardiogram'],
-    },
-    {
-        txId: 'TX-8819',
-        type: 'Discharge Summary',
-        category: 'Discharge',
-        summary: 'Discharge following uncomplicated laparoscopic appendectomy. Day 2 post-op. Follow-up within 7 days, activity restrictions for 2 weeks.',
-        tags: ['Post-surgical', 'Follow-up Required', 'Appendectomy'],
-        confidence: 95,
-        urgencyFlag: false,
-        processingMs: 1340,
-        model: 'Claude claude-haiku-4-5',
-        entities: ['Appendectomy', 'Day 2 post-op', '7-day follow-up'],
-    },
-    {
-        txId: 'TX-8818',
-        type: 'Insurance Form',
-        category: 'Insurance',
-        summary: "Prior authorization for Adalimumab (Humira) 40mg. Crohn's disease diagnosis. Signature and clinical documentation required. Deadline June 17.",
-        tags: ['Pre-auth', 'Biologics', 'Action Required', 'Deadline'],
-        confidence: 92,
-        urgencyFlag: true,
-        processingMs: 980,
-        model: 'Claude claude-haiku-4-5',
-        entities: ["Adalimumab 40mg", "Crohn's disease", 'June 17 deadline'],
-    },
-]
+// Shape of a single analysis as it comes back from GET /ai/analyses
+// (matches the AIAnalysisResponse schema in the backend)
+type ApiAnalysis = {
+    id: string
+    document_id: string
+    document_type: string | null
+    summary: string | null
+    tags: string[] | null
+    recommendation_text: string | null
+    recommendation_type: string | null
+    urgency_detected: boolean
+    confidence_score: string | null // sent as a string, but represents 0-100 (e.g. "92.5"), confirmed via Ayesha's schema
+    processing_time_ms: number | null
+    model_used: string | null
+    status: string
+    created_at: string
+}
+
+const categoryLabels: Record<string, string> = {
+    lab_result: 'Laboratory',
+    referral: 'Referral',
+    discharge_summary: 'Discharge',
+    insurance_form: 'Insurance',
+    imaging: 'Imaging',
+}
+
+// NOTE: the API doesn't send a tx_ref for analyses, only document_id (a UUID).
+// Same limitation as Inbox/Audit — showing the UUID for now. If we cross-reference
+// against inbox/sent document lists later we could resolve this to a real tx_ref.
+//
+// NOTE: the API also doesn't send "entities" at all — that field was mock-only.
+// Falling back to tags for now so AIHistoryItem doesn't break; revisit if Ayesha's
+// Lambda starts returning something entity-like under a different field name.
+//
+// Confirmed via Ayesha's document-analysis.schema.json: confidence_score is
+// already a 0-100 number from the Lambda. The backend's OpenAPI spec shows it
+// serialized as a string (likely a DB Decimal -> str conversion), so we just
+// parse it back to a number — no scaling needed.
+function mapAnalysis(a: ApiAnalysis): Analysis {
+    const confidencePct = a.confidence_score ? Math.round(parseFloat(a.confidence_score)) : 0
+
+    return {
+        txId: a.document_id,
+        type: a.document_type ?? 'unknown',
+        category: (a.document_type && categoryLabels[a.document_type]) ?? 'Other',
+        summary: a.summary ?? 'AI analysis pending — document is being processed.',
+        tags: a.tags ?? [],
+        confidence: confidencePct,
+        urgencyFlag: a.urgency_detected,
+        processingMs: a.processing_time_ms ?? 0,
+        model: a.model_used ?? 'Unknown',
+        entities: a.tags ?? [], // placeholder — see note above
+    }
+}
 
 export default function AIAnalysisPage() {
     const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview')
     const [selected, setSelected] = useState<Analysis | null>(null)
+    const [analyses, setAnalyses] = useState<Analysis[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState(false)
+
+    useEffect(() => {
+        async function fetchData() {
+            setIsLoading(true)
+            try {
+                const data: ApiAnalysis[] = await aiApi.getAnalyses()
+                if (data && data.length > 0) {
+                    setAnalyses(data.map(mapAnalysis))
+                }
+                setError(false)
+            } catch {
+                setError(true)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchData()
+    }, [])
 
     function handleSelect(doc: Analysis) {
         setSelected(selected?.txId === doc.txId ? null : doc)
     }
 
+    function handleRetry() {
+        setIsLoading(true)
+        setError(false)
+        aiApi.getAnalyses()
+            .then((data: ApiAnalysis[]) => {
+                if (data && data.length > 0) {
+                    setAnalyses(data.map(mapAnalysis))
+                }
+                setError(false)
+            })
+            .catch(() => setError(true))
+            .finally(() => setIsLoading(false))
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div
+                    className="animate-spin rounded-full h-8 w-8 border-b-2"
+                    style={{ borderColor: '#0e7490' }}
+                />
+            </div>
+        )
+    }
+
     return (
         <div
-            className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white"
-            style={{ minHeight: 'calc(100vh - 120px)' }}
+            className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white"
+            style={{ height: 'calc(100vh - 120px)' }}
         >
             <AIHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -86,16 +137,32 @@ export default function AIAnalysisPage() {
                 )}
 
                 {activeTab === 'history' && (
-                    <div className="space-y-3">
-                        {RECENT_ANALYSES.map((doc) => (
-                            <AIHistoryItem
-                                key={doc.txId}
-                                doc={doc}
-                                isActive={selected?.txId === doc.txId}
-                                onClick={() => handleSelect(doc)}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        {error && (
+                            <div className="flex flex-col items-center justify-center h-40 gap-3">
+                                <p className="text-sm text-slate-600">
+                                    Failed to load AI analyses — showing sample data.
+                                </p>
+                                <button
+                                    onClick={handleRetry}
+                                    className="text-xs font-medium px-4 py-2 rounded-lg border border-slate-200"
+                                    style={{ color: '#0e7490' }}
+                                >
+                                    Try again
+                                </button>
+                            </div>
+                        )}
+                        <div className="space-y-3">
+                            {analyses.map((doc) => (
+                                <AIHistoryItem
+                                    key={doc.txId}
+                                    doc={doc}
+                                    isActive={selected?.txId === doc.txId}
+                                    onClick={() => handleSelect(doc)}
+                                />
+                            ))}
+                        </div>
+                    </>
                 )}
             </div>
         </div>

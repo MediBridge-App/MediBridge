@@ -33,3 +33,13 @@ variable "az_count" {
   type        = number
   default     = 2
 }
+
+variable "domain_name" {
+  description = "Registered domain for the app (e.g. medibridge.click). App served at app.<domain_name>."
+  type        = string
+}
+
+variable "hosted_zone_id" {
+  description = "Route 53 hosted zone ID for domain_name."
+  type        = string
+}

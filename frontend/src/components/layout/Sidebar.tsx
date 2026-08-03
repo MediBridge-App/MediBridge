@@ -13,6 +13,7 @@ import {
 import { clsx } from 'clsx'
 import { useInbox } from '../../hooks/useInbox';
 import { useNotifications } from '../../hooks/useNotifications'
+import { useAuth } from '../../hooks/useAuth'
 
 const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -29,12 +30,13 @@ const systemItems = [
 ]
 
 interface SidebarProps {
-  onProfileClick: () => void
+    onProfileClick: () => void
 }
 
 export default function Sidebar({ onProfileClick }: SidebarProps) {
     const { unreadCount } = useInbox()
     const { unreadCount: notifCount } = useNotifications()
+    const { user } = useAuth()
 
 
     return (
@@ -62,10 +64,11 @@ export default function Sidebar({ onProfileClick }: SidebarProps) {
             </div>
 
             {/* Organization */}
-            <div className="px-4 py-3 border-b border-white/10">
-                <div className="text-white text-sm font-medium">St. Mercy Clinic</div>
-                <div className="text-xs" style={{ color: '#64748b' }}>ORG-STMERCY</div>
-            </div>
+            {user && (
+                <div className="px-4 py-3 border-b border-white/10">
+                    <div className="text-white text-sm font-medium">{user.organizationName || "..."}</div>
+                    <div className="text-xs" style={{ color: '#64748b' }}>{user.orgCode || ''}</div>
+                </div>)}
 
             {/* Main nav */}
             <nav className="flex-1 overflow-y-auto px-3 py-4">
@@ -141,23 +144,24 @@ export default function Sidebar({ onProfileClick }: SidebarProps) {
             </nav>
 
             {/* User footer */}
-            <div className="px-3 py-4 border-t border-white/10">
-                <button
-                    onClick={onProfileClick}
-                    className="flex items-center gap-3 px-2 py-1.5 w-full rounded-lg hover:bg-white/5 transition-colors"
-                >
-                    <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                        style={{ backgroundColor: '#0ea5a0' }}
+            {user && (
+                <div className="px-3 py-4 border-t border-white/10">
+                    <button
+                        onClick={onProfileClick}
+                        className="flex items-center gap-3 px-2 py-1.5 w-full rounded-lg hover:bg-white/5 transition-colors"
                     >
-                        JR
-                    </div>
-                    <div className="text-left">
-                        <div className="text-white text-sm font-medium">Dr. James Rivera</div>
-                        <div className="text-xs" style={{ color: '#64748b' }}>provider</div>
-                    </div>
-                </button>
-            </div>
+                        <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                            style={{ backgroundColor: '#0ea5a0' }}
+                        >
+                            {user?.initials || '??'}
+                        </div>
+                        <div className="text-left">
+                            <div className="text-white text-sm font-medium">{user?.fullName ?? <span className="animate-pulse bg-slate-600 rounded h-3 w-24 block" />}</div>
+                            <div className="text-xs" style={{ color: '#64748b' }}>{user?.email || ''}</div>
+                        </div>
+                    </button>
+                </div>)}
         </aside>
     )
 }

@@ -34,7 +34,7 @@ export default function InboxToolbar({
 
       {/* Search */}
       <div className="flex items-center gap-2 rounded-lg px-3 py-2 mb-3 bg-slate-50 border border-slate-200">
-        <Search size={14} className="text-slate-400 flex-shrink-0" />
+        <Search size={14} className="text-slate-400 shrink-0" />
         <input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -50,7 +50,7 @@ export default function InboxToolbar({
 
       {/* Filters */}
       <div className="flex items-center gap-2">
-        <Filter size={13} className="text-slate-400 flex-shrink-0" />
+        <Filter size={13} className="text-slate-400 shrink-0" />
         <div className="flex gap-1.5">
           {['all', 'pending', 'delivered', 'read'].map((s) => (
             <button

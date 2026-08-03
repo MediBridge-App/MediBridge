@@ -1,4 +1,5 @@
 import type { DocumentType, DocumentStatus, DocumentPriority } from "../types";
+import type { Analysis } from '../components/ai/AIHistoryItem'
 
 export const MOCK_STATS = {
   documentsSent: 284,
@@ -65,6 +66,7 @@ export const MOCK_RECENT = [
 export const MOCK_INBOX = [
   {
     id: "TX-8821",
+    docId: "mock-8821-0000-4000-8000-000000000001",
     type: "Lab Report",
     subject: "Complete Blood Count + Metabolic Panel",
     from: "City Lab Partners",
@@ -85,6 +87,7 @@ export const MOCK_INBOX = [
   },
   {
     id: "TX-8820",
+    docId: "mock-8820-0000-4000-8000-000000000002",
     type: "Referral",
     subject: "Cardiology Consult — Patient #P-94821",
     from: "Dr. Sarah Chen, MD",
@@ -105,6 +108,7 @@ export const MOCK_INBOX = [
   },
   {
     id: "TX-8819",
+    docId: "mock-8819-0000-4000-8000-000000000003",
     type: "Discharge Summary",
     subject: "Post-Surgical Discharge — Laparoscopic Appendectomy",
     from: "Riverside Medical Center",
@@ -125,6 +129,7 @@ export const MOCK_INBOX = [
   },
   {
     id: "TX-8818",
+    docId: "mock-8818-0000-4000-8000-000000000004",
     type: "Insurance Form",
     subject: "Prior Authorization — Adalimumab (Humira)",
     from: "BlueCross Admin",
@@ -145,6 +150,7 @@ export const MOCK_INBOX = [
   },
   {
     id: "TX-8817",
+    docId: "mock-8817-0000-4000-8000-000000000005",
     type: "Imaging Report",
     subject: "MRI Brain with Contrast — Routine Follow-up",
     from: "RadTech Imaging Center",
@@ -162,9 +168,11 @@ export const MOCK_INBOX = [
     documentType: "imaging" as DocumentType,
     priority: "normal" as DocumentPriority,
     isUnread: false,
+    urgencyFlag: true,
   },
   {
     id: "TX-8816",
+    docId: "mock-8816-0000-4000-8000-000000000006",
     type: "Lab Report",
     subject: "HbA1c + Lipid Panel — Diabetic Monitoring",
     from: "Quest Diagnostics",
@@ -182,6 +190,7 @@ export const MOCK_INBOX = [
     documentType: "lab_result" as DocumentType,
     priority: "urgent" as DocumentPriority,
     isUnread: true,
+    urgencyFlag: true,
   },
 ];
 
@@ -365,3 +374,54 @@ export const MOCK_NOTIFICATIONS = [
     icon: "document",
   },
 ];
+
+export const MOCK_AI_ANALYSES: Analysis[] = [
+  {
+    txId: 'TX-8821',
+    type: 'Lab Report',
+    category: 'Laboratory',
+    summary: 'Routine CBC and CMP results. WBC within normal range (6.2 × 10³/µL). Hemoglobin slightly low at 11.4 g/dL — monitor for anemia.',
+    tags: ['Routine CBC', 'Metabolic Panel', 'Monitor Hemoglobin'],
+    confidence: 97,
+    urgencyFlag: false,
+    processingMs: 840,
+    model: 'Claude claude-haiku-4-5',
+    entities: ['WBC: 6.2', 'Hgb: 11.4', 'CMP: Normal'],
+  },
+  {
+    txId: 'TX-8820',
+    type: 'Referral',
+    category: 'Referral',
+    summary: 'Cardiology referral for 58-year-old male with new-onset chest pain and exertional dyspnea. Requesting stress echocardiogram.',
+    tags: ['Cardiology', 'Chest Pain', 'Echocardiogram Requested', 'Urgent'],
+    confidence: 99,
+    urgencyFlag: true,
+    processingMs: 1120,
+    model: 'Claude claude-haiku-4-5',
+    entities: ['Age: 58M', 'ST changes', 'Echocardiogram'],
+  },
+  {
+    txId: 'TX-8819',
+    type: 'Discharge Summary',
+    category: 'Discharge',
+    summary: 'Discharge following uncomplicated laparoscopic appendectomy. Day 2 post-op. Follow-up within 7 days.',
+    tags: ['Post-surgical', 'Follow-up Required', 'Appendectomy'],
+    confidence: 95,
+    urgencyFlag: false,
+    processingMs: 1340,
+    model: 'Claude claude-haiku-4-5',
+    entities: ['Appendectomy', 'Day 2 post-op', '7-day follow-up'],
+  },
+  {
+    txId: 'TX-8818',
+    type: 'Insurance Form',
+    category: 'Insurance',
+    summary: "Prior authorization for Adalimumab (Humira) 40mg. Crohn's disease diagnosis. Deadline June 17.",
+    tags: ['Pre-auth', 'Biologics', 'Action Required', 'Deadline'],
+    confidence: 92,
+    urgencyFlag: true,
+    processingMs: 980,
+    model: 'Claude claude-haiku-4-5',
+    entities: ["Adalimumab 40mg", "Crohn's disease", 'June 17 deadline'],
+  },
+]
