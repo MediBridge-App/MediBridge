@@ -121,6 +121,30 @@
       "value": "22220000-0000-4000-8000-000000000008",
       "type": "string",
       "description": "processing_error notification"
+    },
+    {
+      "key": "webhook_id",
+      "value": "88880000-0000-4000-8000-000000000001",
+      "type": "string",
+      "description": "St. Mercy's EHR Sync Webhook"
+    },
+    {
+      "key": "api_key_id",
+      "value": "77770000-0000-4000-8000-000000000001",
+      "type": "string",
+      "description": "St. Mercy's Production Key"
+    },
+    {
+      "key": "task_id",
+      "value": "44440000-0000-4000-8000-000000000001",
+      "type": "string",
+      "description": "Review abnormal lipid panel results task"
+    },
+    {
+      "key": "internal_api_key",
+      "value": "",
+      "type": "string",
+      "description": "AI_INTERNAL_API_KEY value (medibridge-dev/app/secrets) — used as X-API-Key on Internal AI requests, not bearer auth"
     }
   ],
   "item": [
@@ -178,7 +202,7 @@
                 "login"
               ]
             },
-            "description": "NOTE: as of 2026-07-23 this is temporary/mocked auth on the backend  it returns a fake token and a fixed fake user regardless of credentials. Downstream endpoints (documents/inbox, documents/sent) also use hardcoded placeholder org/user IDs, not real seed data IDs, until Cognito/JWT is wired up."
+            "description": "Returns access_token, id_token, refresh_token, and user. Downstream requests in this collection authenticate with id_token, not access_token — the backend's get_current_user only accepts tokens where token_use == \"id\" (api/dependencies/auth.py), matching the frontend's auth flow. Copy the id_token value from the response into the access_token collection variable."
           }
         },
         {
@@ -310,8 +334,7 @@
                   "description": "optional filter: uploaded | ocr_complete | classified | routed | delivered | rejected | ocr_failed"
                 }
               ]
-            },
-            "description": "NOTE: as of 2026-07-23 the backend does not filter by ?status yet it returns all documents for the current org regardless of the query param. Also uses a hardcoded placeholder org ID until auth is wired up, so results won't match seed_data.sql org IDs yet."
+            }
           }
         },
         {
@@ -395,6 +418,24 @@
           }
         },
         {
+          "name": "Get download URL",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_delivered_id}}/download-url",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "{{doc_delivered_id}}",
+                "download-url"
+              ]
+            },
+            "description": "Returns a presigned S3 URL that expires in 15 minutes."
+          }
+        },
+        {
           "name": "Send document",
           "request": {
             "method": "POST",
@@ -444,6 +485,23 @@
                 "documents",
                 "{{doc_uploaded_id}}",
                 "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark document as read",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_uploaded_id}}/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "{{doc_uploaded_id}}",
+                "read"
               ]
             }
           }
@@ -552,6 +610,22 @@
               ]
             }
           }
+        },
+        {
+          "name": "Delete notification",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/notifications/{{notification_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notification_id}}"
+              ]
+            }
+          }
         }
       ]
     },
@@ -559,17 +633,49 @@
       "name": "AI Analysis",
       "item": [
         {
-          "name": "Get all AI analyses",
+          "name": "Get AI stats",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/ai/analysis",
+              "raw": "{{base_url}}/ai/stats",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "ai",
-                "analysis"
+                "stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get AI categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/ai/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "categories"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get all AI analyses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/ai/analyses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "analyses"
               ]
             }
           }
@@ -579,15 +685,50 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/ai/analysis/{{doc_delivered_id}}",
+              "raw": "{{base_url}}/ai/analyses/{{doc_delivered_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "ai",
-                "analysis",
+                "analyses",
                 "{{doc_delivered_id}}"
               ]
+            }
+          }
+        },
+        {
+          "name": "Internal — Create/update AI analysis",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/internal/ai/analyses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "internal",
+                "ai",
+                "analyses"
+              ]
+            },
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{internal_api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document_id\": \"{{doc_uploaded_id}}\",\n  \"document_type\": \"lab_result\",\n  \"summary\": \"Lipid panel showing elevated LDL and triglycerides.\",\n  \"tags\": [\n    \"lab\",\n    \"lipid_panel\",\n    \"abnormal\"\n  ],\n  \"recommendation_text\": \"Review abnormal lab results with patient.\",\n  \"recommendation_type\": \"review_results\",\n  \"urgency_detected\": true,\n  \"confidence_score\": 94.1,\n  \"processing_time_ms\": 765,\n  \"model_used\": \"claude-haiku-4-5\",\n  \"status\": \"complete\"\n}"
+            },
+            "description": "Called by Ayesha's Lambda worker after Textract/Bedrock processing. Uses X-API-Key auth (AI_INTERNAL_API_KEY), not the collection's bearer token — set the internal_api_key variable before running this.",
+            "auth": {
+              "type": "noauth"
             }
           }
         }
@@ -624,6 +765,32 @@
                 "organizations",
                 "{{org_stmercy_id}}"
               ]
+            }
+          }
+        },
+        {
+          "name": "Update organization",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/organizations/{{org_stmercy_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "organizations",
+                "{{org_stmercy_id}}"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"St. Mercy General\"\n}"
             }
           }
         }
@@ -698,6 +865,296 @@
                 "{{user_maria_id}}",
                 "status"
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Security Settings",
+      "item": [
+        {
+          "name": "Get security settings",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/security/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "security",
+                "settings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update security settings",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/security/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "security",
+                "settings"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mfa_enabled\": true\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Webhooks",
+          "item": [
+            {
+              "name": "Get webhooks",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/settings/webhooks",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "settings",
+                    "webhooks"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create webhook",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/settings/webhooks",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "settings",
+                    "webhooks"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"New Integration Webhook\",\n  \"url\": \"https://example.org/hooks/medibridge\",\n  \"events\": [\n    \"doc.sent\",\n    \"doc.received\"\n  ]\n}"
+                }
+              }
+            },
+            {
+              "name": "Delete webhook",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{base_url}}/settings/webhooks/{{webhook_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "settings",
+                    "webhooks",
+                    "{{webhook_id}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "API Keys",
+          "item": [
+            {
+              "name": "Get API keys",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/settings/api-keys",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "settings",
+                    "api-keys"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create API key",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/settings/api-keys",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "settings",
+                    "api-keys"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"New API Key\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Delete API key",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{base_url}}/settings/api-keys/{{api_key_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "settings",
+                    "api-keys",
+                    "{{api_key_id}}"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Notification Preferences",
+          "item": [
+            {
+              "name": "Get notification preferences",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/settings/notifications",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "settings",
+                    "notifications"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update notification preferences",
+              "request": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{base_url}}/settings/notifications",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "settings",
+                    "notifications"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"document_delivered\": true\n}"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Get all tasks",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/tasks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get task by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update task status",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/tasks/{{task_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tasks",
+                "{{task_id}}",
+                "status"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\"\n}"
             }
           }
         }
