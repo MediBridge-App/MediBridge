@@ -86,19 +86,12 @@ def test_api_keys(base_url, auth_headers):
 
 
 # ---------------------------------------------------------------------------
-# Known cross-service bugs, tracked here so they surface as failing tests
-# instead of silently regressing further. Flagged to Bella/Vida on 07/29.
-# Once fixed, flip xfail -> real assertion (or delete the xfail marker).
+# Previously known cross-service bugs, flagged to Bella on 07/29 and 08/03.
+# Both fixed on main as of PR #42 (current_org_id) and the /auth/me
+# relationship fix, so these are real assertions now instead of xfail.
 # ---------------------------------------------------------------------------
 
-import pytest
 
-
-@pytest.mark.xfail(
-    reason="users.py uses a hardcoded current_org_id instead of the authenticated "
-    "user's real org — flagged to Bella 07/29",
-    strict=False,
-)
 def test_users_endpoint_respects_authenticated_org(
     base_url, auth_headers, auth_headers_user2
 ):
@@ -108,12 +101,8 @@ def test_users_endpoint_respects_authenticated_org(
     assert users_org1 != users_org2
 
 
-@pytest.mark.xfail(
-    reason="/auth/me returns organization_name/org_code as null — flagged to "
-    "Bella 07/29",
-    strict=False,
-)
 def test_me_includes_organization_name(base_url, auth_headers):
     response = requests.get(f"{base_url}/auth/me", headers=auth_headers)
-    body = response.json()["user"]
+    body = response.json()
     assert body["organization_name"] is not None
+    assert body["org_code"] is not None

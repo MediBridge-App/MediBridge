@@ -29,21 +29,29 @@ def base_url() -> str:
 
 @pytest.fixture(scope="session")
 def user1_token() -> str:
-    """Primary demo user: j.rivera@stmercy.org (organization a0000000-...-001)."""
+    """Primary demo user: j.rivera@stmercy.org (organization a0000000-...-001).
+
+    Uses id_token, not access_token: the backend's get_current_user only
+    accepts tokens with token_use == "id" (see api/dependencies/auth.py),
+    matching the frontend's auth flow.
+    """
     email = os.getenv("DEMO_USER_1_EMAIL")
     password = os.getenv("DEMO_USER_1_PASSWORD")
     assert password, "Set DEMO_USER_1_PASSWORD in your .env before running tests"
-    return login(email, password)["access_token"]
+    return login(email, password)["id_token"]
 
 
 @pytest.fixture(scope="session")
 def user2_token() -> str:
     """Second demo user, used for cross-organization scenarios
-    (e.g. confirming a document actually reaches its recipient org)."""
+    (e.g. confirming a document actually reaches its recipient org).
+
+    Uses id_token for the same reason as user1_token above.
+    """
     email = os.getenv("DEMO_USER_2_EMAIL")
     password = os.getenv("DEMO_USER_2_PASSWORD")
     assert password, "Set DEMO_USER_2_PASSWORD in your .env before running tests"
-    return login(email, password)["access_token"]
+    return login(email, password)["id_token"]
 
 
 @pytest.fixture
