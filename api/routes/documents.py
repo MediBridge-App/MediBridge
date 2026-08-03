@@ -13,6 +13,7 @@ from dependencies.auth import get_current_user
 from models.document import Document
 from models.ai_analysis import AIAnalysis
 from models.organization import Organization
+from services.events import publish_document_sent_event
 
 from schemas.document import (
     DocumentCreate,
@@ -591,6 +592,12 @@ def send_document(
         db.commit()
 
         db.refresh(new_document)
+        try:
+            publish_document_sent_event(new_document)
+        except Exception as e:
+            print("SNS publish failed:", e)
+        # Publish after commit so downstream AI services
+        # only receive events for persisted documents.
 
         return get_document(
             doc_id=new_document.id,
