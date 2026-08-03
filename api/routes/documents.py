@@ -592,12 +592,15 @@ def send_document(
         db.commit()
 
         db.refresh(new_document)
-        try:
-            publish_document_sent_event(new_document)
-        except Exception as e:
-            print("SNS publish failed:", e)
         # Publish after commit so downstream AI services
         # only receive events for persisted documents.
+        try:
+            publish_document_sent_event(new_document, current_user.id)
+        except Exception as e:
+            print(
+                f"SNS publish failed. document_id={new_document.id}, error={repr(e)}"
+            )
+                
 
         return get_document(
             doc_id=new_document.id,
