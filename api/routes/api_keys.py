@@ -1,8 +1,4 @@
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException
-)
+from fastapi import APIRouter, Depends, HTTPException
 
 from sqlalchemy.orm import Session
 
@@ -18,19 +14,9 @@ from dependencies.auth import get_current_user
 
 from models.api_key import APIKey
 
-from schemas.api_key import (
-    APIKeyCreate,
-    APIKeyResponse,
-    APIKeyCreatedResponse
-)
+from schemas.api_key import APIKeyCreate, APIKeyResponse, APIKeyCreatedResponse
 
-
-
-router = APIRouter(
-    prefix="/settings/api-keys",
-    tags=["API Keys"]
-)
-
+router = APIRouter(prefix="/settings/api-keys", tags=["API Keys"])
 
 
 # ==================================================
@@ -38,32 +24,15 @@ router = APIRouter(
 # GET /settings/api-keys
 # ==================================================
 
-@router.get(
-    "",
-    response_model=list[APIKeyResponse]
-)
-def get_api_keys(
 
-    db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
-):
+@router.get("", response_model=list[APIKeyResponse])
+def get_api_keys(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
     return (
-
         db.query(APIKey)
-
-        .filter(
-            APIKey.organization_id ==
-            current_user.organization_id
-        )
-
+        .filter(APIKey.organization_id == current_user.organization_id)
         .all()
-
     )
-
-
 
 
 # ==================================================
@@ -71,44 +40,24 @@ def get_api_keys(
 # POST /settings/api-keys
 # ==================================================
 
-@router.post(
-    "",
-    response_model=APIKeyCreatedResponse
-)
+
+@router.post("", response_model=APIKeyCreatedResponse)
 def create_api_key(
-
     body: APIKeyCreate,
-
     db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
+    current_user=Depends(get_current_user),
 ):
 
-    raw_key = (
-        "mb_prod_"
-        + secrets.token_hex(16)
-    )
+    raw_key = "mb_prod_" + secrets.token_hex(16)
 
-
-    key_hash = hashlib.sha256(
-        raw_key.encode()
-    ).hexdigest()
-
-
+    key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
 
     new_key = APIKey(
-
         organization_id=current_user.organization_id,
-
         name=body.name,
-
         key_prefix="mb_prod_",
-
-        key_hash=key_hash
-
+        key_hash=key_hash,
     )
-
 
     db.add(new_key)
 
@@ -116,21 +65,12 @@ def create_api_key(
 
     db.refresh(new_key)
 
-
-
     return {
-
         "id": new_key.id,
-
         "name": new_key.name,
-
         "key": raw_key,
-
-        "created_at": new_key.created_at
-
+        "created_at": new_key.created_at,
     }
-
-
 
 
 # ==================================================
@@ -138,56 +78,26 @@ def create_api_key(
 # DELETE /settings/api-keys/{id}
 # ==================================================
 
-@router.delete(
-    "/{key_id}"
-)
+
+@router.delete("/{key_id}")
 def delete_api_key(
-
-    key_id: UUID,
-
-    db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
+    key_id: UUID, db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
 
     api_key = (
-
         db.query(APIKey)
-
         .filter(
-
-            APIKey.id == key_id,
-
-            APIKey.organization_id ==
-            current_user.organization_id
-
+            APIKey.id == key_id, APIKey.organization_id == current_user.organization_id
         )
-
         .first()
-
     )
-
 
     if not api_key:
 
-        raise HTTPException(
-
-            status_code=404,
-
-            detail="API key not found"
-
-        )
-
+        raise HTTPException(status_code=404, detail="API key not found")
 
     api_key.is_active = False
 
-
     db.commit()
 
-
-    return {
-
-        "message": "key revoked"
-
-    }
+    return {"message": "key revoked"}

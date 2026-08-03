@@ -1,8 +1,4 @@
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException
-)
+from fastapi import APIRouter, Depends, HTTPException
 
 from sqlalchemy.orm import Session
 
@@ -13,11 +9,12 @@ from pydantic import BaseModel
 from database import get_db
 
 from models.notification import Notification
+from models.document import Document
+from models.organization import Organization
 
 from schemas.notification import NotificationResponse
 
 from dependencies.auth import get_current_user
-
 
 
 router = APIRouter(
@@ -26,14 +23,12 @@ router = APIRouter(
 )
 
 
-
 # ==================================================
 # Response Schema
 # ==================================================
 
 class MessageResponse(BaseModel):
     message: str
-
 
 
 # ==================================================
@@ -46,32 +41,53 @@ class MessageResponse(BaseModel):
     response_model=list[NotificationResponse]
 )
 def get_notifications(
-
     db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
+    current_user=Depends(get_current_user),
 ):
 
     notifications = (
-
-        db.query(Notification)
-
+        db.query(
+            Notification,
+            Document.document_type,
+            Document.subject.label("document_subject"),
+            Organization.name.label("sender_org_name"),
+        )
+        .outerjoin(
+            Document,
+            Notification.document_id == Document.id,
+        )
+        .outerjoin(
+            Organization,
+            Document.sender_org_id == Organization.id,
+        )
         .filter(
             Notification.user_id == current_user.id
         )
-
         .order_by(
             Notification.created_at.desc()
         )
-
         .all()
-
     )
 
 
-    return notifications
-
+    return [
+        {
+            **{
+                key: value
+                for key, value in notification.__dict__.items()
+                if key != "_sa_instance_state"
+            },
+            "document_type": document_type,
+            "document_subject": document_subject,
+            "sender_org_name": sender_org_name,
+        }
+        for (
+            notification,
+            document_type,
+            document_subject,
+            sender_org_name,
+        ) in notifications
+    ]
 
 
 # ==================================================
@@ -84,36 +100,25 @@ def get_notifications(
     response_model=MessageResponse
 )
 def mark_all_read(
-
     db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
+    current_user=Depends(get_current_user),
 ):
 
     (
         db.query(Notification)
-
         .filter(
             Notification.user_id == current_user.id
         )
-
         .update(
-            {
-                "is_read": True
-            }
+            {"is_read": True}
         )
     )
 
-
     db.commit()
-
 
     return {
         "message": "all notifications marked read"
     }
-
-
 
 
 # ==================================================
@@ -126,29 +131,18 @@ def mark_all_read(
     response_model=NotificationResponse
 )
 def mark_notification_read(
-
     notification_id: UUID,
-
     db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
+    current_user=Depends(get_current_user),
 ):
 
     notification = (
-
         db.query(Notification)
-
         .filter(
-
             Notification.id == notification_id,
-
-            Notification.user_id == current_user.id
-
+            Notification.user_id == current_user.id,
         )
-
         .first()
-
     )
 
 
@@ -162,15 +156,44 @@ def mark_notification_read(
 
     notification.is_read = True
 
-
     db.commit()
 
-    db.refresh(notification)
+
+    notification_data = (
+        db.query(
+            Notification,
+            Document.document_type,
+            Document.subject.label("document_subject"),
+            Organization.name.label("sender_org_name"),
+        )
+        .outerjoin(
+            Document,
+            Notification.document_id == Document.id,
+        )
+        .outerjoin(
+            Organization,
+            Document.sender_org_id == Organization.id,
+        )
+        .filter(
+            Notification.id == notification_id
+        )
+        .first()
+    )
 
 
-    return notification
+    notification, document_type, document_subject, sender_org_name = notification_data
 
 
+    return {
+        **{
+            key: value
+            for key, value in notification.__dict__.items()
+            if key != "_sa_instance_state"
+        },
+        "document_type": document_type,
+        "document_subject": document_subject,
+        "sender_org_name": sender_org_name,
+    }
 
 
 # ==================================================
@@ -183,29 +206,18 @@ def mark_notification_read(
     response_model=MessageResponse
 )
 def delete_notification(
-
     notification_id: UUID,
-
     db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
+    current_user=Depends(get_current_user),
 ):
 
     notification = (
-
         db.query(Notification)
-
         .filter(
-
             Notification.id == notification_id,
-
-            Notification.user_id == current_user.id
-
+            Notification.user_id == current_user.id,
         )
-
         .first()
-
     )
 
 

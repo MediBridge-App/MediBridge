@@ -15,22 +15,15 @@ def get_database_credentials():
     secret_arn = os.getenv("DB_SECRET_ARN")
 
     if not secret_arn:
-        raise Exception(
-            "DB_SECRET_ARN is not configured"
-        )
+        raise Exception("DB_SECRET_ARN is not configured")
 
     client = boto3.client(
-        "secretsmanager",
-        region_name=os.getenv("AWS_REGION", "us-east-2")
+        "secretsmanager", region_name=os.getenv("AWS_REGION", "us-east-2")
     )
 
-    response = client.get_secret_value(
-        SecretId=secret_arn
-    )
+    response = client.get_secret_value(SecretId=secret_arn)
 
-    return json.loads(
-        response["SecretString"]
-    )
+    return json.loads(response["SecretString"])
 
 
 # Retrieve database credentials from AWS Secrets Manager
@@ -49,19 +42,10 @@ DATABASE_URL = (
 )
 
 
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10
-)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_size=5, max_overflow=10)
 
 
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 Base = declarative_base()

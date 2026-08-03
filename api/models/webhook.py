@@ -10,47 +10,18 @@ class Webhook(Base):
 
     __tablename__ = "webhooks"
 
-
-    id = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        index=True
-    )
-
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
 
     organization_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("organizations.id"),
-        nullable=False
+        UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False
     )
 
+    name = Column(String(100), nullable=False)
 
-    name = Column(
-        String(100),
-        nullable=False
-    )
+    url = Column(Text, nullable=False)
 
+    events = Column(ARRAY(String), nullable=True)
 
-    url = Column(
-        Text,
-        nullable=False
-    )
+    is_active = Column(Boolean, default=True)
 
-
-    events = Column(
-        ARRAY(String),
-        nullable=True
-    )
-
-
-    is_active = Column(
-        Boolean,
-        default=True
-    )
-
-
-    created_at = Column(
-        DateTime,
-        default=datetime.utcnow
-    )
+    created_at = Column(DateTime, default=datetime.utcnow)

@@ -7,19 +7,11 @@ from database import get_db
 from models.task import Task
 from models.user import User
 
-from schemas.task import (
-    TaskResponse,
-    TaskStatusUpdate
-)
+from schemas.task import TaskResponse, TaskStatusUpdate
 
 from dependencies.auth import get_current_user
 
-
-router = APIRouter(
-    prefix="/tasks",
-    tags=["Tasks"]
-)
-
+router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
 # ==================================================
@@ -27,26 +19,15 @@ router = APIRouter(
 # GET /tasks
 # ==================================================
 
-@router.get(
-    "",
-    response_model=list[TaskResponse]
-)
+
+@router.get("", response_model=list[TaskResponse])
 def get_tasks(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
 
-    tasks = (
-        db.query(Task)
-        .filter(
-            Task.assigned_to_user_id == current_user.id
-        )
-        .all()
-    )
+    tasks = db.query(Task).filter(Task.assigned_to_user_id == current_user.id).all()
 
     return tasks
-
-
 
 
 # ==================================================
@@ -54,34 +35,24 @@ def get_tasks(
 # GET /tasks/{id}
 # ==================================================
 
-@router.get(
-    "/{task_id}",
-    response_model=TaskResponse
-)
+
+@router.get("/{task_id}", response_model=TaskResponse)
 def get_task(
     task_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
 
     task = (
         db.query(Task)
-        .filter(
-            Task.id == task_id,
-            Task.assigned_to_user_id == current_user.id
-        )
+        .filter(Task.id == task_id, Task.assigned_to_user_id == current_user.id)
         .first()
     )
 
     if not task:
-        raise HTTPException(
-            status_code=404,
-            detail="Task not found"
-        )
+        raise HTTPException(status_code=404, detail="Task not found")
 
     return task
-
-
 
 
 # ==================================================
@@ -89,43 +60,28 @@ def get_task(
 # PUT /tasks/{id}/status
 # ==================================================
 
-@router.put(
-    "/{task_id}/status",
-    response_model=TaskResponse
-)
+
+@router.put("/{task_id}/status", response_model=TaskResponse)
 def update_task_status(
     task_id: UUID,
     body: TaskStatusUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
 
     task = (
         db.query(Task)
-        .filter(
-            Task.id == task_id,
-            Task.assigned_to_user_id == current_user.id
-        )
+        .filter(Task.id == task_id, Task.assigned_to_user_id == current_user.id)
         .first()
     )
 
     if not task:
-        raise HTTPException(
-            status_code=404,
-            detail="Task not found"
-        )
+        raise HTTPException(status_code=404, detail="Task not found")
 
-    allowed_statuses = [
-        "open",
-        "in_progress",
-        "completed"
-    ]
+    allowed_statuses = ["open", "in_progress", "completed"]
 
     if body.status not in allowed_statuses:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid task status"
-        )
+        raise HTTPException(status_code=400, detail="Invalid task status")
 
     task.status = body.status
 

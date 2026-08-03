@@ -23,10 +23,8 @@ class NotificationPreferencesResponse(BaseModel):
 
     updated_at: datetime
 
-
     class Config:
         from_attributes = True
-
 
 
 class NotificationPreferencesUpdate(BaseModel):
