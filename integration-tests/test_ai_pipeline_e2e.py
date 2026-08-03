@@ -7,7 +7,6 @@ True end-to-end test of the async AI pipeline:
 
 import time
 
-import pytest
 import requests
 
 RECIPIENT_ORG_ID = "a0000000-0000-4000-8000-000000000002"  # Riverside Cardiology
@@ -30,13 +29,6 @@ POLL_INTERVAL_SECONDS = 5
 POLL_TIMEOUT_SECONDS = 90
 
 
-@pytest.mark.xfail(
-    reason="send_document's SNS payload only matches "
-    "contracts/events/document-sent.schema.json as of Bella's fix on "
-    "feature/engineer-2-backend-1 (b6999e1), not yet merged to main — "
-    "flip to a real assertion once that PR lands",
-    strict=False,
-)
 def test_document_send_triggers_ai_analysis(base_url, auth_headers, auth_headers_user2):
     # 1. Get a real presigned upload URL and actually upload something, so
     # Textract has real bytes to extract text from.
