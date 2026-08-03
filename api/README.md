@@ -559,7 +559,7 @@ Swagger provides:
 ## Clone Repository
 
 ```bash
-git clone <repository-url>
+git clone (https://github.com/MediBridge-App/MediBridge.git)
 
 cd api
 ```
