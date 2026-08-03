@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Document AI Analysis",
+  "description": "Structured analysis returned by the AI document-processing worker.",
+  "type": "object",
+  "properties": {
+    "document_type": {
+      "type": "string",
+      "enum": [
+        "referral",
+        "lab_result",
+        "discharge_summary",
+        "insurance_form",
+        "imaging",
+        "other"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "recommendation_text": {
+      "type": ["string", "null"]
+    },
+    "recommendation_type": {
+      "type": ["string", "null"]
+    },
+    "urgency_detected": {
+      "type": "boolean"
+    },
+    "confidence_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    }
+  },
+  "required": [
+    "document_type",
+    "summary",
+    "tags",
+    "recommendation_text",
+    "recommendation_type",
+    "urgency_detected",
+    "confidence_score"
+  ],
+  "additionalProperties": false
+}

@@ -11,12 +11,7 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        index=True
-    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
 
     cognito_id = Column(
         String(255),
@@ -25,54 +20,23 @@ class User(Base):
     )
 
     organization_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("organizations.id"),
-        nullable=False
+        UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False
     )
 
-    organization = relationship(
-    "Organization",
-    back_populates="users"
-)
+    organization = relationship("Organization", back_populates="users")
 
-    email = Column(
-        String(255),
-        unique=True,
-        nullable=False
-    )
+    email = Column(String(255), unique=True, nullable=False)
 
-    full_name = Column(
-        String(255),
-        nullable=False
-    )
+    full_name = Column(String(255), nullable=False)
 
-    role = Column(
-        String(50),
-        nullable=False
-    )
+    role = Column(String(50), nullable=False)
 
-    is_active = Column(
-        Boolean,
-        default=True
-    )
+    is_active = Column(Boolean, default=True)
 
-    last_login = Column(
-        DateTime,
-        nullable=True
-    )
+    last_login = Column(DateTime, nullable=True)
 
-    created_at = Column(
-        DateTime,
-        default=datetime.utcnow
-    )
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-    specialty = Column(
-        String(100),
-        nullable=True
-    )
+    specialty = Column(String(100), nullable=True)
 
-
-    npi_number = Column(
-        String(20),
-        nullable=True
-    )
+    npi_number = Column(String(20), nullable=True)

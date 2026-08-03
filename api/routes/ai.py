@@ -1,8 +1,4 @@
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException
-)
+from fastapi import APIRouter, Depends, HTTPException
 
 from sqlalchemy.orm import Session
 
@@ -17,13 +13,7 @@ from models.document import Document
 
 from schemas.ai_analysis import AIAnalysisResponse
 
-
-
-router = APIRouter(
-    prefix="/ai",
-    tags=["AI Analysis"]
-)
-
+router = APIRouter(prefix="/ai", tags=["AI Analysis"])
 
 
 # ==================================================
@@ -31,72 +21,35 @@ router = APIRouter(
 # GET /ai/stats
 # ==================================================
 
+
 @router.get("/stats")
-def get_ai_stats(
-
-    db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
-):
+def get_ai_stats(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
     org_id = current_user.organization_id
 
-
     total = (
-
         db.query(AIAnalysis)
-
-        .join(
-            Document,
-            AIAnalysis.document_id == Document.id
-        )
-
-        .filter(
-            Document.recipient_org_id == org_id
-        )
-
+        .join(Document, AIAnalysis.document_id == Document.id)
+        .filter(Document.recipient_org_id == org_id)
         .count()
-
     )
-
 
     urgent_flags = (
-
         db.query(AIAnalysis)
-
-        .join(
-            Document,
-            AIAnalysis.document_id == Document.id
-        )
-
+        .join(Document, AIAnalysis.document_id == Document.id)
         .filter(
-
             Document.recipient_org_id == org_id,
-
-            AIAnalysis.urgency_detected == True
-
+            AIAnalysis.urgency_detected.is_(True),
         )
-
         .count()
-
     )
 
-
     return {
-
         "documents_processed": total,
-
         "avg_confidence": 96.2,
-
         "avg_processing_seconds": 1.1,
-
-        "urgent_flags": urgent_flags
-
+        "urgent_flags": urgent_flags,
     }
-
-
-
 
 
 # ==================================================
@@ -104,37 +57,20 @@ def get_ai_stats(
 # GET /ai/categories
 # ==================================================
 
+
 @router.get("/categories")
 def get_ai_categories(
-
-    db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
+    db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
 
     results = (
-
-        db.query(
-            AIAnalysis.document_type
-        )
-
-        .join(
-            Document,
-            AIAnalysis.document_id == Document.id
-        )
-
-        .filter(
-            Document.recipient_org_id == current_user.organization_id
-        )
-
+        db.query(AIAnalysis.document_type)
+        .join(Document, AIAnalysis.document_id == Document.id)
+        .filter(Document.recipient_org_id == current_user.organization_id)
         .all()
-
     )
 
-
     counts = {}
-
 
     for row in results:
 
@@ -142,24 +78,9 @@ def get_ai_categories(
 
         if document_type:
 
-            counts[document_type] = (
-                counts.get(document_type, 0) + 1
-            )
+            counts[document_type] = counts.get(document_type, 0) + 1
 
-
-    return [
-
-        {
-            "type": key,
-            "count": value
-        }
-
-        for key,value in counts.items()
-
-    ]
-
-
-
+    return [{"type": key, "count": value} for key, value in counts.items()]
 
 
 # ==================================================
@@ -167,41 +88,17 @@ def get_ai_categories(
 # GET /ai/analyses
 # ==================================================
 
-@router.get(
-    "/analyses",
-    response_model=list[AIAnalysisResponse]
-)
-def get_analyses(
 
-    db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
-):
+@router.get("/analyses", response_model=list[AIAnalysisResponse])
+def get_analyses(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
     return (
-
         db.query(AIAnalysis)
-
-        .join(
-            Document,
-            AIAnalysis.document_id == Document.id
-        )
-
-        .filter(
-            Document.recipient_org_id == current_user.organization_id
-        )
-
-        .order_by(
-            AIAnalysis.created_at.desc()
-        )
-
+        .join(Document, AIAnalysis.document_id == Document.id)
+        .filter(Document.recipient_org_id == current_user.organization_id)
+        .order_by(AIAnalysis.created_at.desc())
         .all()
-
     )
-
-
-
 
 
 # ==================================================
@@ -209,48 +106,26 @@ def get_analyses(
 # GET /ai/analyses/{document_id}
 # ==================================================
 
-@router.get(
-    "/analyses/{document_id}",
-    response_model=AIAnalysisResponse
-)
+
+@router.get("/analyses/{document_id}", response_model=AIAnalysisResponse)
 def get_document_analysis(
-
     document_id: UUID,
-
     db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
+    current_user=Depends(get_current_user),
 ):
 
     analysis = (
-
         db.query(AIAnalysis)
-
-        .join(
-            Document,
-            AIAnalysis.document_id == Document.id
-        )
-
+        .join(Document, AIAnalysis.document_id == Document.id)
         .filter(
-
             AIAnalysis.document_id == document_id,
-
-            Document.recipient_org_id == current_user.organization_id
-
+            Document.recipient_org_id == current_user.organization_id,
         )
-
         .first()
-
     )
-
 
     if not analysis:
 
-        raise HTTPException(
-            status_code=404,
-            detail="AI analysis not found"
-        )
-
+        raise HTTPException(status_code=404, detail="AI analysis not found")
 
     return analysis

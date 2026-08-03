@@ -1,11 +1,7 @@
 import os
 import boto3
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException
-)
+from fastapi import APIRouter, Depends, HTTPException
 
 from sqlalchemy.orm import Session
 
@@ -13,29 +9,14 @@ from database import get_db
 
 from models.user import User
 
-from schemas.auth import (
-    LoginRequest,
-    TokenResponse
-)
+from schemas.auth import LoginRequest, TokenResponse
 
-from dependencies.auth import (
-    get_current_user
-)
+from dependencies.auth import get_current_user
+
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-router = APIRouter(
-    prefix="/auth",
-    tags=["Authentication"]
-)
-
-
-cognito_client = boto3.client(
-    "cognito-idp",
-    region_name=os.getenv(
-        "AWS_REGION"
-    )
-)
-
+cognito_client = boto3.client("cognito-idp", region_name=os.getenv("AWS_REGION"))
 
 
 # =====================================
@@ -43,121 +24,62 @@ cognito_client = boto3.client(
 # POST /auth/login
 # =====================================
 
-@router.post(
-    "/login",
-    response_model=TokenResponse
-)
-def login(
-    user: LoginRequest,
-    db: Session = Depends(get_db)
-):
+
+@router.post("/login", response_model=TokenResponse)
+def login(user: LoginRequest, db: Session = Depends(get_db)):
 
     try:
 
         response = cognito_client.initiate_auth(
-
-            ClientId=os.getenv(
-                "COGNITO_CLIENT_ID"
-            ),
-
+            ClientId=os.getenv("COGNITO_CLIENT_ID"),
             AuthFlow="USER_PASSWORD_AUTH",
-
-            AuthParameters={
-                "USERNAME": user.email,
-                "PASSWORD": user.password
-            }
+            AuthParameters={"USERNAME": user.email, "PASSWORD": user.password},
         )
-
 
         auth = response["AuthenticationResult"]
 
-
-        db_user = (
-            db.query(User)
-            .filter(
-                User.email == user.email
-            )
-            .first()
-        )
-
+        db_user = db.query(User).filter(User.email == user.email).first()
 
         if not db_user:
 
-            raise HTTPException(
-                status_code=404,
-                detail="User not found in database"
-            )
-
+            raise HTTPException(status_code=404, detail="User not found in database")
 
         return {
-
             "access_token": auth["AccessToken"],
-
             "id_token": auth["IdToken"],
-
-            "refresh_token": auth.get(
-                "RefreshToken"
-            ),
-
+            "refresh_token": auth.get("RefreshToken"),
             "token_type": "bearer",
-
             "user": {
-                "id": db_user.id,
+                "id": str(db_user.id),
                 "full_name": db_user.full_name,
                 "email": db_user.email,
                 "role": db_user.role,
                 "specialty": db_user.specialty,
                 "npi_number": db_user.npi_number,
-                "organization_id": db_user.organization_id,
+                "organization_id": str(db_user.organization_id),
                 "organization_name": (
-                    db_user.organization.name
-                    if db_user.organization
-                    else None
+                    db_user.organization.name if db_user.organization else None
                 ),
                 "org_code": (
-                    db_user.organization.org_code
-                    if db_user.organization
-                    else None
+                    db_user.organization.org_code if db_user.organization else None
                 ),
-                "last_login": db_user.last_login
-            }
-
+                "last_login": db_user.last_login,
+            },
         }
-
-
 
     except cognito_client.exceptions.NotAuthorizedException:
 
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password"
-        )
-
-
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
     except cognito_client.exceptions.UserNotFoundException:
 
-        raise HTTPException(
-            status_code=401,
-            detail="User does not exist"
-        )
-
-
+        raise HTTPException(status_code=401, detail="User does not exist")
 
     except Exception as e:
 
-        print(
-            "COGNITO LOGIN ERROR:",
-            repr(e)
-        )
+        print("COGNITO LOGIN ERROR:", repr(e))
 
-        raise HTTPException(
-            status_code=500,
-            detail="Authentication failed"
-        )
-
-
-
+        raise HTTPException(status_code=500, detail="Authentication failed")
 
 
 # =====================================
@@ -165,17 +87,11 @@ def login(
 # POST /auth/logout
 # =====================================
 
-@router.post(
-    "/logout"
-)
+
+@router.post("/logout")
 def logout():
 
-    return {
-        "message": "Logged out"
-    }
-
-
-
+    return {"message": "Logged out"}
 
 
 # =====================================
@@ -183,45 +99,23 @@ def logout():
 # GET /auth/me
 # =====================================
 
-@router.get(
-    "/me"
-)
-def get_me(
-    current_user = Depends(get_current_user)
-):
+
+@router.get("/me")
+def get_me(current_user: User = Depends(get_current_user)):
 
     return {
-
-        "user": {
-
-            "id": current_user.id,
-
-            "full_name": current_user.full_name,
-
-            "email": current_user.email,
-
-            "role": current_user.role,
-
-            "specialty": current_user.specialty,
-
-            "npi_number": current_user.npi_number,
-
-            "organization_id": current_user.organization_id,
-
-            "organization_name": (
-                current_user.organization.name
-                if current_user.organization
-                else None
-            ),
-
-            "org_code": (
-                current_user.organization.org_code
-                if current_user.organization
-                else None
-            ),
-
-            "last_login": current_user.last_login
-
-        }
-
+        "id": str(current_user.id),
+        "full_name": current_user.full_name,
+        "email": current_user.email,
+        "role": current_user.role,
+        "specialty": current_user.specialty,
+        "npi_number": current_user.npi_number,
+        "organization_id": str(current_user.organization_id),
+        "organization_name": (
+            current_user.organization.name if current_user.organization else None
+        ),
+        "org_code": (
+            current_user.organization.org_code if current_user.organization else None
+        ),
+        "last_login": current_user.last_login,
     }

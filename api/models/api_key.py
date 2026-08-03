@@ -10,53 +10,20 @@ class APIKey(Base):
 
     __tablename__ = "api_keys"
 
-
-    id = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        index=True
-    )
-
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
 
     organization_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("organizations.id"),
-        nullable=False
+        UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False
     )
 
+    name = Column(String(100), nullable=False)
 
-    name = Column(
-        String(100),
-        nullable=False
-    )
+    key_prefix = Column(String(20), nullable=False)
 
+    key_hash = Column(String(255), nullable=False)
 
-    key_prefix = Column(
-        String(20),
-        nullable=False
-    )
+    is_active = Column(Boolean, default=True)
 
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-    key_hash = Column(
-        String(255),
-        nullable=False
-    )
-
-
-    is_active = Column(
-        Boolean,
-        default=True
-    )
-
-
-    created_at = Column(
-        DateTime,
-        default=datetime.utcnow
-    )
-
-
-    last_used_at = Column(
-        DateTime,
-        nullable=True
-    )
+    last_used_at = Column(DateTime, nullable=True)

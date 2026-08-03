@@ -3,10 +3,7 @@ import requests
 # 1. Get presigned URL from FastAPI
 response = requests.post(
     "http://localhost:8000/documents/upload-url",
-    json={
-        "filename": "test.pdf",
-        "content_type": "application/pdf"
-    }
+    json={"filename": "test.pdf", "content_type": "application/pdf"},
 )
 
 response.raise_for_status()
@@ -26,8 +23,8 @@ upload_response = requests.put(
     data=file_data,
     headers={
         "Content-Type": "application/pdf",
-        "x-amz-server-side-encryption": "aws:kms"
-    }
+        "x-amz-server-side-encryption": "aws:kms",
+    },
 )
 
 print("Upload status:", upload_response.status_code)

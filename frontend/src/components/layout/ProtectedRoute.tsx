@@ -1,33 +1,21 @@
-import { useState, useEffect } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
-import { getCurrentUser } from 'aws-amplify/auth'
+import { useAuth } from '../../hooks/useAuth'
 
 export default function ProtectedRoute() {
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+    const { user, isLoading } = useAuth()
 
-    useEffect(() => {
-        async function checkAuth() {
-            try {
-                await getCurrentUser()
-                setIsAuthenticated(true)
-            } catch {
-                setIsAuthenticated(false)
-            }
-        }
-        checkAuth()
-    }, [])
-
-    if (isAuthenticated === null) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2"
+                <div
+                    className="animate-spin rounded-full h-8 w-8 border-b-2"
                     style={{ borderColor: '#0e7490' }}
                 />
             </div>
         )
     }
 
-    if (!isAuthenticated) {
+    if (!user) {
         return <Navigate to="/login" replace />
     }
 

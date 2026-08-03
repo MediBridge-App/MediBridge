@@ -94,6 +94,13 @@ data "aws_iam_policy_document" "worker" {
       "arn:aws:bedrock:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:inference-profile/*",
     ]
   }
+
+  # Read the internal backend API key at runtime.
+  statement {
+    sid       = "ReadAppSecrets"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [var.app_secrets_arn]
+  }
 }
 
 resource "aws_iam_role_policy" "worker" {
@@ -141,6 +148,8 @@ resource "aws_lambda_function" "worker" {
   environment {
     variables = {
       DOCUMENT_BUCKET = var.document_bucket
+      BACKEND_API_URL = var.backend_api_url
+      APP_SECRETS_ARN = var.app_secrets_arn
     }
   }
 

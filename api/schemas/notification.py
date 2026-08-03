@@ -2,16 +2,20 @@ from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
 
-
 class NotificationResponse(BaseModel):
 
     id: UUID
     type: str
     message: str
     is_read: bool
-    document_id: UUID | None
-    created_at: datetime
 
+    document_id: UUID | None = None
+
+    document_type: str | None = None
+    document_subject: str | None = None
+    sender_org_name: str | None = None
+
+    created_at: datetime
 
     class Config:
         from_attributes = True

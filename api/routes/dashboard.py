@@ -8,12 +8,7 @@ from dependencies.auth import get_current_user
 
 from models.document import Document
 
-
-router = APIRouter(
-    prefix="/dashboard",
-    tags=["Dashboard"]
-)
-
+router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 
 # ==================================================
@@ -21,81 +16,45 @@ router = APIRouter(
 # GET /dashboard/stats
 # ==================================================
 
+
 @router.get("/stats")
 def dashboard_stats(
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
 
     org_id = current_user.organization_id
 
-
-    documents_sent = (
-        db.query(Document)
-        .filter(
-            Document.sender_org_id == org_id
-        )
-        .count()
-    )
-
+    documents_sent = db.query(Document).filter(Document.sender_org_id == org_id).count()
 
     documents_received = (
-        db.query(Document)
-        .filter(
-            Document.recipient_org_id == org_id
-        )
-        .count()
+        db.query(Document).filter(Document.recipient_org_id == org_id).count()
     )
-
 
     pending_review = (
         db.query(Document)
-        .filter(
-            Document.recipient_org_id == org_id,
-            Document.status != "delivered"
-        )
+        .filter(Document.recipient_org_id == org_id, Document.status != "delivered")
         .count()
     )
-
 
     ai_processed = (
         db.query(Document)
         .filter(
             Document.recipient_org_id == org_id,
-            Document.status.in_(
-                [
-                    "ocr_complete",
-                    "classified",
-                    "routed",
-                    "delivered"
-                ]
-            )
+            Document.status.in_(["ocr_complete", "classified", "routed", "delivered"]),
         )
         .count()
     )
 
-
     return {
-
         "documents_sent": documents_sent,
-
         "documents_received": documents_received,
-
         "pending_review": pending_review,
-
         "ai_processed": ai_processed,
-
-
         "sent_change_pct": 0,
-
         "received_change_pct": 0,
-
         "pending_change_pct": 0,
-
-        "ai_change_pct": 0
+        "ai_change_pct": 0,
     }
-
-
 
 
 # ==================================================
@@ -103,10 +62,10 @@ def dashboard_stats(
 # GET /dashboard/activity
 # ==================================================
 
+
 @router.get("/activity")
 def dashboard_activity(
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
 
     documents = (
@@ -114,29 +73,23 @@ def dashboard_activity(
         .filter(
             (
                 (Document.sender_org_id == current_user.organization_id)
-                |
-                (Document.recipient_org_id == current_user.organization_id)
+                | (Document.recipient_org_id == current_user.organization_id)
             )
         )
-        .order_by(
-            Document.created_at.desc()
-        )
+        .order_by(Document.created_at.desc())
         .limit(10)
         .all()
     )
-
 
     return [
         {
             "date": document.created_at,
             "document_id": document.id,
             "subject": document.subject,
-            "status": document.status
+            "status": document.status,
         }
         for document in documents
     ]
-
-
 
 
 # ==================================================
@@ -144,36 +97,20 @@ def dashboard_activity(
 # GET /dashboard/document-types
 # ==================================================
 
+
 @router.get("/document-types")
 def document_types(
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
 
     results = (
-        db.query(
-            Document.document_type,
-            func.count(Document.id)
-        )
-        .filter(
-            Document.recipient_org_id == current_user.organization_id
-        )
-        .group_by(
-            Document.document_type
-        )
+        db.query(Document.document_type, func.count(Document.id))
+        .filter(Document.recipient_org_id == current_user.organization_id)
+        .group_by(Document.document_type)
         .all()
     )
 
-
-    return [
-        {
-            "type": item[0],
-            "count": item[1]
-        }
-        for item in results
-    ]
-
-
+    return [{"type": item[0], "count": item[1]} for item in results]
 
 
 # ==================================================
@@ -181,10 +118,10 @@ def document_types(
 # GET /dashboard/recent
 # ==================================================
 
+
 @router.get("/recent")
 def recent_documents(
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
 
     documents = (
@@ -192,16 +129,12 @@ def recent_documents(
         .filter(
             (
                 (Document.sender_org_id == current_user.organization_id)
-                |
-                (Document.recipient_org_id == current_user.organization_id)
+                | (Document.recipient_org_id == current_user.organization_id)
             )
         )
-        .order_by(
-            Document.created_at.desc()
-        )
+        .order_by(Document.created_at.desc())
         .limit(10)
         .all()
     )
-
 
     return documents

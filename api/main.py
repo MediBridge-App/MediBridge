@@ -1,6 +1,7 @@
 import os
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from fastapi import FastAPI
@@ -31,11 +32,10 @@ from routes import (
     internal_ai,
 )
 
-
 app = FastAPI(
     title="MediBridge API",
     description="Digital Document Exchange Backend API",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 
@@ -43,20 +43,11 @@ app = FastAPI(
 # Exception Handlers
 # ==================================================
 
-app.add_exception_handler(
-    SQLAlchemyError,
-    database_exception_handler
-)
+app.add_exception_handler(SQLAlchemyError, database_exception_handler)
 
-app.add_exception_handler(
-    RequestValidationError,
-    validation_exception_handler
-)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
-app.add_exception_handler(
-    Exception,
-    general_exception_handler
-)
+app.add_exception_handler(Exception, general_exception_handler)
 
 
 # ==================================================
@@ -66,6 +57,8 @@ app.add_exception_handler(
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://d17p405i1iil2n.cloudfront.net",
+    "https://medibridge.click",
 ]
 
 frontend_url = os.getenv("FRONTEND_URL")
@@ -107,16 +100,12 @@ app.include_router(internal_ai.router)
 # Health Check
 # ==================================================
 
+
 @app.get("/")
 def root():
-    return {
-        "status": "ok",
-        "message": "MediBridge API is running"
-    }
+    return {"status": "ok", "message": "MediBridge API is running"}
 
 
 @app.get("/health")
 def health():
-    return {
-        "status": "ok"
-    }
+    return {"status": "ok"}

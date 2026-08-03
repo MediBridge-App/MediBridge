@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import or_
 from uuid import UUID
 from datetime import datetime
 import uuid
@@ -11,77 +12,94 @@ from dependencies.auth import get_current_user
 
 from models.document import Document
 from models.ai_analysis import AIAnalysis
+from models.organization import Organization
+from services.events import publish_document_sent_event
 
 from schemas.document import (
     DocumentCreate,
     DocumentResponse,
     UploadURLRequest,
-    DocumentStatusUpdate
+    DocumentStatusUpdate,
 )
 
 from services.audit import create_audit_log
-from services.s3 import generate_presigned_upload_url
-
-
-router = APIRouter(
-    prefix="/documents",
-    tags=["Documents"]
+from services.s3 import (
+    generate_presigned_upload_url,
+    generate_presigned_download_url,
 )
+
+
+router = APIRouter(prefix="/documents", tags=["Documents"])
+
+
+SenderOrg = aliased(Organization)
+RecipientOrg = aliased(Organization)
 
 
 # ==================================================
 # GET INBOX DOCUMENTS
+# GET /documents/inbox
 # ==================================================
 
-@router.get(
-    "/inbox",
-    response_model=list[DocumentResponse]
-)
+
+@router.get("/inbox", response_model=list[DocumentResponse])
 def get_inbox(
     status: str | None = None,
     type: str | None = None,
     priority: str | None = None,
     search: str | None = None,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
 
     try:
+
         query = (
             db.query(
                 Document,
-                AIAnalysis.urgency_detected
+                AIAnalysis.urgency_detected,
+                AIAnalysis.summary,
+                AIAnalysis.tags,
+                SenderOrg.name.label("sender_org_name"),
+                RecipientOrg.name.label("recipient_org_name"),
             )
             .outerjoin(
                 AIAnalysis,
-                AIAnalysis.document_id == Document.id
+                AIAnalysis.document_id == Document.id,
+            )
+            .join(
+                SenderOrg,
+                SenderOrg.id == Document.sender_org_id,
+            )
+            .join(
+                RecipientOrg,
+                RecipientOrg.id == Document.recipient_org_id,
             )
             .filter(
-                Document.recipient_org_id == current_user.organization_id
+                Document.recipient_org_id
+                == current_user.organization_id
             )
         )
 
         if status:
-            query = query.filter(
-                Document.status == status
-            )
+            query = query.filter(Document.status == status)
 
         if type:
-            query = query.filter(
-                Document.document_type == type
-            )
+            query = query.filter(Document.document_type == type)
 
         if priority:
-            query = query.filter(
-                Document.priority == priority
-            )
+            query = query.filter(Document.priority == priority)
 
         if search:
             query = query.filter(
                 Document.subject.ilike(f"%{search}%")
             )
 
-        results = query.all()
+        results = (
+            query
+            .order_by(Document.created_at.desc())
+            .all()
+        )
 
         return [
             {
@@ -90,95 +108,206 @@ def get_inbox(
                     for key, value in document.__dict__.items()
                     if key != "_sa_instance_state"
                 },
-                "urgency_detected": urgency_detected
+                "urgency_detected": urgency_detected,
+                "summary": summary,
+                "tags": tags,
+                "sender_org_name": sender_org_name,
+                "recipient_org_name": recipient_org_name,
             }
-            for document, urgency_detected in results
+            for (
+                document,
+                urgency_detected,
+                summary,
+                tags,
+                sender_org_name,
+                recipient_org_name,
+            ) in results
         ]
 
-    except SQLAlchemyError:
+    except Exception as e:
+
+        print("INBOX ERROR:", repr(e))
+
         raise HTTPException(
             status_code=500,
-            detail="Unable to retrieve inbox documents"
+            detail=str(e),
         )
 
 
 # ==================================================
 # GET SENT DOCUMENTS
+# GET /documents/sent
 # ==================================================
 
-@router.get(
-    "/sent",
-    response_model=list[DocumentResponse]
-)
+
+@router.get("/sent", response_model=list[DocumentResponse])
 def get_sent(
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
 
     try:
-        return (
-            db.query(Document)
-            .filter(
-                Document.sender_org_id == current_user.organization_id
+
+        results = (
+            db.query(
+                Document,
+                AIAnalysis.urgency_detected,
+                AIAnalysis.summary,
+                AIAnalysis.tags,
+                SenderOrg.name.label("sender_org_name"),
+                RecipientOrg.name.label("recipient_org_name"),
             )
+            .outerjoin(
+                AIAnalysis,
+                AIAnalysis.document_id == Document.id,
+            )
+            .join(
+                SenderOrg,
+                SenderOrg.id == Document.sender_org_id,
+            )
+            .join(
+                RecipientOrg,
+                RecipientOrg.id == Document.recipient_org_id,
+            )
+            .filter(
+                Document.sender_org_id
+                == current_user.organization_id
+            )
+            .order_by(Document.created_at.desc())
             .all()
         )
 
+        return [
+            {
+                **{
+                    key: value
+                    for key, value in document.__dict__.items()
+                    if key != "_sa_instance_state"
+                },
+                "urgency_detected": urgency_detected,
+                "summary": summary,
+                "tags": tags,
+                "sender_org_name": sender_org_name,
+                "recipient_org_name": recipient_org_name,
+            }
+            for (
+                document,
+                urgency_detected,
+                summary,
+                tags,
+                sender_org_name,
+                recipient_org_name,
+            ) in results
+        ]
+
     except SQLAlchemyError:
+
         raise HTTPException(
             status_code=500,
-            detail="Unable to retrieve sent documents"
+            detail="Unable to retrieve sent documents",
         )
 
 
 # ==================================================
 # SEARCH DOCUMENTS
+# GET /documents/search
 # ==================================================
 
-@router.get(
-    "/search",
-    response_model=list[DocumentResponse]
-)
+@router.get("/search", response_model=list[DocumentResponse])
 def search_documents(
     q: str,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
 
     try:
-        return (
-            db.query(Document)
+
+        results = (
+            db.query(
+                Document,
+                AIAnalysis.urgency_detected,
+                AIAnalysis.summary,
+                AIAnalysis.tags,
+                SenderOrg.name.label("sender_org_name"),
+                RecipientOrg.name.label("recipient_org_name"),
+            )
+            .outerjoin(
+                AIAnalysis,
+                AIAnalysis.document_id == Document.id,
+            )
+            .join(
+                SenderOrg,
+                SenderOrg.id == Document.sender_org_id,
+            )
+            .join(
+                RecipientOrg,
+                RecipientOrg.id == Document.recipient_org_id,
+            )
             .filter(
                 (
                     (Document.recipient_org_id == current_user.organization_id)
                     |
                     (Document.sender_org_id == current_user.organization_id)
                 ),
-                Document.subject.isnot(None),
-                Document.subject.ilike(f"%{q}%")
+                or_(
+                    Document.subject.ilike(f"%{q}%"),
+                    Document.tx_ref.ilike(f"%{q}%"),
+                    Document.document_type.ilike(f"%{q}%"),
+                    Document.priority.ilike(f"%{q}%"),
+                    Document.status.ilike(f"%{q}%"),
+                    Document.notes.ilike(f"%{q}%"),
+                    SenderOrg.name.ilike(f"%{q}%"),
+                    RecipientOrg.name.ilike(f"%{q}%"),
+                    AIAnalysis.summary.ilike(f"%{q}%")
+                )
             )
+            .order_by(Document.created_at.desc())
             .all()
         )
 
+
+        return [
+            {
+                **{
+                    key: value
+                    for key, value in document.__dict__.items()
+                    if key != "_sa_instance_state"
+                },
+                "urgency_detected": urgency_detected,
+                "summary": summary,
+                "tags": tags,
+                "sender_org_name": sender_org_name,
+                "recipient_org_name": recipient_org_name,
+            }
+            for (
+                document,
+                urgency_detected,
+                summary,
+                tags,
+                sender_org_name,
+                recipient_org_name,
+            ) in results
+        ]
+
+
     except SQLAlchemyError:
+
         raise HTTPException(
             status_code=500,
-            detail="Unable to search documents"
+            detail="Unable to search documents",
         )
 
-
 # ==================================================
-# GET SINGLE DOCUMENT
+# GET DOCUMENT DOWNLOAD URL
+# GET /documents/{doc_id}/download-url
 # ==================================================
 
-@router.get(
-    "/{doc_id}",
-    response_model=DocumentResponse
-)
-def get_document(
+
+@router.get("/{doc_id}/download-url")
+def get_download_url(
     doc_id: UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
 
     try:
@@ -191,63 +320,260 @@ def get_document(
                     (Document.sender_org_id == current_user.organization_id)
                     |
                     (Document.recipient_org_id == current_user.organization_id)
-                )
+                ),
             )
             .first()
         )
 
         if not document:
+
             raise HTTPException(
                 status_code=404,
-                detail="Document not found or access denied"
+                detail="Document not found or access denied",
             )
 
-        return document
+        result = generate_presigned_download_url(
+            document.file_s3_key
+        )
+
+        create_audit_log(
+            db=db,
+            event_type="document_downloaded",
+            action="Document download URL generated",
+            document_id=document.id,
+            user_id=current_user.id,
+            organization_id=current_user.organization_id,
+            details={},
+        )
+
+        db.commit()
+
+        return {
+            **result,
+            "filename": document.original_filename,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to generate download URL",
+        )
+# ==================================================
+# GET SINGLE DOCUMENT
+# GET /documents/{doc_id}
+# ==================================================
+
+@router.get("/{doc_id}", response_model=DocumentResponse)
+def get_document(
+    doc_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+
+    try:
+
+        result = (
+            db.query(
+                Document,
+                AIAnalysis.urgency_detected,
+                AIAnalysis.summary,
+                AIAnalysis.tags,
+                SenderOrg.name.label("sender_org_name"),
+                RecipientOrg.name.label("recipient_org_name"),
+            )
+            .outerjoin(
+                AIAnalysis,
+                AIAnalysis.document_id == Document.id,
+            )
+            .join(
+                SenderOrg,
+                SenderOrg.id == Document.sender_org_id,
+            )
+            .join(
+                RecipientOrg,
+                RecipientOrg.id == Document.recipient_org_id,
+            )
+            .filter(
+                Document.id == doc_id,
+                (
+                    (Document.sender_org_id == current_user.organization_id)
+                    |
+                    (Document.recipient_org_id == current_user.organization_id)
+                ),
+            )
+            .first()
+        )
+
+        if not result:
+            raise HTTPException(
+                status_code=404,
+                detail="Document not found or access denied",
+            )
+
+
+        (
+            document,
+            urgency_detected,
+            summary,
+            tags,
+            sender_org_name,
+            recipient_org_name,
+        ) = result
+
+
+        return {
+            **{
+                key: value
+                for key, value in document.__dict__.items()
+                if key != "_sa_instance_state"
+            },
+            "urgency_detected": urgency_detected,
+            "summary": summary,
+            "tags": tags,
+            "sender_org_name": sender_org_name,
+            "recipient_org_name": recipient_org_name,
+        }
+
+
+    except HTTPException:
+        raise
+
+    except SQLAlchemyError as e:
+        print("INBOX ERROR:", e)
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
+
+
+# ==================================================
+# MARK DOCUMENT AS READ
+# PUT /documents/{doc_id}/read
+# ==================================================
+
+
+@router.put("/{doc_id}/read", response_model=DocumentResponse)
+def mark_document_read(
+    doc_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+
+    try:
+
+        document = (
+            db.query(Document)
+            .filter(
+                Document.id == doc_id,
+                (
+                    (Document.sender_org_id == current_user.organization_id)
+                    |
+                    (Document.recipient_org_id == current_user.organization_id)
+                ),
+            )
+            .first()
+        )
+
+        if not document:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Document not found or access denied",
+            )
+
+        if document.read_at is None:
+
+            document.read_at = datetime.utcnow()
+
+            create_audit_log(
+                db=db,
+                event_type="document_read",
+                action="Document marked as read",
+                document_id=document.id,
+                user_id=current_user.id,
+                organization_id=current_user.organization_id,
+                details={},
+            )
+
+            db.commit()
+
+            db.refresh(document)
+
+        return get_document(
+            doc_id=document.id,
+            db=db,
+            current_user=current_user,
+        )
 
     except HTTPException:
         raise
 
     except SQLAlchemyError:
+
+        db.rollback()
+
         raise HTTPException(
             status_code=500,
-            detail="Unable to retrieve document"
+            detail="Unable to mark document as read",
         )
 
 
 # ==================================================
 # SEND DOCUMENT
+# POST /documents/send
 # ==================================================
 
-@router.post(
-    "/send",
-    response_model=DocumentResponse
-)
+
+@router.post("/send", response_model=DocumentResponse)
 def send_document(
     document: DocumentCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
 
-    new_document = Document(
-        tx_ref=f"TX-{uuid.uuid4().hex[:6].upper()}",
-        sender_org_id=current_user.organization_id,
-        recipient_org_id=document.recipient_org_id,
-        uploaded_by_user_id=current_user.id,
-        file_s3_key=document.file_s3_key,
-        original_filename=document.original_filename,
-        file_size=document.file_size,
-        document_type=document.document_type,
-        subject=document.subject,
-        priority=document.priority,
-        status="uploaded",
-        notes=document.notes
-    )
-
     try:
+
+        recipient = (
+            db.query(Organization)
+            .filter(
+                Organization.id == document.recipient_org_id
+            )
+            .first()
+        )
+
+        if not recipient:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Recipient organization not found",
+            )
+
+
+        new_document = Document(
+            tx_ref=f"TX-{uuid.uuid4().hex[:6].upper()}",
+            sender_org_id=current_user.organization_id,
+            recipient_org_id=document.recipient_org_id,
+            uploaded_by_user_id=current_user.id,
+            file_s3_key=document.file_s3_key,
+            original_filename=document.original_filename,
+            file_size=document.file_size,
+            document_type=document.document_type,
+            subject=document.subject,
+            priority=document.priority,
+            status="uploaded",
+            notes=document.notes,
+        )
+
 
         db.add(new_document)
 
         db.flush()
+
 
         create_audit_log(
             db=db,
@@ -258,15 +584,33 @@ def send_document(
             organization_id=current_user.organization_id,
             details={
                 "document_type": new_document.document_type,
-                "subject": new_document.subject
-            }
+                "subject": new_document.subject,
+            },
         )
+
 
         db.commit()
 
         db.refresh(new_document)
+        # Publish after commit so downstream AI services
+        # only receive events for persisted documents.
+        try:
+            publish_document_sent_event(new_document, current_user.id)
+        except Exception as e:
+            print(
+                f"SNS publish failed. document_id={new_document.id}, error={repr(e)}"
+            )
+                
 
-        return new_document
+        return get_document(
+            doc_id=new_document.id,
+            db=db,
+            current_user=current_user,
+        )
+
+
+    except HTTPException:
+        raise
 
     except SQLAlchemyError:
 
@@ -274,23 +618,22 @@ def send_document(
 
         raise HTTPException(
             status_code=500,
-            detail="Unable to send document"
+            detail="Unable to send document",
         )
 
 
 # ==================================================
 # UPDATE DOCUMENT STATUS
+# PUT /documents/{doc_id}/status
 # ==================================================
 
-@router.put(
-    "/{doc_id}/status",
-    response_model=DocumentResponse
-)
+
+@router.put("/{doc_id}/status", response_model=DocumentResponse)
 def update_document_status(
     doc_id: UUID,
     body: DocumentStatusUpdate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
 
     try:
@@ -298,15 +641,22 @@ def update_document_status(
         document = (
             db.query(Document)
             .filter(
-                Document.id == doc_id
+                Document.id == doc_id,
+                (
+                    (Document.sender_org_id == current_user.organization_id)
+                    |
+                    (Document.recipient_org_id == current_user.organization_id)
+                ),
             )
             .first()
         )
 
+
         if not document:
+
             raise HTTPException(
                 status_code=404,
-                detail="Document not found"
+                detail="Document not found or access denied",
             )
 
 
@@ -316,14 +666,16 @@ def update_document_status(
             "ocr_failed",
             "classified",
             "routed",
-            "delivered"
+            "delivered",
+            "rejected",
         ]
 
 
         if body.status not in allowed_statuses:
+
             raise HTTPException(
                 status_code=400,
-                detail="Invalid document status"
+                detail="Invalid document status",
             )
 
 
@@ -331,6 +683,7 @@ def update_document_status(
 
 
         if old_status == body.status:
+
             return document
 
 
@@ -338,6 +691,7 @@ def update_document_status(
 
 
         if body.status == "delivered":
+
             document.delivered_at = datetime.utcnow()
 
 
@@ -350,8 +704,8 @@ def update_document_status(
             organization_id=current_user.organization_id,
             details={
                 "old_status": old_status,
-                "new_status": body.status
-            }
+                "new_status": body.status,
+            },
         )
 
 
@@ -359,11 +713,17 @@ def update_document_status(
 
         db.refresh(document)
 
-        return document
+
+        return get_document(
+            doc_id=document.id,
+            db=db,
+            current_user=current_user,
+        )
 
 
     except HTTPException:
         raise
+
 
     except SQLAlchemyError:
 
@@ -371,32 +731,33 @@ def update_document_status(
 
         raise HTTPException(
             status_code=500,
-            detail="Unable to update document status"
+            detail="Unable to update document status",
         )
 
 
 # ==================================================
 # CREATE S3 UPLOAD URL
+# POST /documents/upload-url
 # ==================================================
 
-@router.post(
-    "/upload-url"
-)
+
+@router.post("/upload-url")
 def create_upload_url(
     request: UploadURLRequest,
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
 
     try:
 
         return generate_presigned_upload_url(
             request.filename,
-            request.content_type
+            request.content_type,
         )
+
 
     except Exception:
 
         raise HTTPException(
             status_code=500,
-            detail="Unable to generate upload URL"
+            detail="Unable to generate upload URL",
         )

@@ -1,6 +1,9 @@
 import { Building2 } from 'lucide-react'
+import { useAuth } from '../../hooks/useAuth'
 
 export default function SendSidebar() {
+    const { user } = useAuth()
+
     return (
         <div className="space-y-6">
 
@@ -18,36 +21,9 @@ export default function SendSidebar() {
                     </div>
                     <div>
                         <div className="text-sm font-semibold text-slate-800">
-                            St. Mercy General
+                            {user?.organizationName || '...'}
                         </div>
-                        <div className="text-xs text-slate-400 font-mono">ORG-00142</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Today's Sent */}
-            <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                    Today's Sent
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50 rounded-xl border border-slate-200 p-3 text-center">
-                        <div
-                            className="text-2xl font-bold"
-                            style={{ color: '#0e7490' }}
-                        >
-                            12
-                        </div>
-                        <div className="text-xs text-slate-500 mt-0.5">Documents</div>
-                    </div>
-                    <div className="bg-slate-50 rounded-xl border border-slate-200 p-3 text-center">
-                        <div
-                            className="text-2xl font-bold"
-                            style={{ color: '#0e7490' }}
-                        >
-                            7
-                        </div>
-                        <div className="text-xs text-slate-500 mt-0.5">Orgs Reached</div>
+                        <div className="text-xs text-slate-400 font-mono">{user?.orgCode || ''}</div>
                     </div>
                 </div>
             </div>

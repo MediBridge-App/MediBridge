@@ -8,7 +8,6 @@ class APIKeyCreate(BaseModel):
     name: str
 
 
-
 class APIKeyResponse(BaseModel):
 
     id: UUID
@@ -23,10 +22,8 @@ class APIKeyResponse(BaseModel):
 
     last_used_at: datetime | None
 
-
     class Config:
         from_attributes = True
-
 
 
 class APIKeyCreatedResponse(BaseModel):

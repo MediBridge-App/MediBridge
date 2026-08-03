@@ -4,23 +4,17 @@ from datetime import datetime
 
 from database import get_db
 
-from models.user_notification_preferences import (
-    UserNotificationPreferences
-)
+from models.user_notification_preferences import UserNotificationPreferences
 from models.user import User
 
 from schemas.user_notification_preferences import (
     NotificationPreferencesResponse,
-    NotificationPreferencesUpdate
+    NotificationPreferencesUpdate,
 )
 
 from dependencies.auth import get_current_user
 
-
-router = APIRouter(
-    prefix="/settings",
-    tags=["Settings"]
-)
+router = APIRouter(prefix="/settings", tags=["Settings"])
 
 
 # ==================================================
@@ -28,31 +22,24 @@ router = APIRouter(
 # GET /settings/notifications
 # ==================================================
 
-@router.get(
-    "/notifications",
-    response_model=NotificationPreferencesResponse
-)
+
+@router.get("/notifications", response_model=NotificationPreferencesResponse)
 def get_notification_preferences(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
 
     preferences = (
         db.query(UserNotificationPreferences)
-        .filter(
-            UserNotificationPreferences.user_id == current_user.id
-        )
+        .filter(UserNotificationPreferences.user_id == current_user.id)
         .first()
     )
 
     if not preferences:
         raise HTTPException(
-            status_code=404,
-            detail="Notification preferences not found"
+            status_code=404, detail="Notification preferences not found"
         )
 
     return preferences
-
 
 
 # ==================================================
@@ -60,28 +47,23 @@ def get_notification_preferences(
 # PUT /settings/notifications
 # ==================================================
 
-@router.put(
-    "/notifications",
-    response_model=NotificationPreferencesResponse
-)
+
+@router.put("/notifications", response_model=NotificationPreferencesResponse)
 def update_notification_preferences(
     body: NotificationPreferencesUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
 
     preferences = (
         db.query(UserNotificationPreferences)
-        .filter(
-            UserNotificationPreferences.user_id == current_user.id
-        )
+        .filter(UserNotificationPreferences.user_id == current_user.id)
         .first()
     )
 
     if not preferences:
         raise HTTPException(
-            status_code=404,
-            detail="Notification preferences not found"
+            status_code=404, detail="Notification preferences not found"
         )
 
     if body.document_delivered is not None:

@@ -1,16 +1,15 @@
 import { ChevronDown } from 'lucide-react'
 
-const DOC_TYPES = [
-    'Lab Report',
-    'Referral',
-    'Discharge Summary',
-    'Insurance Form',
-    'Imaging Report',
-    'Medical Records',
-    'Prior Authorization',
-    'Consultation Note',
-    'Prescription',
-    'Other',
+// Restricted to exactly what the backend's document_type field accepts
+// (confirmed against DocumentType in types.ts / the OpenAPI schema).
+// The old list had 10 options (Prescription, Consultation Note, etc.) that
+// aren't real backend values — sending those would fail validation (422).
+const DOC_TYPES: { value: string; label: string }[] = [
+    { value: 'referral', label: 'Referral' },
+    { value: 'lab_result', label: 'Lab Result' },
+    { value: 'discharge_summary', label: 'Discharge Summary' },
+    { value: 'insurance_form', label: 'Insurance Form' },
+    { value: 'imaging', label: 'Imaging Report' },
 ]
 
 const PRIORITY_OPTIONS = [
@@ -61,7 +60,7 @@ export default function DocumentForm({
                         >
                             <option value="" disabled>Select document type…</option>
                             {DOC_TYPES.map((t) => (
-                                <option key={t} value={t}>{t}</option>
+                                <option key={t.value} value={t.value}>{t.label}</option>
                             ))}
                         </select>
                         <ChevronDown

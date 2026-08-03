@@ -1,0 +1,13 @@
+{
+  "document_type": "lab_result",
+  "summary": "Routine complete blood count results. Hemoglobin is slightly below the reference range and may require follow-up.",
+  "tags": [
+    "CBC",
+    "Low Hemoglobin",
+    "Follow-up Recommended"
+  ],
+  "recommendation_text": "Review the low hemoglobin result and consider clinical follow-up.",
+  "recommendation_type": "clinical_follow_up",
+  "urgency_detected": false,
+  "confidence_score": 96.5
+}

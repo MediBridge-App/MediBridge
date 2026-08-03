@@ -8,17 +8,9 @@ from dependencies.auth import get_current_user
 
 from models.webhook import Webhook
 
-from schemas.webhook import (
-    WebhookCreate,
-    WebhookResponse
-)
+from schemas.webhook import WebhookCreate, WebhookResponse
 
-
-router = APIRouter(
-    prefix="/settings/webhooks",
-    tags=["Webhooks"]
-)
-
+router = APIRouter(prefix="/settings/webhooks", tags=["Webhooks"])
 
 
 # ==================================================
@@ -26,26 +18,15 @@ router = APIRouter(
 # GET /settings/webhooks
 # ==================================================
 
-@router.get(
-    "",
-    response_model=list[WebhookResponse]
-)
-def get_webhooks(
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
+
+@router.get("", response_model=list[WebhookResponse])
+def get_webhooks(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
     user = current_user
 
-
     return (
-        db.query(Webhook)
-        .filter(
-            Webhook.organization_id == user.organization_id
-        )
-        .all()
+        db.query(Webhook).filter(Webhook.organization_id == user.organization_id).all()
     )
-
 
 
 # ==================================================
@@ -53,31 +34,22 @@ def get_webhooks(
 # POST /settings/webhooks
 # ==================================================
 
-@router.post(
-    "",
-    response_model=WebhookResponse
-)
+
+@router.post("", response_model=WebhookResponse)
 def create_webhook(
     body: WebhookCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
 
     user = current_user
 
-
     webhook = Webhook(
-
         organization_id=user.organization_id,
-
         name=body.name,
-
         url=body.url,
-
-        events=body.events
-
+        events=body.events,
     )
-
 
     db.add(webhook)
 
@@ -85,9 +57,7 @@ def create_webhook(
 
     db.refresh(webhook)
 
-
     return webhook
-
 
 
 # ==================================================
@@ -95,41 +65,29 @@ def create_webhook(
 # DELETE /settings/webhooks/{id}
 # ==================================================
 
-@router.delete(
-    "/{webhook_id}"
-)
+
+@router.delete("/{webhook_id}")
 def delete_webhook(
     webhook_id: UUID,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
 
     user = current_user
 
-
     webhook = (
         db.query(Webhook)
         .filter(
-            Webhook.id == webhook_id,
-            Webhook.organization_id == user.organization_id
+            Webhook.id == webhook_id, Webhook.organization_id == user.organization_id
         )
         .first()
     )
 
-
     if not webhook:
-        raise HTTPException(
-            status_code=404,
-            detail="Webhook not found"
-        )
-
+        raise HTTPException(status_code=404, detail="Webhook not found")
 
     webhook.is_active = False
 
-
     db.commit()
 
-
-    return {
-        "message": "webhook removed"
-    }
+    return {"message": "webhook removed"}

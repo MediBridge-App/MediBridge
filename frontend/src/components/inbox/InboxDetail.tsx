@@ -1,6 +1,5 @@
 import {
   Download,
-  Eye,
   X,
   Building2,
   Calendar,
@@ -11,10 +10,14 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import type { InboxDocument } from '../../types'
+import { useState } from 'react'
+import { documentsApi, extractDownloadUrl } from '../../api'
 
 interface InboxDetailProps {
   doc: InboxDocument
   onClose: () => void
+  hasBeenViewed: boolean
+  onViewed: () => void
 }
 
 const categoryColors: Record<string, { color: string; bg: string }> = {
@@ -25,8 +28,10 @@ const categoryColors: Record<string, { color: string; bg: string }> = {
   Imaging: { color: '#0284c7', bg: '#dbeafe' },
 }
 
-export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
+export default function InboxDetail({ doc, onClose, hasBeenViewed, onViewed }: InboxDetailProps) {
   const cat = categoryColors[doc.aiCategory] ?? { color: '#64748b', bg: '#f1f5f9' }
+  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
   const timeline = [
     { event: 'Document Uploaded to S3', done: true },
@@ -36,6 +41,27 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
     { event: 'Recipient Notified', done: doc.status !== 'uploaded' },
     { event: 'Document Read by Recipient', done: !doc.isUnread },
   ]
+
+  async function handleDownload() {
+    setDownloading(true)
+    setDownloadError(null)
+    try {
+      const data = await documentsApi.getDownloadUrl(doc.docId)
+      const url = extractDownloadUrl(data)
+      if (url) {
+        window.open(url, '_blank')
+        onViewed()
+      } else {
+        console.error('Unrecognized download-url response shape:', data)
+        setDownloadError('Could not read download link from server response.')
+      }
+    } catch (err) {
+      console.error('Download failed', err)
+      setDownloadError('Download failed. Please try again.')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white border-l border-slate-200">
@@ -68,15 +94,23 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors">
-            <Download size={13} /> Download
-          </button>
           <button
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#0e7490' }}
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors disabled:opacity-50"
           >
-            <Eye size={13} /> View
+            <Download size={13} />
+            {downloading ? 'Downloading...' : 'Download'}
           </button>
+          {hasBeenViewed && (
+            <span
+              className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg"
+              style={{ color: '#059669', backgroundColor: '#d1fae5' }}
+              title="You've already downloaded this document"
+            >
+              <CheckCircle2 size={12} /> Viewed
+            </span>
+          )}
           <button
             onClick={onClose}
             className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
@@ -85,6 +119,12 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
           </button>
         </div>
       </div>
+
+      {downloadError && (
+        <div className="px-6 py-2 text-xs font-medium text-red-600 bg-red-50 border-b border-red-100">
+          {downloadError}
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -149,15 +189,19 @@ export default function InboxDetail({ doc, onClose }: InboxDetailProps) {
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {doc.aiTags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full px-3 py-1 text-xs font-medium border border-slate-200"
-                style={{ backgroundColor: '#f8fafc', color: '#0e7490' }}
-              >
-                {tag}
-              </span>
-            ))}
+            {doc.aiTags.length > 0 ? (
+              doc.aiTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full px-3 py-1 text-xs font-medium border border-slate-200"
+                  style={{ backgroundColor: '#f8fafc', color: '#0e7490' }}
+                >
+                  {tag}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-slate-400">No tags yet</span>
+            )}
           </div>
         </div>
 

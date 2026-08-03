@@ -18,6 +18,8 @@ interface AuditToolbarProps {
     typeFilter: string
     onTypeFilterChange: (value: string) => void
     totalCount: number
+    onExport: () => void
+    exporting: boolean
 }
 
 export default function AuditToolbar({
@@ -26,6 +28,8 @@ export default function AuditToolbar({
     typeFilter,
     onTypeFilterChange,
     totalCount,
+    onExport,
+    exporting,
 }: AuditToolbarProps) {
     return (
         <div
@@ -56,10 +60,12 @@ export default function AuditToolbar({
 
                     {/* Export CSV */}
                     <button
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors"
+                        onClick={onExport}
+                        disabled={exporting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors disabled:opacity-50"
                     >
                         <Download size={13} />
-                        Export CSV
+                        {exporting ? 'Exporting...' : 'Export CSV'}
                     </button>
                 </div>
             </div>

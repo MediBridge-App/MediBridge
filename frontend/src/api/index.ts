@@ -26,9 +26,7 @@ api.interceptors.request.use(async (req) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
-      window.location.href = "/login";
-    }
+    // Don't auto-redirect on 401
     return Promise.reject(err);
   },
 );
@@ -58,7 +56,36 @@ export const documentsApi = {
     api.post("/documents/upload-url", data).then((r) => r.data),
   search: (q: string) =>
     api.get("/documents/search", { params: { q } }).then((r) => r.data),
+  // Real dedicated endpoint, confirmed live as of Aug 3 — replaces the old
+  // workaround that incorrectly called PUT /status with "delivered" (which
+  // risked corrupting the actual document workflow status).
+  markAsRead: (id: string) =>
+    api.put(`/documents/${id}/read`).then((r) => r.data),
+  // NOTE: real doc_id (UUID) required here, not tx_ref.
+  // Response shape from Bella's endpoint isn't confirmed yet — currently
+  // returns 500 ("Unable to generate download URL"), likely an S3/IAM issue
+  // on her end. Once fixed, check the real payload and simplify getDownloadUrl
+  // if needed — see extractDownloadUrl() below for how we're handling the
+  // unknown shape for now.
+  getDownloadUrl: (docId: string) =>
+    api.get(`/documents/${docId}/download-url`).then((r) => r.data),
 };
+
+// Helper: Bella's download-url endpoint has an untyped response in the
+// OpenAPI spec, so we don't yet know if it returns a plain string, or an
+// object like { download_url: "..." } or { url: "..." }. This function
+// checks the common shapes so InboxDetail doesn't break once the backend
+// starts returning real data — update/simplify once confirmed.
+export function extractDownloadUrl(data: unknown): string | null {
+  if (typeof data === "string") return data;
+  if (data && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    if (typeof obj.download_url === "string") return obj.download_url;
+    if (typeof obj.url === "string") return obj.url;
+    if (typeof obj.presigned_url === "string") return obj.presigned_url;
+  }
+  return null;
+}
 
 // ─── Audit ───────────────────────────────────────────────────────────────────
 
@@ -98,6 +125,8 @@ export const organizationsApi = {
   getAll: (search?: string) =>
     api.get("/organizations", { params: { search } }).then((r) => r.data),
   getById: (id: string) => api.get(`/organizations/${id}`).then((r) => r.data),
+  update: (id: string, data: object) =>
+    api.put(`/organizations/${id}`, data).then((r) => r.data),
 };
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -124,19 +153,34 @@ export const securityApi = {
     api.put("/security/settings", data).then((r) => r.data),
 };
 
-api.interceptors.request.use(async (req) => {
-  try {
-    const session = await fetchAuthSession();
-    const token = session.tokens?.accessToken?.toString();
-    const payload = session.tokens?.accessToken?.payload;
-    console.log("Token payload:", JSON.stringify(payload, null, 2));
-    console.log("Sub:", payload?.sub);
-    if (token) {
-      req.headers.Authorization = `Bearer ${token}`;
-    }
-  } catch (err) {
-    console.log("Auth session error:", err);
-  }
-  return req;
-});
+// ─── Notification Preferences (Settings page) ─────────────────────────────────
+// Distinct from notificationsApi above — that's the notification bell/list,
+// this is the per-user "which events should notify me" preferences.
+
+export const notificationPreferencesApi = {
+  get: () => api.get("/settings/notifications").then((r) => r.data),
+  update: (data: object) =>
+    api.put("/settings/notifications", data).then((r) => r.data),
+};
+
+// ─── API Keys ─────────────────────────────────────────────────────────────────
+
+export const apiKeysApi = {
+  getAll: () => api.get("/settings/api-keys").then((r) => r.data),
+  create: (data: object) =>
+    api.post("/settings/api-keys", data).then((r) => r.data),
+  delete: (keyId: string) =>
+    api.delete(`/settings/api-keys/${keyId}`).then((r) => r.data),
+};
+
+// ─── Webhooks ─────────────────────────────────────────────────────────────────
+
+export const webhooksApi = {
+  getAll: () => api.get("/settings/webhooks").then((r) => r.data),
+  create: (data: object) =>
+    api.post("/settings/webhooks", data).then((r) => r.data),
+  delete: (webhookId: string) =>
+    api.delete(`/settings/webhooks/${webhookId}`).then((r) => r.data),
+};
+
 export default api;
