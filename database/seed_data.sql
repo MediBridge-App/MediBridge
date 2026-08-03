@@ -20,7 +20,7 @@ RESTART IDENTITY CASCADE;
 -- ORGANIZATIONS (3)
 -- ---------------------------------------------------------------------
 INSERT INTO organizations (id, name, org_code, type, created_at) VALUES
-  ('a0000000-0000-4000-8000-000000000001', 'St. Mercy Clinic',           'ORG-STMERCY',   'clinic',   now() - interval '30 days'),
+  ('a0000000-0000-4000-8000-000000000001', 'St. Mercy General',           'ORG-STMERCY',   'clinic',   now() - interval '30 days'),
   ('a0000000-0000-4000-8000-000000000002', 'Riverside Cardiology',       'ORG-RIVERSIDE', 'clinic',   now() - interval '28 days'),
   ('a0000000-0000-4000-8000-000000000003', 'Metro General Hospital',     'ORG-METRO',     'hospital', now() - interval '25 days');
 
@@ -142,7 +142,7 @@ INSERT INTO audit_logs (id, event_id, document_id, user_id, organization_id, eve
 -- NOTIFICATIONS — recipient-side alerts
 -- ---------------------------------------------------------------------
 INSERT INTO notifications (id, user_id, document_id, type, message, is_read, created_at) VALUES
-  ('22220000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000001', 'new_document',      'New referral received from St. Mercy Clinic.', true,  now() - interval '5 days' - interval '3 hours'),
+  ('22220000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000003', 'c0000000-0000-4000-8000-000000000001', 'new_document',      'New referral received from St. Mercy General.', true,  now() - interval '5 days' - interval '3 hours'),
   ('22220000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002', 'c0000000-0000-4000-8000-000000000002', 'urgent',            'Urgent lab result received: Lipid panel flagged abnormal.', true, now() - interval '4 days' - interval '2 hours'),
   ('22220000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000005', 'c0000000-0000-4000-8000-000000000003', 'new_document',      'New discharge summary routed to your organization.', false, now() - interval '3 days'),
   ('22220000-0000-4000-8000-000000000004', 'b0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000004', 'new_document',      'New insurance form routed to your organization.', false, now() - interval '2 days' - interval '20 hours'),
@@ -190,7 +190,7 @@ INSERT INTO documents (id, tx_ref, sender_org_id, recipient_org_id, uploaded_by_
   ('c0000000-0000-4000-8000-000000000013', 'TX-1013',
     'a0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000004',
     'documents/TX-1013.pdf', 'discharge_summary_confidential.pdf', 187392, 'discharge_summary', 'Discharge summary — confidential, restricted access', 'normal', 'routed',
-    'Routed to Metro General only; unauthorized access attempt logged from St. Mercy Clinic.', now() - interval '1 day', NULL, NULL);
+    'Routed to Metro General only; unauthorized access attempt logged from St. Mercy General.', now() - interval '1 day', NULL, NULL);
 
 -- document_text: OCR completed for TX-1011 before rejection; failed OCR row
 -- for TX-1012 (no extracted text); completed OCR for TX-1013.
