@@ -12,9 +12,9 @@ class AIAnalysisResponse(BaseModel):
 
     document_type: str | None
 
-    summary: str | None
+    ai_summary: str | None
 
-    tags: list[str] | None
+    ai_tags: list[str] | None
 
     recommendation_text: str | None
 
@@ -31,7 +31,6 @@ class AIAnalysisResponse(BaseModel):
     status: str
 
     created_at: datetime
-
 
     class Config:
         from_attributes = True

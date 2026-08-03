@@ -1,26 +1,19 @@
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException
-)
-
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
 from fastapi.responses import StreamingResponse
 
 from io import StringIO
-
 import csv
-
 
 from database import get_db
 
 from dependencies.auth import get_current_user
 
 from models.audit import AuditLog
+from models.user import User
+from models.organization import Organization
 
 from schemas.audit import AuditResponse
-
 
 
 router = APIRouter(
@@ -29,26 +22,35 @@ router = APIRouter(
 )
 
 
-
 # ==================================================
 # GET ALL AUDIT EVENTS
 # GET /audit
 # ==================================================
+
 
 @router.get(
     "",
     response_model=list[AuditResponse]
 )
 def get_audit_logs(
-
     db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
+    current_user=Depends(get_current_user),
 ):
 
     logs = (
-        db.query(AuditLog)
+        db.query(
+            AuditLog,
+            User.full_name.label("user_name"),
+            Organization.name.label("org_name"),
+        )
+        .outerjoin(
+            User,
+            AuditLog.user_id == User.id,
+        )
+        .outerjoin(
+            Organization,
+            AuditLog.organization_id == Organization.id,
+        )
         .filter(
             AuditLog.organization_id == current_user.organization_id
         )
@@ -59,9 +61,18 @@ def get_audit_logs(
     )
 
 
-    return logs
-
-
+    return [
+        {
+            **{
+                key: value
+                for key, value in log.__dict__.items()
+                if key != "_sa_instance_state"
+            },
+            "user_name": user_name,
+            "org_name": org_name,
+        }
+        for log, user_name, org_name in logs
+    ]
 
 
 # ==================================================
@@ -69,15 +80,11 @@ def get_audit_logs(
 # GET /audit/export
 # ==================================================
 
-@router.get(
-    "/export"
-)
+
+@router.get("/export")
 def export_audit_logs(
-
     db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
+    current_user=Depends(get_current_user),
 ):
 
     logs = (
@@ -94,68 +101,51 @@ def export_audit_logs(
 
     output = StringIO()
 
-
     writer = csv.writer(output)
 
 
-    writer.writerow([
-        "event_id",
-        "event_type",
-        "action",
-        "document_id",
-        "user_id",
-        "organization_id",
-        "ip_address",
-        "hash",
-        "created_at"
-    ])
-
+    writer.writerow(
+        [
+            "event_id",
+            "event_type",
+            "action",
+            "document_id",
+            "user_id",
+            "organization_id",
+            "ip_address",
+            "hash",
+            "created_at",
+        ]
+    )
 
 
     for log in logs:
 
-        writer.writerow([
-
-            log.event_id,
-
-            log.event_type,
-
-            log.action,
-
-            log.document_id,
-
-            log.user_id,
-
-            log.organization_id,
-
-            log.ip_address,
-
-            log.hash,
-
-            log.created_at
-
-        ])
-
+        writer.writerow(
+            [
+                log.event_id,
+                log.event_type,
+                log.action,
+                log.document_id,
+                log.user_id,
+                log.organization_id,
+                log.ip_address,
+                log.hash,
+                log.created_at,
+            ]
+        )
 
 
     output.seek(0)
 
 
-
     return StreamingResponse(
-
         output,
-
         media_type="text/csv",
-
         headers={
-            "Content-Disposition":
-            "attachment; filename=audit_logs.csv"
-        }
-
+            "Content-Disposition": "attachment; filename=audit_logs.csv"
+        },
     )
-
-
 
 
 # ==================================================
@@ -163,25 +153,34 @@ def export_audit_logs(
 # GET /audit/{event_id}
 # ==================================================
 
+
 @router.get(
     "/{event_id}",
     response_model=AuditResponse
 )
 def get_audit_event(
-
     event_id: str,
-
     db: Session = Depends(get_db),
-
-    current_user = Depends(get_current_user)
-
+    current_user=Depends(get_current_user),
 ):
 
     audit = (
-        db.query(AuditLog)
+        db.query(
+            AuditLog,
+            User.full_name.label("user_name"),
+            Organization.name.label("org_name"),
+        )
+        .outerjoin(
+            User,
+            AuditLog.user_id == User.id,
+        )
+        .outerjoin(
+            Organization,
+            AuditLog.organization_id == Organization.id,
+        )
         .filter(
             AuditLog.event_id == event_id,
-            AuditLog.organization_id == current_user.organization_id
+            AuditLog.organization_id == current_user.organization_id,
         )
         .first()
     )
@@ -191,8 +190,19 @@ def get_audit_event(
 
         raise HTTPException(
             status_code=404,
-            detail="Audit event not found"
+            detail="Audit event not found",
         )
 
 
-    return audit
+    log, user_name, org_name = audit
+
+
+    return {
+        **{
+            key: value
+            for key, value in log.__dict__.items()
+            if key != "_sa_instance_state"
+        },
+        "user_name": user_name,
+        "org_name": org_name,
+    }

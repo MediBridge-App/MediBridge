@@ -8,7 +8,6 @@ class LoginRequest(BaseModel):
     password: str
 
 
-
 class UserResponse(BaseModel):
 
     id: UUID
@@ -27,7 +26,6 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 
 class TokenResponse(BaseModel):

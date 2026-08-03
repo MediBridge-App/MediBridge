@@ -8,7 +8,6 @@ from models.user import User
 from models.document import Document
 from models.user_notification_preferences import UserNotificationPreferences
 
-
 db = SessionLocal()
 
 
@@ -16,17 +15,11 @@ db = SessionLocal()
 # IDS
 # ==================================================
 
-CLINIC_ID = uuid.UUID(
-    "a0000000-0000-4000-8000-000000000001"
-)
+CLINIC_ID = uuid.UUID("a0000000-0000-4000-8000-000000000001")
 
-HOSPITAL_ID = uuid.UUID(
-    "a0000000-0000-4000-8000-000000000002"
-)
+HOSPITAL_ID = uuid.UUID("a0000000-0000-4000-8000-000000000002")
 
-USER_ID = uuid.UUID(
-    "b0000000-0000-4000-8000-000000000001"
-)
+USER_ID = uuid.UUID("b0000000-0000-4000-8000-000000000001")
 
 
 try:
@@ -40,23 +33,19 @@ try:
             "id": CLINIC_ID,
             "name": "Seattle Clinic",
             "org_code": "ORG-001",
-            "type": "clinic"
+            "type": "clinic",
         },
         {
             "id": HOSPITAL_ID,
             "name": "UW Hospital",
             "org_code": "ORG-002",
-            "type": "hospital"
-        }
+            "type": "hospital",
+        },
     ]
-
 
     for item in organizations:
 
-        org = db.query(Organization).filter(
-            Organization.id == item["id"]
-        ).first()
-
+        org = db.query(Organization).filter(Organization.id == item["id"]).first()
 
         if org:
 
@@ -67,7 +56,6 @@ try:
             org.date_format = "MM/DD/YYYY"
             org.language = "English (US)"
 
-
         else:
 
             org = Organization(
@@ -77,24 +65,18 @@ try:
                 type=item["type"],
                 timezone="America/Chicago",
                 date_format="MM/DD/YYYY",
-                language="English (US)"
+                language="English (US)",
             )
 
             db.add(org)
 
-
     db.commit()
-
-
 
     # ==================================================
     # USER
     # ==================================================
 
-    user = db.query(User).filter(
-        User.id == USER_ID
-    ).first()
-
+    user = db.query(User).filter(User.id == USER_ID).first()
 
     if user:
 
@@ -105,7 +87,6 @@ try:
         user.role = "provider"
         # user.specialty = "Cardiology"
         # user.npi_number = "1234567890"
-
 
     else:
 
@@ -122,21 +103,17 @@ try:
 
         db.add(user)
 
-
     db.commit()
-
-
 
     # ==================================================
     # NOTIFICATION PREFERENCES
     # ==================================================
 
-    preferences = db.query(
-        UserNotificationPreferences
-    ).filter(
-        UserNotificationPreferences.user_id == USER_ID
-    ).first()
-
+    preferences = (
+        db.query(UserNotificationPreferences)
+        .filter(UserNotificationPreferences.user_id == USER_ID)
+        .first()
+    )
 
     if preferences:
 
@@ -145,7 +122,6 @@ try:
         preferences.urgent_documents = True
         preferences.audit_events = False
         preferences.ai_processing_complete = True
-
 
     else:
 
@@ -156,22 +132,18 @@ try:
             document_read=True,
             urgent_documents=True,
             audit_events=False,
-            ai_processing_complete=True
+            ai_processing_complete=True,
         )
 
         db.add(preferences)
 
-
     db.commit()
-
-
 
     # ==================================================
     # DOCUMENTS
     # ==================================================
 
     documents = [
-
         {
             "id": "44444444-4444-4444-4444-444444444444",
             "tx_ref": "TX-001",
@@ -184,9 +156,8 @@ try:
             "file_s3_key": "documents/referral.pdf",
             "original_filename": "cardiology_referral.pdf",
             "file_size": 102400,
-            "read": True
+            "read": True,
         },
-
         {
             "id": "55555555-5555-5555-5555-555555555555",
             "tx_ref": "TX-002",
@@ -199,9 +170,8 @@ try:
             "file_s3_key": "documents/lab_results.pdf",
             "original_filename": "lab_results.pdf",
             "file_size": 204800,
-            "read": True
+            "read": True,
         },
-
         {
             "id": "66666666-6666-6666-6666-666666666666",
             "tx_ref": "TX-003",
@@ -214,28 +184,21 @@ try:
             "file_s3_key": "documents/mri_scan.pdf",
             "original_filename": "mri_scan.pdf",
             "file_size": 500000,
-            "read": False
-        }
-
+            "read": False,
+        },
     ]
-
 
     for item in documents:
 
         document_id = uuid.UUID(item["id"])
 
-
-        document = db.query(Document).filter(
-            Document.id == document_id
-        ).first()
-
+        document = db.query(Document).filter(Document.id == document_id).first()
 
         if document:
 
             document.status = item["status"]
             document.priority = item["priority"]
             document.subject = item["subject"]
-
 
         else:
 
@@ -252,20 +215,15 @@ try:
                 file_s3_key=item["file_s3_key"],
                 original_filename=item["original_filename"],
                 file_size=item["file_size"],
-                delivered_at=datetime.utcnow()
-                if item["status"] == "delivered"
-                else None,
-                read_at=datetime.utcnow()
-                if item["read"]
-                else None
+                delivered_at=(
+                    datetime.utcnow() if item["status"] == "delivered" else None
+                ),
+                read_at=datetime.utcnow() if item["read"] else None,
             )
 
             db.add(document)
 
-
-
     db.commit()
-
 
     print("Seed complete!")
 
