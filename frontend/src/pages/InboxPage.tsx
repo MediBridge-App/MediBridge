@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { InboxDocument, DocumentStatus, DocumentType, DocumentPriority } from '../types'
-import { documentsApi, organizationsApi } from '../api'
+import { documentsApi } from '../api'
 import InboxToolbar from '../components/inbox/InboxToolbar'
 import InboxList from '../components/inbox/InboxList'
 import InboxDetail from '../components/inbox/InboxDetail'
@@ -18,11 +18,18 @@ function formatTime(isoString: string): string {
     })
 }
 
+// Bella added sender_org_name/recipient_org_name/summary/tags directly to
+// this response — confirmed via a real GET /documents/inbox call. This
+// means we no longer need a separate /organizations fetch to resolve org
+// names, or a separate /ai/analyses/{id} fetch in InboxDetail for the
+// summary/tags — all included here now.
 type ApiDoc = {
     id: string
     tx_ref: string
     sender_org_id: string
     recipient_org_id: string
+    sender_org_name: string
+    recipient_org_name: string
     document_type: string
     subject: string
     priority: string
@@ -34,36 +41,26 @@ type ApiDoc = {
     delivered_at: string | null
     read_at: string | null
     urgency_detected: boolean | null
+    summary: string | null
+    tags: string[] | null
 }
 
-// Shape of a single org from GET /organizations — using "name" per the
-// OpenAPI schema. Not yet verified against a real response; if org names
-// don't show up correctly, check the actual field name in Swagger and
-// adjust orgMap below.
-type ApiOrganization = {
-    id: string
-    name: string
-}
-
-// orgMap: id -> display name, built once from GET /organizations.
-// Falls back to the raw UUID if an org isn't found in the map (e.g. org
-// list fetch failed, or an org_id doesn't match anything returned).
-function mapDoc(doc: ApiDoc, orgMap: Record<string, string>): InboxDocument {
+function mapDoc(doc: ApiDoc): InboxDocument {
     return {
         id: doc.tx_ref,
         docId: doc.id,
         type: doc.document_type,
         subject: doc.subject,
-        from: orgMap[doc.sender_org_id] ?? doc.sender_org_id,
+        from: doc.sender_org_name,
         fromOrg: doc.sender_org_id,
-        to: orgMap[doc.recipient_org_id] ?? doc.recipient_org_id,
+        to: doc.recipient_org_name,
         toOrg: doc.recipient_org_id,
         status: doc.status as DocumentStatus,
         time: formatTime(doc.created_at),
         size: doc.file_size ? `${Math.round(doc.file_size / 1024)} KB` : 'Unknown',
         pages: 1,
-        aiSummary: doc.notes || 'AI analysis pending — document is being processed.',
-        aiTags: [],
+        aiSummary: doc.summary ?? 'AI analysis pending — document is being processed.',
+        aiTags: doc.tags ?? [],
         aiCategory: doc.document_type
             .replace(/_/g, ' ')
             .replace(/\b\w/g, (c: string) => c.toUpperCase()),
@@ -88,15 +85,8 @@ export default function InboxPage() {
         async function fetchInbox() {
             setIsLoading(true)
             try {
-                const [inboxData, orgsData]: [ApiDoc[], ApiOrganization[]] = await Promise.all([
-                    documentsApi.getInbox(),
-                    organizationsApi.getAll(),
-                ])
-                const builtOrgMap: Record<string, string> = {}
-                for (const org of orgsData ?? []) {
-                    builtOrgMap[org.id] = org.name
-                }
-                const mapped = inboxData.map((d) => mapDoc(d, builtOrgMap))
+                const inboxData: ApiDoc[] = await documentsApi.getInbox()
+                const mapped = inboxData.map(mapDoc)
                 setDocuments(mapped)
                 const unread = mapped.filter((d: InboxDocument) => d.isUnread).length
                 setUnreadCount(unread)
@@ -127,12 +117,11 @@ export default function InboxPage() {
         return matchSearch && matchStatus
     })
 
+    // Bella added a real PUT /documents/{id}/read endpoint (confirmed live
+    // Aug 3) — this replaces the old harmful workaround that called
+    // PUT /status with "delivered" and risked corrupting the real document
+    // workflow status. Now persists for real via the dedicated endpoint.
     async function handleMarkRead(id: string, docId: string) {
-        try {
-            await documentsApi.markAsRead(docId)
-        } catch {
-            // continue anyway
-        }
         setDocuments((prev) =>
             prev.map((doc) => doc.id === id ? { ...doc, isUnread: false } : doc)
         )
@@ -140,6 +129,14 @@ export default function InboxPage() {
         setUnreadCount(newUnread)
         if (selected?.id === id) {
             setSelected({ ...selected, isUnread: false })
+        }
+        try {
+            await documentsApi.markAsRead(docId)
+        } catch (err) {
+            console.error('Failed to persist read state:', err)
+            // Leave the optimistic UI update in place either way — a failed
+            // persist just means it'll show unread again on next reload,
+            // which is honest given the API call didn't actually succeed.
         }
     }
 
@@ -165,16 +162,9 @@ export default function InboxPage() {
     function handleRetry() {
         setIsLoading(true)
         setError(false)
-        Promise.all([
-            documentsApi.getInbox(),
-            organizationsApi.getAll(),
-        ])
-            .then(([inboxData, orgsData]: [ApiDoc[], ApiOrganization[]]) => {
-                const builtOrgMap: Record<string, string> = {}
-                for (const org of orgsData ?? []) {
-                    builtOrgMap[org.id] = org.name
-                }
-                const mapped = inboxData.map((d) => mapDoc(d, builtOrgMap))
+        documentsApi.getInbox()
+            .then((inboxData: ApiDoc[]) => {
+                const mapped = inboxData.map(mapDoc)
                 setDocuments(mapped)
                 const unread = mapped.filter((d: InboxDocument) => d.isUnread).length
                 setUnreadCount(unread)
