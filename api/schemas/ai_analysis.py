@@ -12,9 +12,9 @@ class AIAnalysisResponse(BaseModel):
 
     document_type: str | None
 
-    ai_summary: str | None
+    summary: str | None
 
-    ai_tags: list[str] | None
+    tags: list[str] | None
 
     recommendation_text: str | None
 

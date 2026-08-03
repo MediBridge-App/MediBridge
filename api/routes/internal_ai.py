@@ -77,8 +77,8 @@ def create_or_update_analysis(
             "analysis": {
                 "id": analysis.id,
                 "document_id": analysis.document_id,
-                "ai_summary": analysis.ai_summary,
-                "ai_tags": analysis.ai_tags,
+                "summary": analysis.summary,
+                "tags": analysis.tags,
                 "urgency_detected": analysis.urgency_detected,
                 "model_used": analysis.model_used,
             },
