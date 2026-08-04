@@ -1,16 +1,31 @@
 from datetime import datetime
+from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel
 
 
+class DocumentTypeEnum(str, Enum):
+    referral = "referral"
+    lab_result = "lab_result"
+    discharge_summary = "discharge_summary"
+    insurance_form = "insurance_form"
+    imaging = "imaging"
+
+
+class PriorityEnum(str, Enum):
+    urgent = "urgent"
+    normal = "normal"
+    routine = "routine"
+
+
 class DocumentCreate(BaseModel):
     recipient_org_id: UUID
 
-    document_type: str | None = None
+    document_type: DocumentTypeEnum | None = None
     subject: str | None = None
 
-    priority: str = "normal"
+    priority: PriorityEnum = PriorityEnum.normal
 
     file_s3_key: str
     original_filename: str | None = None
@@ -31,10 +46,10 @@ class DocumentResponse(BaseModel):
     sender_org_name: str | None = None
     recipient_org_name: str | None = None
 
-    document_type: str | None = None
+    document_type: DocumentTypeEnum | None = None
     subject: str | None = None
 
-    priority: str
+    priority: PriorityEnum
     status: str
 
     file_s3_key: str | None = None
@@ -47,6 +62,7 @@ class DocumentResponse(BaseModel):
 
     delivered_at: datetime | None = None
     read_at: datetime | None = None
+
     urgency_detected: bool | None = None
 
     summary: str | None = None
@@ -59,7 +75,7 @@ class DocumentResponse(BaseModel):
 class UploadURLRequest(BaseModel):
     filename: str
     content_type: str
-    document_type: str | None = None
+    document_type: DocumentTypeEnum | None = None
 
 
 class DocumentStatusUpdate(BaseModel):
