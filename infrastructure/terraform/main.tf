@@ -133,6 +133,14 @@ module "lambda" {
 # }
 
 module "frontend_hosting" {
-  source      = "./modules/frontend-hosting"
-  name_prefix = local.name_prefix
+  source         = "./modules/frontend-hosting"
+  name_prefix    = local.name_prefix
+  domain_name    = var.domain_name
+  hosted_zone_id = var.hosted_zone_id
+
+  # CloudFront's cert must be created in us-east-1, so pass both providers.
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
 }
