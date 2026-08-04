@@ -1,16 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from database import get_db
-
 from dependencies.internal_auth import verify_internal_api_key
-
 from models.ai_analysis import AIAnalysis
 from models.document import Document
-
 from schemas.internal_ai import AIAnalysisCreate
-
 from services.audit import create_audit_log
 
 router = APIRouter(prefix="/internal/ai", tags=["Internal AI"])
