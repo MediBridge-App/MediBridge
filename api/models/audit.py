@@ -1,7 +1,8 @@
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, JSON
-from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime
 import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import UUID
 
 from database import Base
 
@@ -32,4 +33,4 @@ class AuditLog(Base):
 
     hash = Column(String(64), nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))

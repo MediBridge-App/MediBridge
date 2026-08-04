@@ -1,16 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
-
-from sqlalchemy.orm import Session
-
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
 from database import get_db
-
 from dependencies.auth import get_current_user
-
 from models.ai_analysis import AIAnalysis
 from models.document import Document
-
 from schemas.ai_analysis import AIAnalysisResponse
 
 router = APIRouter(prefix="/ai", tags=["AI Analysis"])

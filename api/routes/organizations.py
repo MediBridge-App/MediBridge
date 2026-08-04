@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_
+from sqlalchemy.orm import Session
 
 from database import get_db
 from models.organization import Organization
-
 from schemas.organization import OrganizationResponse, OrganizationUpdate
 
 router = APIRouter(prefix="/organizations", tags=["Organizations"])

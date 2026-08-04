@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from database import get_db
-
 from dependencies.auth import get_current_user
-
 from models.document import Document
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -71,10 +69,10 @@ def dashboard_activity(
     documents = (
         db.query(Document)
         .filter(
-            (
+            
                 (Document.sender_org_id == current_user.organization_id)
                 | (Document.recipient_org_id == current_user.organization_id)
-            )
+            
         )
         .order_by(Document.created_at.desc())
         .limit(10)
@@ -128,10 +126,10 @@ def recent_documents(
     documents = (
         db.query(Document)
         .filter(
-            (
+            
                 (Document.sender_org_id == current_user.organization_id)
                 | (Document.recipient_org_id == current_user.organization_id)
-            )
+            
         )
         .order_by(Document.created_at.desc())
         .limit(10)

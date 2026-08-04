@@ -1,20 +1,18 @@
-from sqlalchemy import (
-    Column,
-    String,
-    DateTime,
-    Integer,
-    Text,
-    Boolean,
-    ForeignKey,
-    Numeric,
-    ARRAY,
-)
-
-from sqlalchemy.dialects.postgresql import UUID
-
-from datetime import datetime
-
 import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import (
+    ARRAY,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+)
+from sqlalchemy.dialects.postgresql import UUID
 
 from database import Base
 
@@ -52,4 +50,4 @@ class AIAnalysis(Base):
 
     status = Column(String(50), default="complete")
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

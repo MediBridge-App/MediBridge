@@ -1,8 +1,9 @@
-from sqlalchemy.orm import relationship
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime
 import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from database import Base
 
@@ -23,7 +24,7 @@ class Notification(Base):
 
     is_read = Column(Boolean, default=False, nullable=False)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
 
     user = relationship("User")
     document = relationship("Document")

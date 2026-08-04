@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Boolean, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime
 import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
 
 from database import Base
 
@@ -26,6 +27,6 @@ class UserNotificationPreferences(Base):
 
     ai_processing_complete = Column(Boolean, default=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

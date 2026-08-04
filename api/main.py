@@ -5,31 +5,30 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
-from fastapi.exceptions import RequestValidationError
 
 from exceptions import (
     database_exception_handler,
     general_exception_handler,
     validation_exception_handler,
 )
-
 from routes import (
-    documents,
+    ai,
+    api_keys,
+    audit,
     auth,
     dashboard,
-    audit,
+    documents,
+    internal_ai,
+    notifications,
+    organizations,
     security_setting,
+    tasks,
     user_notification_preferences,
     users,
-    organizations,
-    notifications,
-    ai,
-    tasks,
-    api_keys,
     webhooks,
-    internal_ai,
 )
 
 app = FastAPI(

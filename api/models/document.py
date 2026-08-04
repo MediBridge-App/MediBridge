@@ -1,7 +1,8 @@
-from sqlalchemy import Column, String, DateTime, Integer, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime
 import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import UUID
 
 from database import Base
 
@@ -42,7 +43,7 @@ class Document(Base):
 
     notes = Column(Text, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     delivered_at = Column(DateTime, nullable=True)
 
