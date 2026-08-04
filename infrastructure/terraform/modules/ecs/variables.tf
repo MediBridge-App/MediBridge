@@ -99,3 +99,39 @@ variable "events_topic_arn" {
   default     = ""
   description = "SNS topic the backend publishes document.sent events to. Empty = no publish permission."
 }
+
+# ---------------------------------------------------------------------------
+# Backend runtime config. These map 1:1 to the os.getenv calls in the backend
+# (api/database.py, api/services/*). Source of truth is the code — keep in sync.
+# ---------------------------------------------------------------------------
+variable "db_host" {
+  type        = string
+  description = "RDS endpoint hostname. Backend builds DATABASE_URL from this (DB_HOST)."
+}
+
+variable "db_port" {
+  type        = number
+  default     = 5432
+  description = "RDS port (DB_PORT)."
+}
+
+variable "db_name" {
+  type        = string
+  default     = "medibridge"
+  description = "Database name (DB_NAME). Matches the db_name in the rds module."
+}
+
+variable "cognito_user_pool_id" {
+  type        = string
+  description = "Cognito User Pool ID (COGNITO_USER_POOL_ID) — backend builds the JWKS URL and validates tokens."
+}
+
+variable "cognito_client_id" {
+  type        = string
+  description = "Cognito web client ID (COGNITO_CLIENT_ID) — backend verifies token audience."
+}
+
+variable "frontend_url" {
+  type        = string
+  description = "Frontend origin (FRONTEND_URL) — appended to the backend CORS allow-list."
+}

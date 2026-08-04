@@ -1,11 +1,10 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from database import SessionLocal
-
+from models.document import Document
 from models.organization import Organization
 from models.user import User
-from models.document import Document
 from models.user_notification_preferences import UserNotificationPreferences
 
 db = SessionLocal()
@@ -23,7 +22,6 @@ USER_ID = uuid.UUID("b0000000-0000-4000-8000-000000000001")
 
 
 try:
-
     # ==================================================
     # ORGANIZATIONS
     # ==================================================
@@ -44,11 +42,9 @@ try:
     ]
 
     for item in organizations:
-
         org = db.query(Organization).filter(Organization.id == item["id"]).first()
 
         if org:
-
             org.name = item["name"]
             org.org_code = item["org_code"]
             org.type = item["type"]
@@ -57,7 +53,6 @@ try:
             org.language = "English (US)"
 
         else:
-
             org = Organization(
                 id=item["id"],
                 name=item["name"],
@@ -79,7 +74,6 @@ try:
     user = db.query(User).filter(User.id == USER_ID).first()
 
     if user:
-
         user.organization_id = CLINIC_ID
         user.cognito_id = "test-user"
         user.email = "test@medibridge.com"
@@ -89,7 +83,6 @@ try:
         # user.npi_number = "1234567890"
 
     else:
-
         user = User(
             id=USER_ID,
             cognito_id="test-user",
@@ -116,7 +109,6 @@ try:
     )
 
     if preferences:
-
         preferences.document_delivered = True
         preferences.document_read = True
         preferences.urgent_documents = True
@@ -124,7 +116,6 @@ try:
         preferences.ai_processing_complete = True
 
     else:
-
         preferences = UserNotificationPreferences(
             id=uuid.uuid4(),
             user_id=USER_ID,
@@ -189,19 +180,16 @@ try:
     ]
 
     for item in documents:
-
         document_id = uuid.UUID(item["id"])
 
         document = db.query(Document).filter(Document.id == document_id).first()
 
         if document:
-
             document.status = item["status"]
             document.priority = item["priority"]
             document.subject = item["subject"]
 
         else:
-
             document = Document(
                 id=document_id,
                 tx_ref=item["tx_ref"],
@@ -216,10 +204,11 @@ try:
                 original_filename=item["original_filename"],
                 file_size=item["file_size"],
                 delivered_at=(
-                    datetime.utcnow() if item["status"] == "delivered" else None
+                    datetime.now(timezone.utc)
+                    if item["status"] == "delivered"
+                    else None
                 ),
-                read_at=datetime.utcnow() if item["read"] else None,
-            )
+                read_at=datetime.now(timezone.utc) if item["read"] else None)
 
             db.add(document)
 
@@ -229,11 +218,9 @@ try:
 
 
 except Exception as e:
-
     db.rollback()
     print("Seed failed:", e)
 
 
 finally:
-
     db.close()

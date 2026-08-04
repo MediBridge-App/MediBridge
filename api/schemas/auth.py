@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class LoginRequest(BaseModel):
@@ -9,7 +10,6 @@ class LoginRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
-
     id: UUID
     email: str
     full_name: str
@@ -29,7 +29,6 @@ class UserResponse(BaseModel):
 
 
 class TokenResponse(BaseModel):
-
     access_token: str
     id_token: str
     refresh_token: str | None = None

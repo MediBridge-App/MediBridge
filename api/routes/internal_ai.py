@@ -1,16 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from database import get_db
-
 from dependencies.internal_auth import verify_internal_api_key
-
 from models.ai_analysis import AIAnalysis
 from models.document import Document
-
 from schemas.internal_ai import AIAnalysisCreate
-
 from services.audit import create_audit_log
 
 router = APIRouter(prefix="/internal/ai", tags=["Internal AI"])
@@ -24,7 +20,6 @@ def create_or_update_analysis(
 ):
 
     try:
-
         document = db.query(Document).filter(Document.id == body.document_id).first()
 
         if not document:
@@ -37,7 +32,6 @@ def create_or_update_analysis(
         )
 
         if analysis:
-
             # Update existing AI analysis
             for field, value in body.model_dump(exclude_unset=True).items():
                 setattr(analysis, field, value)
@@ -45,7 +39,6 @@ def create_or_update_analysis(
             action = "AI analysis updated by Lambda service"
 
         else:
-
             # Create new AI analysis
             analysis = AIAnalysis(**body.model_dump())
 
@@ -88,7 +81,6 @@ def create_or_update_analysis(
         raise
 
     except SQLAlchemyError:
-
         db.rollback()
 
         raise HTTPException(status_code=500, detail="Unable to save AI analysis")

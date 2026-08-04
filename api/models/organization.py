@@ -1,14 +1,14 @@
-from sqlalchemy import Column, String, DateTime
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
-import uuid
 
 from database import Base
 
 
 class Organization(Base):
-
     __tablename__ = "organizations"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
@@ -25,6 +25,5 @@ class Organization(Base):
 
     language = Column(String(50), default="English (US)", nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     users = relationship("User", back_populates="organization")

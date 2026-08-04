@@ -53,6 +53,29 @@ resource "aws_iam_role_policy_attachment" "execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# Secret injection happens at task launch via the EXECUTION role (not the task
+# role). To inject AI_INTERNAL_API_KEY from the app secret, the execution role
+# needs to read that secret and decrypt it with the CMK. Scoped to just the app
+# secret + the key — nothing broader.
+data "aws_iam_policy_document" "execution_secrets" {
+  statement {
+    sid       = "ReadAppSecretForInjection"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [var.app_secrets_arn]
+  }
+  statement {
+    sid       = "DecryptAppSecret"
+    actions   = ["kms:Decrypt"]
+    resources = [var.kms_key_arn]
+  }
+}
+
+resource "aws_iam_role_policy" "execution_secrets" {
+  name   = "${var.name_prefix}-ecs-execution-secrets"
+  role   = aws_iam_role.execution.id
+  policy = data.aws_iam_policy_document.execution_secrets.json
+}
+
 # ---------------------------------------------------------------------------
 # Task role — what the running application may do
 # ---------------------------------------------------------------------------
@@ -133,13 +156,34 @@ resource "aws_ecs_task_definition" "backend" {
     # Only non-secret config here. The DB password is never an env var — the
     # app gets the secret ARN and fetches the value itself using the task role,
     # so the password never appears in the task definition or the console.
+    # Env vars the backend code reads (os.getenv in api/database.py,
+    # api/services/*). This is the authoritative list — keep it in sync with the
+    # code. DATABASE_URL is NOT here on purpose: the backend builds it from
+    # DB_HOST/DB_PORT/DB_NAME + the DB secret. DOCUMENT_BUCKET/APP_SECRETS_ARN/
+    # APP_PORT were removed — the backend never reads them (only the worker uses
+    # DOCUMENT_BUCKET, in the lambda module).
     environment = [
       { name = "AWS_REGION", value = var.aws_region },
-      { name = "DOCUMENT_BUCKET", value = var.document_bucket_name },
+      { name = "S3_BUCKET_NAME", value = var.document_bucket_name },
+      { name = "DB_HOST", value = var.db_host },
+      { name = "DB_PORT", value = tostring(var.db_port) },
+      { name = "DB_NAME", value = var.db_name },
       { name = "DB_SECRET_ARN", value = var.db_secret_arn },
-      { name = "APP_SECRETS_ARN", value = var.app_secrets_arn },
-      { name = "APP_PORT", value = tostring(var.app_port) },
+      { name = "COGNITO_USER_POOL_ID", value = var.cognito_user_pool_id },
+      { name = "COGNITO_CLIENT_ID", value = var.cognito_client_id },
+      { name = "FRONTEND_URL", value = var.frontend_url },
       { name = "EVENTS_TOPIC_ARN", value = var.events_topic_arn },
+    ]
+
+    # AI_INTERNAL_API_KEY is a shared secret (backend <-> worker), injected from
+    # Secrets Manager at runtime — never plaintext here. Both sides read the same
+    # secret field, so they always agree (fixes the earlier value mismatch). The
+    # execution role's execution_secrets policy grants the read+decrypt.
+    secrets = [
+      {
+        name      = "AI_INTERNAL_API_KEY"
+        valueFrom = "${var.app_secrets_arn}:AI_INTERNAL_API_KEY::"
+      },
     ]
 
     logConfiguration = {

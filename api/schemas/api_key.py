@@ -1,15 +1,14 @@
-from pydantic import BaseModel
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class APIKeyCreate(BaseModel):
-
     name: str
 
 
 class APIKeyResponse(BaseModel):
-
     id: UUID
 
     name: str
@@ -27,7 +26,6 @@ class APIKeyResponse(BaseModel):
 
 
 class APIKeyCreatedResponse(BaseModel):
-
     id: UUID
 
     name: str

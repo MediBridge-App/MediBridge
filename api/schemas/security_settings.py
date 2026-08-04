@@ -1,10 +1,10 @@
-from pydantic import BaseModel
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class SecuritySettingsResponse(BaseModel):
-
     id: UUID
 
     organization_id: UUID
@@ -26,7 +26,6 @@ class SecuritySettingsResponse(BaseModel):
 
 
 class SecuritySettingsUpdate(BaseModel):
-
     mfa_enabled: bool | None = None
 
     ip_allowlisting_enabled: bool | None = None

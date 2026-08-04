@@ -1,10 +1,10 @@
-from pydantic import BaseModel
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class TaskResponse(BaseModel):
-
     id: UUID
 
     document_id: UUID | None
@@ -26,5 +26,4 @@ class TaskResponse(BaseModel):
 
 
 class TaskStatusUpdate(BaseModel):
-
     status: str

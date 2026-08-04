@@ -1,10 +1,10 @@
-from pydantic import BaseModel
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class NotificationPreferencesResponse(BaseModel):
-
     id: UUID
 
     user_id: UUID
@@ -28,7 +28,6 @@ class NotificationPreferencesResponse(BaseModel):
 
 
 class NotificationPreferencesUpdate(BaseModel):
-
     document_delivered: bool | None = None
 
     document_read: bool | None = None

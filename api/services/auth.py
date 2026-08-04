@@ -1,9 +1,9 @@
 import os
-import requests
 
+import requests
 from dotenv import load_dotenv
-from jose import jwt
 from fastapi import HTTPException
+from jose import jwt
 
 load_dotenv()
 
@@ -33,7 +33,6 @@ def get_jwks():
 def verify_token(token: str):
 
     try:
-
         jwks = get_jwks()
 
         headers = jwt.get_unverified_header(token)
@@ -49,7 +48,6 @@ def verify_token(token: str):
         return payload
 
     except Exception as e:
-
         print(e)
 
         raise HTTPException(status_code=401, detail="Invalid authentication token")

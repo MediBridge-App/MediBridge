@@ -1,18 +1,16 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime
 
 from database import get_db
-
-from models.user_notification_preferences import UserNotificationPreferences
+from dependencies.auth import get_current_user
 from models.user import User
-
+from models.user_notification_preferences import UserNotificationPreferences
 from schemas.user_notification_preferences import (
     NotificationPreferencesResponse,
     NotificationPreferencesUpdate,
 )
-
-from dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 
@@ -81,7 +79,7 @@ def update_notification_preferences(
     if body.ai_processing_complete is not None:
         preferences.ai_processing_complete = body.ai_processing_complete
 
-    preferences.updated_at = datetime.utcnow()
+    preferences.updated_at = datetime.now(timezone.utc)
 
     db.commit()
     db.refresh(preferences)
