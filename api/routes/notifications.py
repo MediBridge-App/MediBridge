@@ -1,31 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException
-
-from sqlalchemy.orm import Session
-
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from database import get_db
-
-from models.notification import Notification
+from dependencies.auth import get_current_user
 from models.document import Document
+from models.notification import Notification
 from models.organization import Organization
-
 from schemas.notification import NotificationResponse
 
-from dependencies.auth import get_current_user
-
-
-router = APIRouter(
-    prefix="/notifications",
-    tags=["Notifications"]
-)
+router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 
 # ==================================================
 # Response Schema
 # ==================================================
+
 
 class MessageResponse(BaseModel):
     message: str
@@ -36,10 +28,8 @@ class MessageResponse(BaseModel):
 # GET /notifications
 # ==================================================
 
-@router.get(
-    "",
-    response_model=list[NotificationResponse]
-)
+
+@router.get("", response_model=list[NotificationResponse])
 def get_notifications(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -60,15 +50,10 @@ def get_notifications(
             Organization,
             Document.sender_org_id == Organization.id,
         )
-        .filter(
-            Notification.user_id == current_user.id
-        )
-        .order_by(
-            Notification.created_at.desc()
-        )
+        .filter(Notification.user_id == current_user.id)
+        .order_by(Notification.created_at.desc())
         .all()
     )
-
 
     return [
         {
@@ -95,10 +80,8 @@ def get_notifications(
 # PUT /notifications/read-all
 # ==================================================
 
-@router.put(
-    "/read-all",
-    response_model=MessageResponse
-)
+
+@router.put("/read-all", response_model=MessageResponse)
 def mark_all_read(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -106,19 +89,13 @@ def mark_all_read(
 
     (
         db.query(Notification)
-        .filter(
-            Notification.user_id == current_user.id
-        )
-        .update(
-            {"is_read": True}
-        )
+        .filter(Notification.user_id == current_user.id)
+        .update({"is_read": True})
     )
 
     db.commit()
 
-    return {
-        "message": "all notifications marked read"
-    }
+    return {"message": "all notifications marked read"}
 
 
 # ==================================================
@@ -126,10 +103,8 @@ def mark_all_read(
 # PUT /notifications/{notification_id}/read
 # ==================================================
 
-@router.put(
-    "/{notification_id}/read",
-    response_model=NotificationResponse
-)
+
+@router.put("/{notification_id}/read", response_model=NotificationResponse)
 def mark_notification_read(
     notification_id: UUID,
     db: Session = Depends(get_db),
@@ -145,19 +120,12 @@ def mark_notification_read(
         .first()
     )
 
-
     if not notification:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Notification not found"
-        )
-
+        raise HTTPException(status_code=404, detail="Notification not found")
 
     notification.is_read = True
 
     db.commit()
-
 
     notification_data = (
         db.query(
@@ -174,15 +142,11 @@ def mark_notification_read(
             Organization,
             Document.sender_org_id == Organization.id,
         )
-        .filter(
-            Notification.id == notification_id
-        )
+        .filter(Notification.id == notification_id)
         .first()
     )
 
-
     notification, document_type, document_subject, sender_org_name = notification_data
-
 
     return {
         **{
@@ -201,10 +165,8 @@ def mark_notification_read(
 # DELETE /notifications/{notification_id}
 # ==================================================
 
-@router.delete(
-    "/{notification_id}",
-    response_model=MessageResponse
-)
+
+@router.delete("/{notification_id}", response_model=MessageResponse)
 def delete_notification(
     notification_id: UUID,
     db: Session = Depends(get_db),
@@ -220,20 +182,11 @@ def delete_notification(
         .first()
     )
 
-
     if not notification:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Notification not found"
-        )
-
+        raise HTTPException(status_code=404, detail="Notification not found")
 
     db.delete(notification)
 
     db.commit()
 
-
-    return {
-        "message": "notification dismissed"
-    }
+    return {"message": "notification dismissed"}

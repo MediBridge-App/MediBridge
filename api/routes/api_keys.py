@@ -1,20 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
-
-from sqlalchemy.orm import Session
-
+import hashlib
+import secrets
 from uuid import UUID
 
-import secrets
-import hashlib
-
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from database import get_db
-
 from dependencies.auth import get_current_user
-
 from models.api_key import APIKey
-
-from schemas.api_key import APIKeyCreate, APIKeyResponse, APIKeyCreatedResponse
+from schemas.api_key import APIKeyCreate, APIKeyCreatedResponse, APIKeyResponse
 
 router = APIRouter(prefix="/settings/api-keys", tags=["API Keys"])
 
@@ -93,7 +87,6 @@ def delete_api_key(
     )
 
     if not api_key:
-
         raise HTTPException(status_code=404, detail="API key not found")
 
     api_key.is_active = False

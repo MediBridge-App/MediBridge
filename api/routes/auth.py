@@ -1,17 +1,13 @@
 import os
+
 import boto3
-
 from fastapi import APIRouter, Depends, HTTPException
-
 from sqlalchemy.orm import Session
 
 from database import get_db
-
-from models.user import User
-
-from schemas.auth import LoginRequest, TokenResponse
-
 from dependencies.auth import get_current_user
+from models.user import User
+from schemas.auth import LoginRequest, TokenResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -29,7 +25,6 @@ cognito_client = boto3.client("cognito-idp", region_name=os.getenv("AWS_REGION")
 def login(user: LoginRequest, db: Session = Depends(get_db)):
 
     try:
-
         response = cognito_client.initiate_auth(
             ClientId=os.getenv("COGNITO_CLIENT_ID"),
             AuthFlow="USER_PASSWORD_AUTH",
@@ -41,7 +36,6 @@ def login(user: LoginRequest, db: Session = Depends(get_db)):
         db_user = db.query(User).filter(User.email == user.email).first()
 
         if not db_user:
-
             raise HTTPException(status_code=404, detail="User not found in database")
 
         return {
@@ -68,15 +62,12 @@ def login(user: LoginRequest, db: Session = Depends(get_db)):
         }
 
     except cognito_client.exceptions.NotAuthorizedException:
-
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     except cognito_client.exceptions.UserNotFoundException:
-
         raise HTTPException(status_code=401, detail="User does not exist")
 
     except Exception as e:
-
         print("COGNITO LOGIN ERROR:", repr(e))
 
         raise HTTPException(status_code=500, detail="Authentication failed")

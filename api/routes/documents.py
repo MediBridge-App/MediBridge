@@ -1,33 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, aliased
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import or_
-from uuid import UUID
-from datetime import datetime
 import uuid
+from datetime import datetime, timezone
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import or_
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session, aliased
 
 from database import get_db
-
 from dependencies.auth import get_current_user
-
-from models.document import Document
 from models.ai_analysis import AIAnalysis
+from models.document import Document
 from models.organization import Organization
-from services.events import publish_document_sent_event
-
 from schemas.document import (
     DocumentCreate,
     DocumentResponse,
-    UploadURLRequest,
     DocumentStatusUpdate,
+    UploadURLRequest,
 )
-
 from services.audit import create_audit_log
+from services.events import publish_document_sent_event
 from services.s3 import (
-    generate_presigned_upload_url,
     generate_presigned_download_url,
+    generate_presigned_upload_url,
 )
-
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -53,7 +49,6 @@ def get_inbox(
 ):
 
     try:
-
         query = (
             db.query(
                 Document,
@@ -75,10 +70,7 @@ def get_inbox(
                 RecipientOrg,
                 RecipientOrg.id == Document.recipient_org_id,
             )
-            .filter(
-                Document.recipient_org_id
-                == current_user.organization_id
-            )
+            .filter(Document.recipient_org_id == current_user.organization_id)
         )
 
         if status:
@@ -91,15 +83,9 @@ def get_inbox(
             query = query.filter(Document.priority == priority)
 
         if search:
-            query = query.filter(
-                Document.subject.ilike(f"%{search}%")
-            )
+            query = query.filter(Document.subject.ilike(f"%{search}%"))
 
-        results = (
-            query
-            .order_by(Document.created_at.desc())
-            .all()
-        )
+        results = query.order_by(Document.created_at.desc()).all()
 
         return [
             {
@@ -125,7 +111,6 @@ def get_inbox(
         ]
 
     except Exception as e:
-
         print("INBOX ERROR:", repr(e))
 
         raise HTTPException(
@@ -147,7 +132,6 @@ def get_sent(
 ):
 
     try:
-
         results = (
             db.query(
                 Document,
@@ -169,10 +153,7 @@ def get_sent(
                 RecipientOrg,
                 RecipientOrg.id == Document.recipient_org_id,
             )
-            .filter(
-                Document.sender_org_id
-                == current_user.organization_id
-            )
+            .filter(Document.sender_org_id == current_user.organization_id)
             .order_by(Document.created_at.desc())
             .all()
         )
@@ -201,7 +182,6 @@ def get_sent(
         ]
 
     except SQLAlchemyError:
-
         raise HTTPException(
             status_code=500,
             detail="Unable to retrieve sent documents",
@@ -213,6 +193,7 @@ def get_sent(
 # GET /documents/search
 # ==================================================
 
+
 @router.get("/search", response_model=list[DocumentResponse])
 def search_documents(
     q: str,
@@ -221,7 +202,6 @@ def search_documents(
 ):
 
     try:
-
         results = (
             db.query(
                 Document,
@@ -246,8 +226,7 @@ def search_documents(
             .filter(
                 (
                     (Document.recipient_org_id == current_user.organization_id)
-                    |
-                    (Document.sender_org_id == current_user.organization_id)
+                    | (Document.sender_org_id == current_user.organization_id)
                 ),
                 or_(
                     Document.subject.ilike(f"%{q}%"),
@@ -258,13 +237,12 @@ def search_documents(
                     Document.notes.ilike(f"%{q}%"),
                     SenderOrg.name.ilike(f"%{q}%"),
                     RecipientOrg.name.ilike(f"%{q}%"),
-                    AIAnalysis.summary.ilike(f"%{q}%")
-                )
+                    AIAnalysis.summary.ilike(f"%{q}%"),
+                ),
             )
             .order_by(Document.created_at.desc())
             .all()
         )
-
 
         return [
             {
@@ -289,13 +267,12 @@ def search_documents(
             ) in results
         ]
 
-
     except SQLAlchemyError:
-
         raise HTTPException(
             status_code=500,
             detail="Unable to search documents",
         )
+
 
 # ==================================================
 # GET DOCUMENT DOWNLOAD URL
@@ -311,30 +288,25 @@ def get_download_url(
 ):
 
     try:
-
         document = (
             db.query(Document)
             .filter(
                 Document.id == doc_id,
                 (
                     (Document.sender_org_id == current_user.organization_id)
-                    |
-                    (Document.recipient_org_id == current_user.organization_id)
+                    | (Document.recipient_org_id == current_user.organization_id)
                 ),
             )
             .first()
         )
 
         if not document:
-
             raise HTTPException(
                 status_code=404,
                 detail="Document not found or access denied",
             )
 
-        result = generate_presigned_download_url(
-            document.file_s3_key
-        )
+        result = generate_presigned_download_url(document.file_s3_key)
 
         create_audit_log(
             db=db,
@@ -357,15 +329,17 @@ def get_download_url(
         raise
 
     except Exception:
-
         raise HTTPException(
             status_code=500,
             detail="Unable to generate download URL",
         )
+
+
 # ==================================================
 # GET SINGLE DOCUMENT
 # GET /documents/{doc_id}
 # ==================================================
+
 
 @router.get("/{doc_id}", response_model=DocumentResponse)
 def get_document(
@@ -375,7 +349,6 @@ def get_document(
 ):
 
     try:
-
         result = (
             db.query(
                 Document,
@@ -401,8 +374,7 @@ def get_document(
                 Document.id == doc_id,
                 (
                     (Document.sender_org_id == current_user.organization_id)
-                    |
-                    (Document.recipient_org_id == current_user.organization_id)
+                    | (Document.recipient_org_id == current_user.organization_id)
                 ),
             )
             .first()
@@ -414,7 +386,6 @@ def get_document(
                 detail="Document not found or access denied",
             )
 
-
         (
             document,
             urgency_detected,
@@ -423,7 +394,6 @@ def get_document(
             sender_org_name,
             recipient_org_name,
         ) = result
-
 
         return {
             **{
@@ -437,7 +407,6 @@ def get_document(
             "sender_org_name": sender_org_name,
             "recipient_org_name": recipient_org_name,
         }
-
 
     except HTTPException:
         raise
@@ -465,30 +434,26 @@ def mark_document_read(
 ):
 
     try:
-
         document = (
             db.query(Document)
             .filter(
                 Document.id == doc_id,
                 (
                     (Document.sender_org_id == current_user.organization_id)
-                    |
-                    (Document.recipient_org_id == current_user.organization_id)
+                    | (Document.recipient_org_id == current_user.organization_id)
                 ),
             )
             .first()
         )
 
         if not document:
-
             raise HTTPException(
                 status_code=404,
                 detail="Document not found or access denied",
             )
 
         if document.read_at is None:
-
-            document.read_at = datetime.utcnow()
+            document.read_at = datetime.now(timezone.utc)
 
             create_audit_log(
                 db=db,
@@ -514,7 +479,6 @@ def mark_document_read(
         raise
 
     except SQLAlchemyError:
-
         db.rollback()
 
         raise HTTPException(
@@ -537,22 +501,17 @@ def send_document(
 ):
 
     try:
-
         recipient = (
             db.query(Organization)
-            .filter(
-                Organization.id == document.recipient_org_id
-            )
+            .filter(Organization.id == document.recipient_org_id)
             .first()
         )
 
         if not recipient:
-
             raise HTTPException(
                 status_code=404,
                 detail="Recipient organization not found",
             )
-
 
         new_document = Document(
             tx_ref=f"TX-{uuid.uuid4().hex[:6].upper()}",
@@ -569,11 +528,9 @@ def send_document(
             notes=document.notes,
         )
 
-
         db.add(new_document)
 
         db.flush()
-
 
         create_audit_log(
             db=db,
@@ -588,7 +545,6 @@ def send_document(
             },
         )
 
-
         db.commit()
 
         db.refresh(new_document)
@@ -597,10 +553,7 @@ def send_document(
         try:
             publish_document_sent_event(new_document, current_user.id)
         except Exception as e:
-            print(
-                f"SNS publish failed. document_id={new_document.id}, error={repr(e)}"
-            )
-                
+            print(f"SNS publish failed. document_id={new_document.id}, error={e!r}")
 
         return get_document(
             doc_id=new_document.id,
@@ -608,12 +561,10 @@ def send_document(
             current_user=current_user,
         )
 
-
     except HTTPException:
         raise
 
     except SQLAlchemyError:
-
         db.rollback()
 
         raise HTTPException(
@@ -637,28 +588,23 @@ def update_document_status(
 ):
 
     try:
-
         document = (
             db.query(Document)
             .filter(
                 Document.id == doc_id,
                 (
                     (Document.sender_org_id == current_user.organization_id)
-                    |
-                    (Document.recipient_org_id == current_user.organization_id)
+                    | (Document.recipient_org_id == current_user.organization_id)
                 ),
             )
             .first()
         )
 
-
         if not document:
-
             raise HTTPException(
                 status_code=404,
                 detail="Document not found or access denied",
             )
-
 
         allowed_statuses = [
             "uploaded",
@@ -670,30 +616,21 @@ def update_document_status(
             "rejected",
         ]
 
-
         if body.status not in allowed_statuses:
-
             raise HTTPException(
                 status_code=400,
                 detail="Invalid document status",
             )
 
-
         old_status = document.status
 
-
         if old_status == body.status:
-
             return document
-
 
         document.status = body.status
 
-
         if body.status == "delivered":
-
-            document.delivered_at = datetime.utcnow()
-
+            document.delivered_at = datetime.now(timezone.utc)
 
         create_audit_log(
             db=db,
@@ -708,11 +645,9 @@ def update_document_status(
             },
         )
 
-
         db.commit()
 
         db.refresh(document)
-
 
         return get_document(
             doc_id=document.id,
@@ -720,13 +655,10 @@ def update_document_status(
             current_user=current_user,
         )
 
-
     except HTTPException:
         raise
 
-
     except SQLAlchemyError:
-
         db.rollback()
 
         raise HTTPException(
@@ -748,15 +680,12 @@ def create_upload_url(
 ):
 
     try:
-
         return generate_presigned_upload_url(
             request.filename,
             request.content_type,
         )
 
-
     except Exception:
-
         raise HTTPException(
             status_code=500,
             detail="Unable to generate upload URL",

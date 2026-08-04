@@ -1,16 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
-
-from sqlalchemy.orm import Session
-
 from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
 from database import get_db
-
 from dependencies.auth import get_current_user
-
 from models.ai_analysis import AIAnalysis
 from models.document import Document
-
 from schemas.ai_analysis import AIAnalysisResponse
 
 router = APIRouter(prefix="/ai", tags=["AI Analysis"])
@@ -73,11 +69,9 @@ def get_ai_categories(
     counts = {}
 
     for row in results:
-
         document_type = row[0]
 
         if document_type:
-
             counts[document_type] = counts.get(document_type, 0) + 1
 
     return [{"type": key, "count": value} for key, value in counts.items()]
@@ -125,7 +119,6 @@ def get_document_analysis(
     )
 
     if not analysis:
-
         raise HTTPException(status_code=404, detail="AI analysis not found")
 
     return analysis
