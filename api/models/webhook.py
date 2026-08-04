@@ -8,7 +8,6 @@ from database import Base
 
 
 class Webhook(Base):
-
     __tablename__ = "webhooks"
 
     id = Column(

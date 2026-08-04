@@ -8,7 +8,6 @@ from database import Base
 
 
 class SecuritySettings(Base):
-
     __tablename__ = "security_settings"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)

@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 
 class AuditResponse(BaseModel):
-
     id: UUID
     event_id: str
 

@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 
 class OrganizationResponse(BaseModel):
-
     id: UUID
     name: str
     org_code: str
@@ -20,7 +19,6 @@ class OrganizationResponse(BaseModel):
 
 
 class OrganizationUpdate(BaseModel):
-
     name: str | None = None
     type: str | None = None
     timezone: str | None = None

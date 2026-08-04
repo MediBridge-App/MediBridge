@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 
 class TaskResponse(BaseModel):
-
     id: UUID
 
     document_id: UUID | None
@@ -27,5 +26,4 @@ class TaskResponse(BaseModel):
 
 
 class TaskStatusUpdate(BaseModel):
-
     status: str

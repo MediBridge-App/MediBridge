@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 
 class DocumentCreate(BaseModel):
-
     recipient_org_id: UUID
 
     document_type: str | None = None
@@ -21,7 +20,6 @@ class DocumentCreate(BaseModel):
 
 
 class DocumentResponse(BaseModel):
-
     id: UUID
 
     tx_ref: str
@@ -39,14 +37,14 @@ class DocumentResponse(BaseModel):
     priority: str
     status: str
 
-    file_s3_key: str  | None = None
+    file_s3_key: str | None = None
     original_filename: str | None = None
     file_size: int | None = None
 
     notes: str | None = None
 
     created_at: datetime
-    
+
     delivered_at: datetime | None = None
     read_at: datetime | None = None
     urgency_detected: bool | None = None
@@ -59,12 +57,10 @@ class DocumentResponse(BaseModel):
 
 
 class UploadURLRequest(BaseModel):
-
     filename: str
     content_type: str
     document_type: str | None = None
 
 
 class DocumentStatusUpdate(BaseModel):
-
     status: str

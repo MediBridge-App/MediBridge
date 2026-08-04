@@ -9,7 +9,6 @@ from database import Base
 
 
 class Organization(Base):
-
     __tablename__ = "organizations"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
@@ -26,8 +25,5 @@ class Organization(Base):
 
     language = Column(String(50), default="English (US)", nullable=True)
 
-    created_at = Column(
-        DateTime,
-        default=lambda: datetime.now(timezone.utc)
-    )
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     users = relationship("User", back_populates="organization")

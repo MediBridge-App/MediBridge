@@ -31,7 +31,7 @@ if not COGNITO_CLIENT_ID:
 
 
 COGNITO_ISSUER = (
-    f"https://cognito-idp.{AWS_REGION}.amazonaws.com/" f"{COGNITO_USER_POOL_ID}"
+    f"https://cognito-idp.{AWS_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}"
 )
 
 
@@ -45,7 +45,7 @@ security = HTTPBearer()
 
 def get_jwks():
 
-    url = f"{COGNITO_ISSUER}/" ".well-known/jwks.json"
+    url = f"{COGNITO_ISSUER}/.well-known/jwks.json"
 
     response = requests.get(url, timeout=10)
 
@@ -62,7 +62,6 @@ def get_jwks():
 def verify_token(token: str):
 
     try:
-
         jwks = get_jwks()
 
         headers = jwt.get_unverified_header(token)
@@ -79,7 +78,6 @@ def verify_token(token: str):
 
         # Vida frontend sends ID token
         if payload.get("token_use") != "id":
-
             raise HTTPException(status_code=401, detail="ID token required")
 
         return payload
@@ -88,7 +86,6 @@ def verify_token(token: str):
         raise
 
     except Exception as e:
-
         print("JWT ERROR:", repr(e))
 
         raise HTTPException(status_code=401, detail="Invalid authentication token")
@@ -111,7 +108,6 @@ def get_current_user(
     cognito_id = payload.get("sub")
 
     if not cognito_id:
-
         raise HTTPException(status_code=401, detail="Invalid token payload")
 
     user = (
@@ -122,7 +118,6 @@ def get_current_user(
     )
 
     if not user:
-
         raise HTTPException(status_code=404, detail="User not found")
 
     return user

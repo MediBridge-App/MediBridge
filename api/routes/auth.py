@@ -25,7 +25,6 @@ cognito_client = boto3.client("cognito-idp", region_name=os.getenv("AWS_REGION")
 def login(user: LoginRequest, db: Session = Depends(get_db)):
 
     try:
-
         response = cognito_client.initiate_auth(
             ClientId=os.getenv("COGNITO_CLIENT_ID"),
             AuthFlow="USER_PASSWORD_AUTH",
@@ -37,7 +36,6 @@ def login(user: LoginRequest, db: Session = Depends(get_db)):
         db_user = db.query(User).filter(User.email == user.email).first()
 
         if not db_user:
-
             raise HTTPException(status_code=404, detail="User not found in database")
 
         return {
@@ -64,15 +62,12 @@ def login(user: LoginRequest, db: Session = Depends(get_db)):
         }
 
     except cognito_client.exceptions.NotAuthorizedException:
-
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     except cognito_client.exceptions.UserNotFoundException:
-
         raise HTTPException(status_code=401, detail="User does not exist")
 
     except Exception as e:
-
         print("COGNITO LOGIN ERROR:", repr(e))
 
         raise HTTPException(status_code=500, detail="Authentication failed")

@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 
 class WebhookCreate(BaseModel):
-
     name: str
 
     url: str
@@ -14,7 +13,6 @@ class WebhookCreate(BaseModel):
 
 
 class WebhookResponse(BaseModel):
-
     id: UUID
 
     name: str

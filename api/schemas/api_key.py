@@ -5,12 +5,10 @@ from pydantic import BaseModel
 
 
 class APIKeyCreate(BaseModel):
-
     name: str
 
 
 class APIKeyResponse(BaseModel):
-
     id: UUID
 
     name: str
@@ -28,7 +26,6 @@ class APIKeyResponse(BaseModel):
 
 
 class APIKeyCreatedResponse(BaseModel):
-
     id: UUID
 
     name: str

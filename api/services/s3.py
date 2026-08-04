@@ -26,7 +26,7 @@ def generate_presigned_upload_url(filename: str, content_type: str):
     if "." in filename:
         file_extension = filename.split(".")[-1]
 
-    s3_key = f"documents/" f"{uuid.uuid4()}"
+    s3_key = f"documents/{uuid.uuid4()}"
 
     if file_extension:
         s3_key += f".{file_extension}"

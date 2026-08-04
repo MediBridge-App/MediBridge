@@ -12,10 +12,7 @@ from models.organization import Organization
 from models.user import User
 from schemas.audit import AuditResponse
 
-router = APIRouter(
-    prefix="/audit",
-    tags=["Audit"]
-)
+router = APIRouter(prefix="/audit", tags=["Audit"])
 
 
 # ==================================================
@@ -24,10 +21,7 @@ router = APIRouter(
 # ==================================================
 
 
-@router.get(
-    "",
-    response_model=list[AuditResponse]
-)
+@router.get("", response_model=list[AuditResponse])
 def get_audit_logs(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -47,15 +41,10 @@ def get_audit_logs(
             Organization,
             AuditLog.organization_id == Organization.id,
         )
-        .filter(
-            AuditLog.organization_id == current_user.organization_id
-        )
-        .order_by(
-            AuditLog.created_at.desc()
-        )
+        .filter(AuditLog.organization_id == current_user.organization_id)
+        .order_by(AuditLog.created_at.desc())
         .all()
     )
-
 
     return [
         {
@@ -85,20 +74,14 @@ def export_audit_logs(
 
     logs = (
         db.query(AuditLog)
-        .filter(
-            AuditLog.organization_id == current_user.organization_id
-        )
-        .order_by(
-            AuditLog.created_at.desc()
-        )
+        .filter(AuditLog.organization_id == current_user.organization_id)
+        .order_by(AuditLog.created_at.desc())
         .all()
     )
-
 
     output = StringIO()
 
     writer = csv.writer(output)
-
 
     writer.writerow(
         [
@@ -114,9 +97,7 @@ def export_audit_logs(
         ]
     )
 
-
     for log in logs:
-
         writer.writerow(
             [
                 log.event_id,
@@ -131,16 +112,12 @@ def export_audit_logs(
             ]
         )
 
-
     output.seek(0)
-
 
     return StreamingResponse(
         output,
         media_type="text/csv",
-        headers={
-            "Content-Disposition": "attachment; filename=audit_logs.csv"
-        },
+        headers={"Content-Disposition": "attachment; filename=audit_logs.csv"},
     )
 
 
@@ -150,10 +127,7 @@ def export_audit_logs(
 # ==================================================
 
 
-@router.get(
-    "/{event_id}",
-    response_model=AuditResponse
-)
+@router.get("/{event_id}", response_model=AuditResponse)
 def get_audit_event(
     event_id: str,
     db: Session = Depends(get_db),
@@ -181,17 +155,13 @@ def get_audit_event(
         .first()
     )
 
-
     if not audit:
-
         raise HTTPException(
             status_code=404,
             detail="Audit event not found",
         )
 
-
     log, user_name, org_name = audit
-
 
     return {
         **{

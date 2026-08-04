@@ -69,11 +69,9 @@ def get_ai_categories(
     counts = {}
 
     for row in results:
-
         document_type = row[0]
 
         if document_type:
-
             counts[document_type] = counts.get(document_type, 0) + 1
 
     return [{"type": key, "count": value} for key, value in counts.items()]
@@ -120,9 +118,7 @@ def get_document_analysis(
         .first()
     )
 
-
     if not analysis:
-
         raise HTTPException(status_code=404, detail="AI analysis not found")
 
     return analysis

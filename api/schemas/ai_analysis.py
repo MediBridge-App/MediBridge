@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 
 class AIAnalysisResponse(BaseModel):
-
     id: UUID
 
     document_id: UUID

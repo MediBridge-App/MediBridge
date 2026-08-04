@@ -87,7 +87,6 @@ def delete_api_key(
     )
 
     if not api_key:
-
         raise HTTPException(status_code=404, detail="API key not found")
 
     api_key.is_active = False

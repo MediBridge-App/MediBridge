@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 
 class AIAnalysisCreate(BaseModel):
-
     document_id: UUID
 
     document_type: str | None = None

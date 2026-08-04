@@ -8,7 +8,6 @@ from database import Base
 
 
 class UserNotificationPreferences(Base):
-
     __tablename__ = "user_notification_preferences"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
@@ -30,7 +29,7 @@ class UserNotificationPreferences(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     updated_at = Column(
-    DateTime,
-    default=lambda: datetime.now(timezone.utc),
-    onupdate=lambda: datetime.now(timezone.utc),
-)
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )

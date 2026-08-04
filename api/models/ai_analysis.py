@@ -18,7 +18,6 @@ from database import Base
 
 
 class AIAnalysis(Base):
-
     __tablename__ = "ai_analyses"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)

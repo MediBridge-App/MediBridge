@@ -69,10 +69,8 @@ def dashboard_activity(
     documents = (
         db.query(Document)
         .filter(
-            
-                (Document.sender_org_id == current_user.organization_id)
-                | (Document.recipient_org_id == current_user.organization_id)
-            
+            (Document.sender_org_id == current_user.organization_id)
+            | (Document.recipient_org_id == current_user.organization_id)
         )
         .order_by(Document.created_at.desc())
         .limit(10)
@@ -108,7 +106,6 @@ def document_types(
         .all()
     )
 
-
     return [{"type": item[0], "count": item[1]} for item in results]
 
 
@@ -126,10 +123,8 @@ def recent_documents(
     documents = (
         db.query(Document)
         .filter(
-            
-                (Document.sender_org_id == current_user.organization_id)
-                | (Document.recipient_org_id == current_user.organization_id)
-            
+            (Document.sender_org_id == current_user.organization_id)
+            | (Document.recipient_org_id == current_user.organization_id)
         )
         .order_by(Document.created_at.desc())
         .limit(10)

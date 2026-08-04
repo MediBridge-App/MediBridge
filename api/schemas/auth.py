@@ -10,7 +10,6 @@ class LoginRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
-
     id: UUID
     email: str
     full_name: str
@@ -30,7 +29,6 @@ class UserResponse(BaseModel):
 
 
 class TokenResponse(BaseModel):
-
     access_token: str
     id_token: str
     refresh_token: str | None = None

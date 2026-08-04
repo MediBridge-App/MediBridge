@@ -9,7 +9,6 @@ from database import Base
 
 
 class Notification(Base):
-
     __tablename__ = "notifications"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)

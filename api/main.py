@@ -56,7 +56,7 @@ origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://d17p405i1iil2n.cloudfront.net",
-    "https://medibridge.click"
+    "https://medibridge.click",
 ]
 
 frontend_url = os.getenv("FRONTEND_URL")

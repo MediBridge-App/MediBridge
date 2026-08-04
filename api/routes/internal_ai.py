@@ -20,7 +20,6 @@ def create_or_update_analysis(
 ):
 
     try:
-
         document = db.query(Document).filter(Document.id == body.document_id).first()
 
         if not document:
@@ -33,7 +32,6 @@ def create_or_update_analysis(
         )
 
         if analysis:
-
             # Update existing AI analysis
             for field, value in body.model_dump(exclude_unset=True).items():
                 setattr(analysis, field, value)
@@ -41,7 +39,6 @@ def create_or_update_analysis(
             action = "AI analysis updated by Lambda service"
 
         else:
-
             # Create new AI analysis
             analysis = AIAnalysis(**body.model_dump())
 
@@ -84,7 +81,6 @@ def create_or_update_analysis(
         raise
 
     except SQLAlchemyError:
-
         db.rollback()
 
         raise HTTPException(status_code=500, detail="Unable to save AI analysis")
