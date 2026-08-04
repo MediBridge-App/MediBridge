@@ -1,17 +1,13 @@
 import os
+
 import boto3
-
 from fastapi import APIRouter, Depends, HTTPException
-
 from sqlalchemy.orm import Session
 
 from database import get_db
-
-from models.user import User
-
-from schemas.auth import LoginRequest, TokenResponse
-
 from dependencies.auth import get_current_user
+from models.user import User
+from schemas.auth import LoginRequest, TokenResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

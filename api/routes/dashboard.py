@@ -1,14 +1,12 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
 
 from database import get_db
-
 from dependencies.auth import get_current_user
-
 from models.document import Document
-
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -34,7 +32,7 @@ def dashboard_stats(
 
     org_id = current_user.organization_id
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     current_period_start = now - timedelta(days=7)
     previous_period_start = now - timedelta(days=14)
@@ -233,11 +231,11 @@ def dashboard_activity(
     documents = (
         db.query(Document)
         .filter(
-            (
+            
                 (Document.sender_org_id == current_user.organization_id)
                 |
                 (Document.recipient_org_id == current_user.organization_id)
-            )
+            
         )
         .order_by(Document.created_at.desc())
         .limit(10)
@@ -307,11 +305,11 @@ def recent_documents(
     documents = (
         db.query(Document)
         .filter(
-            (
+            
                 (Document.sender_org_id == current_user.organization_id)
                 |
                 (Document.recipient_org_id == current_user.organization_id)
-            )
+            
         )
         .order_by(Document.created_at.desc())
         .limit(10)

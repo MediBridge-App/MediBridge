@@ -1,33 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, aliased
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import or_
-from uuid import UUID
-from datetime import datetime
 import uuid
+from datetime import datetime, timezone
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import or_
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session, aliased
 
 from database import get_db
-
 from dependencies.auth import get_current_user
-
-from models.document import Document
 from models.ai_analysis import AIAnalysis
+from models.document import Document
 from models.organization import Organization
-from services.events import publish_document_sent_event
-
 from schemas.document import (
     DocumentCreate,
     DocumentResponse,
-    UploadURLRequest,
     DocumentStatusUpdate,
+    UploadURLRequest,
 )
-
 from services.audit import create_audit_log
+from services.events import publish_document_sent_event
 from services.s3 import (
-    generate_presigned_upload_url,
     generate_presigned_download_url,
+    generate_presigned_upload_url,
 )
-
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -488,7 +484,7 @@ def mark_document_read(
 
         if document.read_at is None:
 
-            document.read_at = datetime.utcnow()
+            document.read_at = datetime.now(timezone.utc)
 
             create_audit_log(
                 db=db,
@@ -598,7 +594,7 @@ def send_document(
             publish_document_sent_event(new_document, current_user.id)
         except Exception as e:
             print(
-                f"SNS publish failed. document_id={new_document.id}, error={repr(e)}"
+                f"SNS publish failed. document_id={new_document.id}, error={e!r}"
             )
                 
 
@@ -692,7 +688,7 @@ def update_document_status(
 
         if body.status == "delivered":
 
-            document.delivered_at = datetime.utcnow()
+            document.delivered_at = datetime.now(timezone.utc)
 
 
         create_audit_log(
