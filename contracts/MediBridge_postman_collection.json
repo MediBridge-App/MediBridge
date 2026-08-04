@@ -1,158 +1,18 @@
 {
   "info": {
+    "_postman_id": "355ede48-dc88-44e4-823f-9c226c6a0a85",
     "name": "MediBridge API",
-    "description": "MediBridge — Secure AI-Assisted Clinical Document Exchange",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "description": "MediBridge — Secure AI-Assisted Clinical Document Exchange.\n\nEndpoints pulled from the capstone proposal + the full endpoint list in the Role Assignment doc. Request bodies use IDs and enum values from database/seed_data.sql (Raissa — Engineer 5) so you can run these against a locally-seeded database with no edits.\n\nEnum values (source of truth, confirmed against seed_data.sql):\n- status: uploaded, ocr_complete, classified, routed, delivered, rejected, ocr_failed\n- document_type: referral, lab_result, discharge_summary, insurance_form, imaging\n- priority: urgent, normal, routine\n- role: organization_admin, provider, registered_nurse, referral_coordinator, medical_assistant (finalized by Olga on Slack — replaces earlier physician/admin/specialist placeholders)\n\nEdge-case docs added for error-handling / filtering tests (see 'Error Handling & Edge Cases' folder):\n- TX-1011 (doc_rejected_id) — status=rejected, recipient rejected as duplicate\n- TX-1012 (doc_ocr_failed_id) — status=ocr_failed, document_text.ocr_status=failed\n- TX-1013 (doc_permission_denied_id) — routed to Metro General only; a St. Mercy user's access attempt is denied (see audit_event_auth_failure_id)\n\n---\nUPDATED on 08/04/2026 after QA audit (compared against api/routes/*.py and the production openapi.json - https://app.medibridge.click):\n- Fixed /ai/analysis -> /ai/analyses (2 requests)\n- Added 24 endpoints that existed in the backend but weren't covered: Dashboard (4), AI stats/categories (2), Documents download-url/read (2), Organizations update (1), Notifications delete (1), Security (2), Notification Preferences (2), API Keys (3), Webhooks (3), Tasks (3), Internal AI (1 happy path + 1 negative case)\n- 'Register' kept intentionally as a test case documenting that the endpoint doesn't exist (404 expected) - see Auth folder\n- See MediBridge_QA_Test_Plan.md and MediBridge_QA_Execution_Report.md for the full rationale behind each change",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "57130378",
+    "_collection_link": "https://go.postman.co/collection/57130378-355ede48-dc88-44e4-823f-9c226c6a0a85?source=collection_link"
   },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{access_token}}",
-        "type": "string"
-      }
-    ]
-  },
-  "variable": [
-    {
-      "key": "base_url",
-      "value": "http://localhost:8000",
-      "type": "string"
-    },
-    {
-      "key": "access_token",
-      "value": "",
-      "type": "string",
-      "description": "Set after /auth/login"
-    },
-    {
-      "key": "org_stmercy_id",
-      "value": "a0000000-0000-4000-8000-000000000001",
-      "type": "string"
-    },
-    {
-      "key": "org_riverside_id",
-      "value": "a0000000-0000-4000-8000-000000000002",
-      "type": "string"
-    },
-    {
-      "key": "org_metro_id",
-      "value": "a0000000-0000-4000-8000-000000000003",
-      "type": "string"
-    },
-    {
-      "key": "user_maria_id",
-      "value": "b0000000-0000-4000-8000-000000000002",
-      "type": "string"
-    },
-    {
-      "key": "doc_delivered_id",
-      "value": "c0000000-0000-4000-8000-000000000001",
-      "type": "string",
-      "description": "TX-1001, status=delivered"
-    },
-    {
-      "key": "doc_uploaded_id",
-      "value": "c0000000-0000-4000-8000-000000000009",
-      "type": "string",
-      "description": "TX-1009, status=uploaded"
-    },
-    {
-      "key": "audit_event_id",
-      "value": "EVT-000001",
-      "type": "string"
-    },
-    {
-      "key": "notification_id",
-      "value": "22220000-0000-4000-8000-000000000001",
-      "type": "string"
-    },
-    {
-      "key": "doc_rejected_id",
-      "value": "c0000000-0000-4000-8000-000000000011",
-      "type": "string",
-      "description": "TX-1011, status=rejected"
-    },
-    {
-      "key": "doc_ocr_failed_id",
-      "value": "c0000000-0000-4000-8000-000000000012",
-      "type": "string",
-      "description": "TX-1012, status=ocr_failed"
-    },
-    {
-      "key": "doc_permission_denied_id",
-      "value": "c0000000-0000-4000-8000-000000000013",
-      "type": "string",
-      "description": "TX-1013, routed to Metro General only"
-    },
-    {
-      "key": "user_stmercy_physician_id",
-      "value": "b0000000-0000-4000-8000-000000000001",
-      "type": "string",
-      "description": "Dr. James Rivera (St. Mercy) — unauthorized org for doc_permission_denied_id"
-    },
-    {
-      "key": "audit_event_rejected_id",
-      "value": "EVT-000012",
-      "type": "string",
-      "description": "document_rejected event for TX-1011"
-    },
-    {
-      "key": "audit_event_ocr_failure_id",
-      "value": "EVT-000014",
-      "type": "string",
-      "description": "ai_processing (OCR failure) event for TX-1012"
-    },
-    {
-      "key": "audit_event_auth_failure_id",
-      "value": "EVT-000015",
-      "type": "string",
-      "description": "auth_failure event for TX-1013"
-    },
-    {
-      "key": "notification_rejected_id",
-      "value": "22220000-0000-4000-8000-000000000007",
-      "type": "string",
-      "description": "document_rejected notification"
-    },
-    {
-      "key": "notification_processing_error_id",
-      "value": "22220000-0000-4000-8000-000000000008",
-      "type": "string",
-      "description": "processing_error notification"
-    },
-    {
-      "key": "webhook_id",
-      "value": "88880000-0000-4000-8000-000000000001",
-      "type": "string",
-      "description": "St. Mercy's EHR Sync Webhook"
-    },
-    {
-      "key": "api_key_id",
-      "value": "77770000-0000-4000-8000-000000000001",
-      "type": "string",
-      "description": "St. Mercy's Production Key"
-    },
-    {
-      "key": "task_id",
-      "value": "44440000-0000-4000-8000-000000000001",
-      "type": "string",
-      "description": "Review abnormal lipid panel results task"
-    },
-    {
-      "key": "internal_api_key",
-      "value": "",
-      "type": "string",
-      "description": "AI_INTERNAL_API_KEY value (medibridge-dev/app/secrets) — used as X-API-Key on Internal AI requests, not bearer auth"
-    }
-  ],
   "item": [
     {
       "name": "Auth",
       "item": [
         {
-          "name": "Register [NOT YET IMPLEMENTED]",
+          "name": "Register (NOT IMPLEMENTED - expect 404)",
           "request": {
             "method": "POST",
             "header": [
@@ -175,11 +35,39 @@
                 "register"
               ]
             },
-            "description": "NOT YET IMPLEMENTED as of 2026-07-23. Bella's api/routes/auth.py currently only has /auth/login, /auth/logout, and /auth/me. This request will 404 until /auth/register is built. Kept here so the contract stays documented."
-          }
+            "description": "This endpoint does not exist in the current backend (api/routes/auth.py only has /login, /logout, /me). Kept here intentionally to document the gap - 404 Not Found is expected. See the QA plan, section 2.1."
+          },
+          "response": []
         },
         {
           "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "const idToken =",
+                  "    response.id_token ||",
+                  "    response.data?.id_token;",
+                  "",
+                  "pm.test(\"ID token was returned\", function () {",
+                  "    pm.expect(idToken, \"id_token not found in response\").to.be.a(\"string\");",
+                  "    pm.expect(idToken.length).to.be.greaterThan(10);",
+                  "});",
+                  "",
+                  "if (idToken) {",
+                  "    pm.environment.set(\"id_token\", idToken);",
+                  "    console.log(\"ID token saved to environment.\");",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -190,7 +78,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"maria.santos@stmercy.org\",\n  \"password\": \"changeme123\"\n}"
+              "raw": "{\n  \"email\": \"maria.santos@stmercy.org\",\n  \"password\": \"Demo1234!Pass\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
@@ -201,14 +89,15 @@
                 "auth",
                 "login"
               ]
-            },
-            "description": "Returns access_token, id_token, refresh_token, and user. Downstream requests in this collection authenticate with id_token, not access_token — the backend's get_current_user only accepts tokens where token_use == \"id\" (api/dependencies/auth.py), matching the frontend's auth flow. Copy the id_token value from the response into the access_token collection variable."
-          }
+            }
+          },
+          "response": []
         },
         {
           "name": "Logout",
           "request": {
             "method": "POST",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/auth/logout",
               "host": [
@@ -219,12 +108,24 @@
                 "logout"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get current user (me)",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{id_token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/auth/me",
               "host": [
@@ -235,79 +136,8 @@
                 "me"
               ]
             }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Dashboard",
-      "item": [
-        {
-          "name": "Get dashboard stats",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/dashboard/stats",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "dashboard",
-                "stats"
-              ]
-            },
-            "description": "Returns documents_sent, documents_received, pending_review, ai_processed, plus *_change_pct fields. NOTE: as of 2026-07-23 ai_processed and all *_change_pct fields are hardcoded to 0 in the backend not yet computed from real data."
-          }
-        },
-        {
-          "name": "Get document activity (sent vs received)",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/dashboard/activity",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "dashboard",
-                "activity"
-              ]
-            },
-            "description": "NOTE: as of 2026-07-23 this returns a hardcoded 2-day stub (Mon/Tue with 0 counts), not real per-day aggregation yet."
-          }
-        },
-        {
-          "name": "Get document type breakdown",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/dashboard/document-types",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "dashboard",
-                "document-types"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Get recent documents",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/dashboard/recent",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "dashboard",
-                "recent"
-              ]
-            },
-            "description": "Returns the 10 most recently created documents across all orgs (not scoped to current org yet)."
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -317,7 +147,18 @@
         {
           "name": "Get inbox",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{id_token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/inbox?status=delivered",
               "host": [
@@ -335,12 +176,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get sent documents",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/sent",
               "host": [
@@ -351,12 +194,14 @@
                 "sent"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get document by ID",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/{{doc_delivered_id}}",
               "host": [
@@ -367,14 +212,54 @@
                 "{{doc_delivered_id}}"
               ]
             }
-          }
+          },
+          "response": []
+        },
+        {
+          "name": "Get download URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_delivered_id}}/download-url",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "{{doc_delivered_id}}",
+                "download-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark document as read",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/documents/{{doc_delivered_id}}/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documents",
+                "{{doc_delivered_id}}",
+                "read"
+              ]
+            }
+          },
+          "response": []
         },
         {
           "name": "Search documents",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/documents/search?q=lipid+panel",
+              "raw": "{{base_url}}/documents/search?q=lipid panel",
               "host": [
                 "{{base_url}}"
               ],
@@ -389,7 +274,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get presigned upload URL",
@@ -403,7 +289,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"original_filename\": \"new_referral.pdf\",\n  \"content_type\": \"application/pdf\"\n}"
+              "raw": "{\n  \"filename\": \"new_referral.pdf\",\n  \"content_type\": \"application/pdf\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/documents/upload-url",
@@ -415,25 +301,8 @@
                 "upload-url"
               ]
             }
-          }
-        },
-        {
-          "name": "Get download URL",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/documents/{{doc_delivered_id}}/download-url",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "documents",
-                "{{doc_delivered_id}}",
-                "download-url"
-              ]
-            },
-            "description": "Returns a presigned S3 URL that expires in 15 minutes."
-          }
+          },
+          "response": []
         },
         {
           "name": "Send document",
@@ -458,9 +327,9 @@
                 "documents",
                 "send"
               ]
-            },
-            "description": "NOTE: as of 2026-07-23 the backend's DocumentCreate schema doesn't actually accept sender_org_id in the body it's derived from a hardcoded placeholder 'current user' until auth is wired up. Sending it here is harmless (extra fields are ignored) but it won't affect the created document's sender_org_id."
-          }
+            }
+          },
+          "response": []
         },
         {
           "name": "Update document status",
@@ -487,24 +356,8 @@
                 "status"
               ]
             }
-          }
-        },
-        {
-          "name": "Mark document as read",
-          "request": {
-            "method": "PUT",
-            "url": {
-              "raw": "{{base_url}}/documents/{{doc_uploaded_id}}/read",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "documents",
-                "{{doc_uploaded_id}}",
-                "read"
-              ]
-            }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -515,6 +368,7 @@
           "name": "Get all audit events",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit",
               "host": [
@@ -524,12 +378,14 @@
                 "audit"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get single audit event",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit/{{audit_event_id}}",
               "host": [
@@ -540,12 +396,14 @@
                 "{{audit_event_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Export audit log (CSV)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit/export",
               "host": [
@@ -556,7 +414,8 @@
                 "export"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -567,6 +426,7 @@
           "name": "Get all notifications",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications",
               "host": [
@@ -576,12 +436,14 @@
                 "notifications"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Mark notification as read",
           "request": {
             "method": "PUT",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications/{{notification_id}}/read",
               "host": [
@@ -593,12 +455,14 @@
                 "read"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Mark all notifications as read",
           "request": {
             "method": "PUT",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications/read-all",
               "host": [
@@ -609,12 +473,14 @@
                 "read-all"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Delete notification",
           "request": {
             "method": "DELETE",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications/{{notification_id}}",
               "host": [
@@ -625,7 +491,8 @@
                 "{{notification_id}}"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -636,6 +503,7 @@
           "name": "Get AI stats",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/ai/stats",
               "host": [
@@ -646,12 +514,14 @@
                 "stats"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get AI categories",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/ai/categories",
               "host": [
@@ -662,12 +532,14 @@
                 "categories"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get all AI analyses",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/ai/analyses",
               "host": [
@@ -678,12 +550,14 @@
                 "analyses"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get AI analysis for a document",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/ai/analyses/{{doc_delivered_id}}",
               "host": [
@@ -695,42 +569,8 @@
                 "{{doc_delivered_id}}"
               ]
             }
-          }
-        },
-        {
-          "name": "Internal — Create/update AI analysis",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{base_url}}/internal/ai/analyses",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "internal",
-                "ai",
-                "analyses"
-              ]
-            },
-            "header": [
-              {
-                "key": "X-API-Key",
-                "value": "{{internal_api_key}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"document_id\": \"{{doc_uploaded_id}}\",\n  \"document_type\": \"lab_result\",\n  \"summary\": \"Lipid panel showing elevated LDL and triglycerides.\",\n  \"tags\": [\n    \"lab\",\n    \"lipid_panel\",\n    \"abnormal\"\n  ],\n  \"recommendation_text\": \"Review abnormal lab results with patient.\",\n  \"recommendation_type\": \"review_results\",\n  \"urgency_detected\": true,\n  \"confidence_score\": 94.1,\n  \"processing_time_ms\": 765,\n  \"model_used\": \"claude-haiku-4-5\",\n  \"status\": \"complete\"\n}"
-            },
-            "description": "Called by Ayesha's Lambda worker after Textract/Bedrock processing. Uses X-API-Key auth (AI_INTERNAL_API_KEY), not the collection's bearer token — set the internal_api_key variable before running this.",
-            "auth": {
-              "type": "noauth"
-            }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -741,6 +581,7 @@
           "name": "Get all organizations",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/organizations",
               "host": [
@@ -750,12 +591,14 @@
                 "organizations"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get organization by ID",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/organizations/{{org_stmercy_id}}",
               "host": [
@@ -766,12 +609,23 @@
                 "{{org_stmercy_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update organization",
           "request": {
             "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timezone\": \"America/New_York\",\n  \"date_format\": \"MM/DD/YYYY\",\n  \"language\": \"en\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/organizations/{{org_stmercy_id}}",
               "host": [
@@ -782,17 +636,9 @@
                 "{{org_stmercy_id}}"
               ]
             },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"St. Mercy General\"\n}"
-            }
-          }
+            "description": "Confirmed live in production: this route has NO role check. Any authenticated user in the org (not just organization_admin) can update org settings. See bug tracker / QA execution report, section 2."
+          },
+          "response": []
         }
       ]
     },
@@ -803,6 +649,7 @@
           "name": "Get org users",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/users",
               "host": [
@@ -812,7 +659,8 @@
                 "users"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update user role",
@@ -826,7 +674,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role\": \"organization_admin\"\n}"
+              "raw": "{\n  \"role\": \"provider\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/users/{{user_maria_id}}/role",
@@ -838,8 +686,10 @@
                 "{{user_maria_id}}",
                 "role"
               ]
-            }
-          }
+            },
+            "description": "Confirmed live in production: this route has NO role check. Any authenticated user in the org can change any user's role, including their own. Body defaults to 'provider' to avoid leaving the test user promoted to admin - see QA execution report, section 2."
+          },
+          "response": []
         },
         {
           "name": "Update user status (activate/deactivate)",
@@ -853,7 +703,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"is_active\": false\n}"
+              "raw": "{\n  \"is_active\": true\n}"
             },
             "url": {
               "raw": "{{base_url}}/users/{{user_maria_id}}/status",
@@ -865,18 +715,98 @@
                 "{{user_maria_id}}",
                 "status"
               ]
-            }
-          }
+            },
+            "description": "Confirmed live in production: this route has NO role check. Any authenticated user in the org can activate/deactivate any user, including their own account. Body defaults to 'true' to avoid leaving the test user deactivated - see QA execution report, section 2."
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Security Settings",
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get dashboard stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get dashboard activity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/activity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "activity"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get document type breakdown",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/document-types",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "document-types"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get recent documents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/recent",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dashboard",
+                "recent"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Security",
       "item": [
         {
           "name": "Get security settings",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/security/settings",
               "host": [
@@ -887,22 +817,13 @@
                 "settings"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update security settings",
           "request": {
             "method": "PUT",
-            "url": {
-              "raw": "{{base_url}}/security/settings",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "security",
-                "settings"
-              ]
-            },
             "header": [
               {
                 "key": "Content-Type",
@@ -911,189 +832,210 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"mfa_enabled\": true\n}"
+              "raw": "{\n  \"mfa_enabled\": true,\n  \"ip_allowlisting_enabled\": true,\n  \"session_timeout_minutes\": 15\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/security/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "security",
+                "settings"
+              ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Settings",
+      "name": "Notification Preferences",
       "item": [
         {
-          "name": "Webhooks",
-          "item": [
-            {
-              "name": "Get webhooks",
-              "request": {
-                "method": "GET",
-                "url": {
-                  "raw": "{{base_url}}/settings/webhooks",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "settings",
-                    "webhooks"
-                  ]
-                }
-              }
-            },
-            {
-              "name": "Create webhook",
-              "request": {
-                "method": "POST",
-                "url": {
-                  "raw": "{{base_url}}/settings/webhooks",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "settings",
-                    "webhooks"
-                  ]
-                },
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"name\": \"New Integration Webhook\",\n  \"url\": \"https://example.org/hooks/medibridge\",\n  \"events\": [\n    \"doc.sent\",\n    \"doc.received\"\n  ]\n}"
-                }
-              }
-            },
-            {
-              "name": "Delete webhook",
-              "request": {
-                "method": "DELETE",
-                "url": {
-                  "raw": "{{base_url}}/settings/webhooks/{{webhook_id}}",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "settings",
-                    "webhooks",
-                    "{{webhook_id}}"
-                  ]
-                }
-              }
+          "name": "Get notification preferences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "notifications"
+              ]
             }
-          ]
+          },
+          "response": []
         },
         {
-          "name": "API Keys",
-          "item": [
-            {
-              "name": "Get API keys",
-              "request": {
-                "method": "GET",
-                "url": {
-                  "raw": "{{base_url}}/settings/api-keys",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "settings",
-                    "api-keys"
-                  ]
-                }
+          "name": "Update notification preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document_delivered\": true,\n  \"document_read\": false,\n  \"urgent_documents\": true,\n  \"audit_events\": false,\n  \"ai_processing_complete\": true\n}"
             },
-            {
-              "name": "Create API key",
-              "request": {
-                "method": "POST",
-                "url": {
-                  "raw": "{{base_url}}/settings/api-keys",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "settings",
-                    "api-keys"
-                  ]
-                },
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"name\": \"New API Key\"\n}"
-                }
-              }
-            },
-            {
-              "name": "Delete API key",
-              "request": {
-                "method": "DELETE",
-                "url": {
-                  "raw": "{{base_url}}/settings/api-keys/{{api_key_id}}",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "settings",
-                    "api-keys",
-                    "{{api_key_id}}"
-                  ]
-                }
-              }
+            "url": {
+              "raw": "{{base_url}}/settings/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "notifications"
+              ]
             }
-          ]
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "API Keys",
+      "item": [
+        {
+          "name": "Get API keys",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings/api-keys",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "api-keys"
+              ]
+            }
+          },
+          "response": []
         },
         {
-          "name": "Notification Preferences",
-          "item": [
-            {
-              "name": "Get notification preferences",
-              "request": {
-                "method": "GET",
-                "url": {
-                  "raw": "{{base_url}}/settings/notifications",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "settings",
-                    "notifications"
-                  ]
-                }
+          "name": "Create API key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"QA Test Key\"\n}"
             },
-            {
-              "name": "Update notification preferences",
-              "request": {
-                "method": "PUT",
-                "url": {
-                  "raw": "{{base_url}}/settings/notifications",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "settings",
-                    "notifications"
-                  ]
-                },
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"document_delivered\": true\n}"
-                }
-              }
+            "url": {
+              "raw": "{{base_url}}/settings/api-keys",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "api-keys"
+              ]
+            },
+            "description": "Copy the 'key' field from the response (only shown once) and save the returned 'id' to the {{api_key_id}} variable for the delete request below."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete API key",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings/api-keys/{{api_key_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "api-keys",
+                "{{api_key_id}}"
+              ]
             }
-          ]
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Get webhooks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings/webhooks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "webhooks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"QA Test Webhook\",\n  \"url\": \"https://example.com/webhook\",\n  \"events\": [\"doc.sent\", \"doc.received\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/settings/webhooks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "webhooks"
+              ]
+            },
+            "description": "Save the returned 'id' to the {{webhook_id}} variable for the delete request below."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete webhook",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings/webhooks/{{webhook_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "webhooks",
+                "{{webhook_id}}"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -1104,6 +1046,7 @@
           "name": "Get all tasks",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/tasks",
               "host": [
@@ -1113,28 +1056,42 @@
                 "tasks"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get task by ID",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "raw": "{{base_url}}/tasks/00000000-0000-4000-8000-000000000000",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "tasks",
-                "{{task_id}}"
+                "00000000-0000-4000-8000-000000000000"
               ]
-            }
-          }
+            },
+            "description": "As of this QA pass, no task exists in the seeded data - GET /tasks returns an empty array. This request uses a placeholder UUID as a negative test and correctly returns 404. If a real task exists later, replace the ID with one returned by 'Get all tasks' to test the happy path."
+          },
+          "response": []
         },
         {
           "name": "Update task status",
           "request": {
             "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
             "url": {
               "raw": "{{base_url}}/tasks/{{task_id}}/status",
               "host": [
@@ -1146,6 +1103,59 @@
                 "status"
               ]
             },
+            "description": "No confirmed enum for 'status' in the reviewed code - also test this with an invalid string to check whether it's validated (see QA plan)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Internal AI (Lambda -> Backend)",
+      "item": [
+        {
+          "name": "Create or update AI analysis (internal)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{internal_api_key}}",
+                "description": "AI_INTERNAL_API_KEY - get this from Ayesha or Secrets Manager, NOT the user's Bearer token"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document_id\": \"{{doc_delivered_id}}\",\n  \"document_type\": \"lab_result\",\n  \"summary\": \"Test AI summary generated by QA\",\n  \"tags\": [\"routine\"],\n  \"urgency_detected\": false,\n  \"confidence_score\": 0.95,\n  \"processing_time_ms\": 1200,\n  \"model_used\": \"claude-haiku-4-5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/internal/ai/analyses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "internal",
+                "ai",
+                "analyses"
+              ]
+            },
+            "description": "Internal endpoint used by Ayesha's Lambda. Uses the x-api-key header, NOT a Bearer JWT - that's why auth on this request is set to 'noauth', to override the Bearer inherited from the collection. Note: a successful call also sets the target document's status to 'classified' as a side effect."
+          },
+          "response": []
+        },
+        {
+          "name": "Internal AI - missing x-api-key (expect 401/422)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -1154,9 +1164,22 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"in_progress\"\n}"
-            }
-          }
+              "raw": "{\n  \"document_id\": \"{{doc_delivered_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/internal/ai/analyses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "internal",
+                "ai",
+                "analyses"
+              ]
+            },
+            "description": "Negative case: no x-api-key header. Expected 401 or 422 (FastAPI's required Header)."
+          },
+          "response": []
         }
       ]
     },
@@ -1167,6 +1190,7 @@
           "name": "Get inbox filtered by status=rejected",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/inbox?status=rejected",
               "host": [
@@ -1183,12 +1207,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get inbox filtered by status=ocr_failed",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/inbox?status=ocr_failed",
               "host": [
@@ -1205,12 +1231,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get rejected document by ID (TX-1011)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/{{doc_rejected_id}}",
               "host": [
@@ -1221,12 +1249,14 @@
                 "{{doc_rejected_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get OCR-failed document by ID (TX-1012)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/{{doc_ocr_failed_id}}",
               "host": [
@@ -1237,12 +1267,14 @@
                 "{{doc_ocr_failed_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Attempt unauthorized access to routed document (TX-1013, expect 403)",
+          "name": "Attempt unauthorized access to routed document (TX-1013, expect 404)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/{{doc_permission_denied_id}}",
               "host": [
@@ -1252,14 +1284,16 @@
                 "documents",
                 "{{doc_permission_denied_id}}"
               ]
-            }
+            },
+            "description": "Run this while authenticated as user_stmercy_physician_id (an org not granted document_access to TX-1013). Confirmed live: the backend returns 404 'Document not found or access denied', not 403 - it intentionally does not distinguish 'exists but no access' from 'doesn't exist' to avoid ID enumeration. A new auth_failure row should appear in audit_logs."
           },
-          "description": "Run this while authenticated as user_stmercy_physician_id (an org not granted document_access to TX-1013). Expected: 403 Forbidden, and a new auth_failure row should appear in audit_logs."
+          "response": []
         },
         {
           "name": "Get audit event (document_rejected)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit/{{audit_event_rejected_id}}",
               "host": [
@@ -1270,12 +1304,14 @@
                 "{{audit_event_rejected_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get audit event (OCR failure)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit/{{audit_event_ocr_failure_id}}",
               "host": [
@@ -1286,12 +1322,14 @@
                 "{{audit_event_ocr_failure_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get audit event (auth_failure)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit/{{audit_event_auth_failure_id}}",
               "host": [
@@ -1302,12 +1340,14 @@
                 "{{audit_event_auth_failure_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Get notification (document_rejected)",
+          "name": "Get notification (document_rejected) - NOT IMPLEMENTED - expect 405",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications/{{notification_rejected_id}}",
               "host": [
@@ -1317,13 +1357,16 @@
                 "notifications",
                 "{{notification_rejected_id}}"
               ]
-            }
-          }
+            },
+            "description": "GET /notifications/{id} does not exist in the backend (only PUT .../read and DELETE do). Kept intentionally as a documented negative case - 405 Method Not Allowed is expected."
+          },
+          "response": []
         },
         {
-          "name": "Get notification (processing_error)",
+          "name": "Get notification (processing_error) - NOT IMPLEMENTED - expect 405",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications/{{notification_processing_error_id}}",
               "host": [
@@ -1333,10 +1376,157 @@
                 "notifications",
                 "{{notification_processing_error_id}}"
               ]
-            }
-          }
+            },
+            "description": "GET /notifications/{id} does not exist in the backend (only PUT .../read and DELETE do). Kept intentionally as a documented negative case - 405 Method Not Allowed is expected."
+          },
+          "response": []
         }
       ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{id_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "description": "Unused - the API validates the Cognito id_token, not access_token. Kept for reference only; not referenced by any request."
+    },
+    {
+      "key": "org_stmercy_id",
+      "value": "a0000000-0000-4000-8000-000000000001"
+    },
+    {
+      "key": "org_riverside_id",
+      "value": "a0000000-0000-4000-8000-000000000002"
+    },
+    {
+      "key": "org_metro_id",
+      "value": "a0000000-0000-4000-8000-000000000003"
+    },
+    {
+      "key": "user_maria_id",
+      "value": "b0000000-0000-4000-8000-000000000002"
+    },
+    {
+      "key": "doc_delivered_id",
+      "value": "c0000000-0000-4000-8000-000000000001",
+      "description": "TX-1001, status=delivered"
+    },
+    {
+      "key": "doc_uploaded_id",
+      "value": "c0000000-0000-4000-8000-000000000009",
+      "description": "TX-1009, status=uploaded"
+    },
+    {
+      "key": "audit_event_id",
+      "value": "EVT-000001"
+    },
+    {
+      "key": "notification_id",
+      "value": "22220000-0000-4000-8000-000000000007",
+      "description": "The one real seeded notification (document_rejected). Do not point this at IDs created/deleted during QA runs."
+    },
+    {
+      "key": "doc_rejected_id",
+      "value": "c0000000-0000-4000-8000-000000000011",
+      "description": "TX-1011, status=rejected"
+    },
+    {
+      "key": "doc_ocr_failed_id",
+      "value": "c0000000-0000-4000-8000-000000000012",
+      "description": "TX-1012, status=ocr_failed"
+    },
+    {
+      "key": "doc_permission_denied_id",
+      "value": "c0000000-0000-4000-8000-000000000013",
+      "description": "TX-1013, routed to Metro General only"
+    },
+    {
+      "key": "user_stmercy_physician_id",
+      "value": "b0000000-0000-4000-8000-000000000001",
+      "description": "Dr. James Rivera (St. Mercy) — unauthorized org for doc_permission_denied_id"
+    },
+    {
+      "key": "audit_event_rejected_id",
+      "value": "EVT-000012",
+      "description": "document_rejected event for TX-1011"
+    },
+    {
+      "key": "audit_event_ocr_failure_id",
+      "value": "EVT-000014",
+      "description": "ai_processing (OCR failure) event for TX-1012"
+    },
+    {
+      "key": "audit_event_auth_failure_id",
+      "value": "EVT-000015",
+      "description": "auth_failure event for TX-1013"
+    },
+    {
+      "key": "notification_rejected_id",
+      "value": "22220000-0000-4000-8000-000000000007",
+      "description": "document_rejected notification"
+    },
+    {
+      "key": "notification_processing_error_id",
+      "value": "22220000-0000-4000-8000-000000000008",
+      "description": "processing_error notification"
+    },
+    {
+      "key": "webhook_id",
+      "value": "",
+      "description": "Set after POST /settings/webhooks (use the returned 'id')"
+    },
+    {
+      "key": "api_key_id",
+      "value": "",
+      "description": "Set after POST /settings/api-keys (use the returned 'id', not the 'key')"
+    },
+    {
+      "key": "task_id",
+      "value": "",
+      "description": "Set from a task ID returned by GET /tasks. As of this QA pass, no tasks exist in seeded data."
+    },
+    {
+      "key": "internal_api_key",
+      "value": "",
+      "description": "AI_INTERNAL_API_KEY env var value - get from Secrets Manager (medibridge-dev/app/secrets). NOT the Cognito bearer token."
     }
   ]
 }
