@@ -124,6 +124,7 @@ def get_document_analysis(
         .first()
     )
 
+
     if not analysis:
 
         raise HTTPException(status_code=404, detail="AI analysis not found")

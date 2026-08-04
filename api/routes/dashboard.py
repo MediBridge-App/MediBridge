@@ -110,6 +110,7 @@ def document_types(
         .all()
     )
 
+
     return [{"type": item[0], "count": item[1]} for item in results]
 
 
