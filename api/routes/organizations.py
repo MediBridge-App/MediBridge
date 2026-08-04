@@ -5,10 +5,15 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from database import get_db
+from dependencies.auth import require_admin
 from models.organization import Organization
+from models.user import User
 from schemas.organization import OrganizationResponse, OrganizationUpdate
 
-router = APIRouter(prefix="/organizations", tags=["Organizations"])
+router = APIRouter(
+    prefix="/organizations",
+    tags=["Organizations"],
+)
 
 
 # ==================================================
@@ -18,7 +23,10 @@ router = APIRouter(prefix="/organizations", tags=["Organizations"])
 
 
 @router.get("", response_model=list[OrganizationResponse])
-def get_organizations(search: str | None = None, db: Session = Depends(get_db)):
+def get_organizations(
+    search: str | None = None,
+    db: Session = Depends(get_db),
+):
 
     query = db.query(Organization)
 
@@ -40,14 +48,22 @@ def get_organizations(search: str | None = None, db: Session = Depends(get_db)):
 
 
 @router.get("/{organization_id}", response_model=OrganizationResponse)
-def get_organization(organization_id: UUID, db: Session = Depends(get_db)):
+def get_organization(
+    organization_id: UUID,
+    db: Session = Depends(get_db),
+):
 
     organization = (
-        db.query(Organization).filter(Organization.id == organization_id).first()
+        db.query(Organization)
+        .filter(Organization.id == organization_id)
+        .first()
     )
 
     if not organization:
-        raise HTTPException(status_code=404, detail="Organization not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Organization not found",
+        )
 
     return organization
 
@@ -60,15 +76,29 @@ def get_organization(organization_id: UUID, db: Session = Depends(get_db)):
 
 @router.put("/{organization_id}", response_model=OrganizationResponse)
 def update_organization(
-    organization_id: UUID, body: OrganizationUpdate, db: Session = Depends(get_db)
+    organization_id: UUID,
+    body: OrganizationUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ):
 
     organization = (
-        db.query(Organization).filter(Organization.id == organization_id).first()
+        db.query(Organization)
+        .filter(Organization.id == organization_id)
+        .first()
     )
 
     if not organization:
-        raise HTTPException(status_code=404, detail="Organization not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Organization not found",
+        )
+
+    if organization.id != current_user.organization_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Cannot update another organization",
+        )
 
     if body.name is not None:
         organization.name = body.name

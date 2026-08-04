@@ -12,7 +12,10 @@ from models.organization import Organization
 from models.user import User
 from schemas.audit import AuditResponse
 
-router = APIRouter(prefix="/audit", tags=["Audit"])
+router = APIRouter(
+    prefix="/audit",
+    tags=["Audit"],
+)
 
 
 # ==================================================
@@ -41,8 +44,13 @@ def get_audit_logs(
             Organization,
             AuditLog.organization_id == Organization.id,
         )
-        .filter(AuditLog.organization_id == current_user.organization_id)
-        .order_by(AuditLog.created_at.desc())
+        .filter(
+            AuditLog.organization_id
+            == current_user.organization_id
+        )
+        .order_by(
+            AuditLog.created_at.desc()
+        )
         .all()
     )
 
@@ -56,7 +64,11 @@ def get_audit_logs(
             "user_name": user_name,
             "org_name": org_name,
         }
-        for log, user_name, org_name in logs
+        for (
+            log,
+            user_name,
+            org_name,
+        ) in logs
     ]
 
 
@@ -74,8 +86,13 @@ def export_audit_logs(
 
     logs = (
         db.query(AuditLog)
-        .filter(AuditLog.organization_id == current_user.organization_id)
-        .order_by(AuditLog.created_at.desc())
+        .filter(
+            AuditLog.organization_id
+            == current_user.organization_id
+        )
+        .order_by(
+            AuditLog.created_at.desc()
+        )
         .all()
     )
 
@@ -103,9 +120,21 @@ def export_audit_logs(
                 log.event_id,
                 log.event_type,
                 log.action,
-                log.document_id,
-                log.user_id,
-                log.organization_id,
+                (
+                    str(log.document_id)
+                    if log.document_id
+                    else ""
+                ),
+                (
+                    str(log.user_id)
+                    if log.user_id
+                    else ""
+                ),
+                (
+                    str(log.organization_id)
+                    if log.organization_id
+                    else ""
+                ),
                 log.ip_address,
                 log.hash,
                 log.created_at,
@@ -117,7 +146,11 @@ def export_audit_logs(
     return StreamingResponse(
         output,
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=audit_logs.csv"},
+        headers={
+            "Content-Disposition": (
+                "attachment; filename=audit_logs.csv"
+            )
+        },
     )
 
 
@@ -150,7 +183,8 @@ def get_audit_event(
         )
         .filter(
             AuditLog.event_id == event_id,
-            AuditLog.organization_id == current_user.organization_id,
+            AuditLog.organization_id
+            == current_user.organization_id,
         )
         .first()
     )

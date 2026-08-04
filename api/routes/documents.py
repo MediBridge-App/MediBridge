@@ -11,7 +11,9 @@ from database import get_db
 from dependencies.auth import get_current_user
 from models.ai_analysis import AIAnalysis
 from models.document import Document
+from models.notification import Notification
 from models.organization import Organization
+from models.user import User
 from schemas.document import (
     DocumentCreate,
     DocumentResponse,
@@ -545,15 +547,46 @@ def send_document(
             },
         )
 
+        # Create notifications for recipient users
+        recipient_users = (
+            db.query(User)
+            .filter(
+                User.organization_id == new_document.recipient_org_id,
+                User.is_active.is_(True),
+            )
+            .all()
+        )
+
+        for user in recipient_users:
+            notification = Notification(
+                user_id=user.id,
+                document_id=new_document.id,
+                type="document_received",
+                message=(
+                    f"New {new_document.document_type} "
+                    "document received"
+                ),
+                is_read=False,
+            )
+
+            db.add(notification)
+
         db.commit()
 
         db.refresh(new_document)
-        # Publish after commit so downstream AI services
-        # only receive events for persisted documents.
+
+        # Publish after database commit
         try:
-            publish_document_sent_event(new_document, current_user.id)
+            publish_document_sent_event(
+                new_document,
+                current_user.id,
+            )
+
         except Exception as e:
-            print(f"SNS publish failed. document_id={new_document.id}, error={e!r}")
+            print(
+                f"SNS publish failed. "
+                f"document_id={new_document.id}, error={e!r}"
+            )
 
         return get_document(
             doc_id=new_document.id,
@@ -625,7 +658,7 @@ def update_document_status(
         old_status = document.status
 
         if old_status == body.status:
-            return document
+            return get_document(doc_id=document.id, db=db, current_user=current_user,)
 
         document.status = body.status
 
