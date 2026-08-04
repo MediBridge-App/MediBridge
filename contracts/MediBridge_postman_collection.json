@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "355ede48-dc88-44e4-823f-9c226c6a0a85",
     "name": "MediBridge API",
-    "description": "MediBridge — Secure AI-Assisted Clinical Document Exchange.\n\nEndpoints pulled from the capstone proposal + the full endpoint list in the Role Assignment doc. Request bodies use IDs and enum values from database/seed_data.sql (Raissa — Engineer 5) so you can run these against a locally-seeded database with no edits.\n\nEnum values (source of truth, confirmed against seed_data.sql):\n- status: uploaded, ocr_complete, classified, routed, delivered, rejected, ocr_failed\n- document_type: referral, lab_result, discharge_summary, insurance_form, imaging\n- priority: urgent, normal, routine\n- role: organization_admin, provider, registered_nurse, referral_coordinator, medical_assistant (finalized by Olga on Slack — replaces earlier physician/admin/specialist placeholders)\n\nEdge-case docs added for error-handling / filtering tests (see 'Error Handling & Edge Cases' folder):\n- TX-1011 (doc_rejected_id) — status=rejected, recipient rejected as duplicate\n- TX-1012 (doc_ocr_failed_id) — status=ocr_failed, document_text.ocr_status=failed\n- TX-1013 (doc_permission_denied_id) — routed to Metro General only; a St. Mercy user's access attempt is denied (see audit_event_auth_failure_id)\n\n---\nATUALIZADO em 04/08/2026 apos auditoria de QA (comparacao com api/routes/*.py e openapi.json de producao - https://app.medibridge.click):\n- Corrigido /ai/analysis -> /ai/analyses (2 requests)\n- Adicionados 24 endpoints que existiam no backend mas nao estavam cobertos: Dashboard (4), AI stats/categories (2), Documents download-url/read (2), Organizations update (1), Notifications delete (1), Security (2), Notification Preferences (2), API Keys (3), Webhooks (3), Tasks (3), Internal AI (1 happy path + 1 caso negativo)\n- 'Register' mantido de proposito como caso de teste documentando que o endpoint nao existe (espera-se 404) - ver pasta Auth\n- Ver MediBridge_QA_Test_Plan.md para o racional completo de cada mudanca",
+    "description": "MediBridge — Secure AI-Assisted Clinical Document Exchange.\n\nEndpoints pulled from the capstone proposal + the full endpoint list in the Role Assignment doc. Request bodies use IDs and enum values from database/seed_data.sql (Raissa — Engineer 5) so you can run these against a locally-seeded database with no edits.\n\nEnum values (source of truth, confirmed against seed_data.sql):\n- status: uploaded, ocr_complete, classified, routed, delivered, rejected, ocr_failed\n- document_type: referral, lab_result, discharge_summary, insurance_form, imaging\n- priority: urgent, normal, routine\n- role: organization_admin, provider, registered_nurse, referral_coordinator, medical_assistant (finalized by Olga on Slack — replaces earlier physician/admin/specialist placeholders)\n\nEdge-case docs added for error-handling / filtering tests (see 'Error Handling & Edge Cases' folder):\n- TX-1011 (doc_rejected_id) — status=rejected, recipient rejected as duplicate\n- TX-1012 (doc_ocr_failed_id) — status=ocr_failed, document_text.ocr_status=failed\n- TX-1013 (doc_permission_denied_id) — routed to Metro General only; a St. Mercy user's access attempt is denied (see audit_event_auth_failure_id)\n\n---\nUPDATED on 08/04/2026 after QA audit (compared against api/routes/*.py and the production openapi.json - https://app.medibridge.click):\n- Fixed /ai/analysis -> /ai/analyses (2 requests)\n- Added 24 endpoints that existed in the backend but weren't covered: Dashboard (4), AI stats/categories (2), Documents download-url/read (2), Organizations update (1), Notifications delete (1), Security (2), Notification Preferences (2), API Keys (3), Webhooks (3), Tasks (3), Internal AI (1 happy path + 1 negative case)\n- 'Register' kept intentionally as a test case documenting that the endpoint doesn't exist (404 expected) - see Auth folder\n- See MediBridge_QA_Test_Plan.md and MediBridge_QA_Execution_Report.md for the full rationale behind each change",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "57130378",
     "_collection_link": "https://go.postman.co/collection/57130378-355ede48-dc88-44e4-823f-9c226c6a0a85?source=collection_link"
@@ -35,7 +35,7 @@
                 "register"
               ]
             },
-            "description": "Este endpoint nao existe no backend atual (api/routes/auth.py so tem /login, /logout, /me). Mantido aqui de proposito para documentar o gap - espera-se 404 Not Found. Ver plano de QA, secao 2.1."
+            "description": "This endpoint does not exist in the current backend (api/routes/auth.py only has /login, /logout, /me). Kept here intentionally to document the gap - 404 Not Found is expected. See the QA plan, section 2.1."
           },
           "response": []
         },
@@ -52,14 +52,14 @@
                   "    response.id_token ||",
                   "    response.data?.id_token;",
                   "",
-                  "pm.test(\"ID token foi retornado\", function () {",
-                  "    pm.expect(idToken, \"id_token não encontrado na resposta\").to.be.a(\"string\");",
+                  "pm.test(\"ID token was returned\", function () {",
+                  "    pm.expect(idToken, \"id_token not found in response\").to.be.a(\"string\");",
                   "    pm.expect(idToken.length).to.be.greaterThan(10);",
                   "});",
                   "",
                   "if (idToken) {",
                   "    pm.environment.set(\"id_token\", idToken);",
-                  "    console.log(\"ID token salvo no ambiente.\");",
+                  "    console.log(\"ID token saved to environment.\");",
                   "}"
                 ],
                 "type": "text/javascript",
@@ -636,7 +636,7 @@
                 "{{org_stmercy_id}}"
               ]
             },
-            "description": "So GET/PUT foram vistos no codigo com checagem por organization_id - confirmar em teste se ha checagem de role (ver plano de QA, secao 5.7)."
+            "description": "Confirmed live in production: this route has NO role check. Any authenticated user in the org (not just organization_admin) can update org settings. See bug tracker / QA execution report, section 2."
           },
           "response": []
         }
@@ -686,7 +686,8 @@
                 "{{user_maria_id}}",
                 "role"
               ]
-            }
+            },
+            "description": "Confirmed live in production: this route has NO role check. Any authenticated user in the org can change any user's role, including their own. Body defaults to 'provider' to avoid leaving the test user promoted to admin - see QA execution report, section 2."
           },
           "response": []
         },
@@ -714,7 +715,8 @@
                 "{{user_maria_id}}",
                 "status"
               ]
-            }
+            },
+            "description": "Confirmed live in production: this route has NO role check. Any authenticated user in the org can activate/deactivate any user, including their own account. Body defaults to 'true' to avoid leaving the test user deactivated - see QA execution report, section 2."
           },
           "response": []
         }
@@ -942,7 +944,7 @@
                 "api-keys"
               ]
             },
-            "description": "Copie o campo 'key' da resposta (so aparece uma vez) e salve na variavel {{api_key_id}} usando o 'id' retornado, para o request de delete abaixo."
+            "description": "Copy the 'key' field from the response (only shown once) and save the returned 'id' to the {{api_key_id}} variable for the delete request below."
           },
           "response": []
         },
@@ -1012,7 +1014,7 @@
                 "webhooks"
               ]
             },
-            "description": "Salve o 'id' retornado na variavel {{webhook_id}} para o request de delete abaixo."
+            "description": "Save the returned 'id' to the {{webhook_id}} variable for the delete request below."
           },
           "response": []
         },
@@ -1072,7 +1074,7 @@
                 "00000000-0000-4000-8000-000000000000"
               ]
             },
-            "description": "Preencha {{task_id}} com um ID retornado por 'Get all tasks' (nao ha task seedada conhecida)."
+            "description": "As of this QA pass, no task exists in the seeded data - GET /tasks returns an empty array. This request uses a placeholder UUID as a negative test and correctly returns 404. If a real task exists later, replace the ID with one returned by 'Get all tasks' to test the happy path."
           },
           "response": []
         },
@@ -1101,7 +1103,7 @@
                 "status"
               ]
             },
-            "description": "Valor de 'status' nao tem enum confirmado no codigo revisado - validar valores aceitos rodando este teste com string invalida tambem (ver plano de QA)."
+            "description": "No confirmed enum for 'status' in the reviewed code - also test this with an invalid string to check whether it's validated (see QA plan)."
           },
           "response": []
         }
@@ -1125,7 +1127,7 @@
               {
                 "key": "x-api-key",
                 "value": "{{internal_api_key}}",
-                "description": "AI_INTERNAL_API_KEY - pegar com a Ayesha/Secrets Manager, NAO e o Bearer token de usuario"
+                "description": "AI_INTERNAL_API_KEY - get this from Ayesha or Secrets Manager, NOT the user's Bearer token"
               }
             ],
             "body": {
@@ -1143,7 +1145,7 @@
                 "analyses"
               ]
             },
-            "description": "Endpoint interno usado pelo Lambda da Ayesha. Usa header x-api-key, NAO Bearer JWT - por isso o auth deste request esta setado como 'noauth' pra sobrescrever o Bearer herdado da collection."
+            "description": "Internal endpoint used by Ayesha's Lambda. Uses the x-api-key header, NOT a Bearer JWT - that's why auth on this request is set to 'noauth', to override the Bearer inherited from the collection. Note: a successful call also sets the target document's status to 'classified' as a side effect."
           },
           "response": []
         },
@@ -1175,7 +1177,7 @@
                 "analyses"
               ]
             },
-            "description": "Caso negativo: sem header x-api-key. Esperado 401 ou 422 (FastAPI Header obrigatorio)."
+            "description": "Negative case: no x-api-key header. Expected 401 or 422 (FastAPI's required Header)."
           },
           "response": []
         }
@@ -1283,7 +1285,7 @@
                 "{{doc_permission_denied_id}}"
               ]
             },
-            "description": "Run this while authenticated as user_stmercy_physician_id (an org not granted document_access to TX-1013). Expected: 403 Forbidden, and a new auth_failure row should appear in audit_logs."
+            "description": "Run this while authenticated as user_stmercy_physician_id (an org not granted document_access to TX-1013). Confirmed live: the backend returns 404 'Document not found or access denied', not 403 - it intentionally does not distinguish 'exists but no access' from 'doesn't exist' to avoid ID enumeration. A new auth_failure row should appear in audit_logs."
           },
           "response": []
         },
@@ -1342,7 +1344,7 @@
           "response": []
         },
         {
-          "name": "Get notification (document_rejected) NOT IMPLEMENTED - expect 405",
+          "name": "Get notification (document_rejected) - NOT IMPLEMENTED - expect 405",
           "request": {
             "method": "GET",
             "header": [],
@@ -1355,7 +1357,8 @@
                 "notifications",
                 "{{notification_rejected_id}}"
               ]
-            }
+            },
+            "description": "GET /notifications/{id} does not exist in the backend (only PUT .../read and DELETE do). Kept intentionally as a documented negative case - 405 Method Not Allowed is expected."
           },
           "response": []
         },
@@ -1373,7 +1376,8 @@
                 "notifications",
                 "{{notification_processing_error_id}}"
               ]
-            }
+            },
+            "description": "GET /notifications/{id} does not exist in the backend (only PUT .../read and DELETE do). Kept intentionally as a documented negative case - 405 Method Not Allowed is expected."
           },
           "response": []
         }
@@ -1422,7 +1426,7 @@
     {
       "key": "access_token",
       "value": "",
-      "description": "Set after /auth/login"
+      "description": "Unused - the API validates the Cognito id_token, not access_token. Kept for reference only; not referenced by any request."
     },
     {
       "key": "org_stmercy_id",
@@ -1456,7 +1460,8 @@
     },
     {
       "key": "notification_id",
-      "value": "22220000-0000-4000-8000-000000000001"
+      "value": "22220000-0000-4000-8000-000000000007",
+      "description": "The one real seeded notification (document_rejected). Do not point this at IDs created/deleted during QA runs."
     },
     {
       "key": "doc_rejected_id",
@@ -1516,12 +1521,12 @@
     {
       "key": "task_id",
       "value": "",
-      "description": "Set from a task ID returned by GET /tasks"
+      "description": "Set from a task ID returned by GET /tasks. As of this QA pass, no tasks exist in seeded data."
     },
     {
       "key": "internal_api_key",
       "value": "",
-      "description": "AI_INTERNAL_API_KEY env var value - get from Ayesha/Secrets Manager (medibridge-dev). NOT the Cognito bearer token."
+      "description": "AI_INTERNAL_API_KEY env var value - get from Secrets Manager (medibridge-dev/app/secrets). NOT the Cognito bearer token."
     }
   ]
 }
