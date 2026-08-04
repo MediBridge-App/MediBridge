@@ -23,7 +23,6 @@ jobs:
       run:
         working-directory: api
 
-
     steps:
 
       - name: Checkout repository

@@ -1,14 +1,20 @@
-import hashlib
-import secrets
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException
+
 from sqlalchemy.orm import Session
 
+from uuid import UUID
+
+import secrets
+import hashlib
+
+
 from database import get_db
+
 from dependencies.auth import get_current_user
+
 from models.api_key import APIKey
-from schemas.api_key import APIKeyCreate, APIKeyCreatedResponse, APIKeyResponse
+
+from schemas.api_key import APIKeyCreate, APIKeyResponse, APIKeyCreatedResponse
 
 router = APIRouter(prefix="/settings/api-keys", tags=["API Keys"])
 

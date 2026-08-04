@@ -1,34 +1,36 @@
 import os
 
 from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
+from fastapi.exceptions import RequestValidationError
 
 from exceptions import (
     database_exception_handler,
     general_exception_handler,
     validation_exception_handler,
 )
+
 from routes import (
-    ai,
-    api_keys,
-    audit,
+    documents,
     auth,
     dashboard,
-    documents,
-    internal_ai,
-    notifications,
-    organizations,
+    audit,
     security_setting,
-    tasks,
     user_notification_preferences,
     users,
+    organizations,
+    notifications,
+    ai,
+    tasks,
+    api_keys,
     webhooks,
+    internal_ai,
 )
-
-load_dotenv()
 
 app = FastAPI(
     title="MediBridge API",
@@ -55,7 +57,7 @@ app.add_exception_handler(Exception, general_exception_handler)
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://d17p405i1iil2n.cloudfront.net",
+    "https://d17p405i1iil2n.cloudfrongit t.net",
     "https://medibridge.click",
 ]
 
