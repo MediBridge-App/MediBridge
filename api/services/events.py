@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 import boto3
 
+
 sns_client = boto3.client(
     "sns",
     region_name=os.getenv("AWS_REGION", "us-east-2")

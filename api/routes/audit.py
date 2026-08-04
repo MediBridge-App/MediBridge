@@ -1,16 +1,20 @@
-import csv
-from io import StringIO
-
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from fastapi.responses import StreamingResponse
+
+from io import StringIO
+import csv
 
 from database import get_db
+
 from dependencies.auth import get_current_user
+
 from models.audit import AuditLog
-from models.organization import Organization
 from models.user import User
+from models.organization import Organization
+
 from schemas.audit import AuditResponse
+
 
 router = APIRouter(
     prefix="/audit",

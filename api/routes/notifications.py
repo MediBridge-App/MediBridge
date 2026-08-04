@@ -1,15 +1,21 @@
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+
 from sqlalchemy.orm import Session
 
+from uuid import UUID
+
+from pydantic import BaseModel
+
 from database import get_db
-from dependencies.auth import get_current_user
-from models.document import Document
+
 from models.notification import Notification
+from models.document import Document
 from models.organization import Organization
+
 from schemas.notification import NotificationResponse
+
+from dependencies.auth import get_current_user
+
 
 router = APIRouter(
     prefix="/notifications",
