@@ -9,6 +9,11 @@ output "distribution_id" {
 }
 
 output "cloudfront_url" {
-  description = "Public HTTPS URL of the frontend."
+  description = "Underlying *.cloudfront.net HTTPS URL. Still works; app_url is the friendly name."
   value       = "https://${aws_cloudfront_distribution.frontend.domain_name}"
+}
+
+output "app_url" {
+  description = "Friendly HTTPS URL users visit (app.<domain>). Used as the backend's FRONTEND_URL / CORS origin."
+  value       = "https://${local.frontend_fqdn}"
 }

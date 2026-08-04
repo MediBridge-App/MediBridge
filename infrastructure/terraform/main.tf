@@ -104,7 +104,7 @@ module "ecs" {
   db_port              = module.rds.port
   cognito_user_pool_id = module.cognito.user_pool_id
   cognito_client_id    = module.cognito.client_id
-  frontend_url         = module.frontend_hosting.cloudfront_url
+  frontend_url         = module.frontend_hosting.app_url
 
   # Start at 0 until Bella has pushed an image. With no image to pull the
   # service restart-loops and the ALB reports the target permanently unhealthy.
