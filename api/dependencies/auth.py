@@ -2,7 +2,7 @@ import os
 
 import requests
 from dotenv import load_dotenv
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt
 from sqlalchemy.orm import Session, joinedload
@@ -21,10 +21,8 @@ COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
 if not AWS_REGION:
     raise Exception("AWS_REGION missing")
 
-
 if not COGNITO_USER_POOL_ID:
     raise Exception("COGNITO_USER_POOL_ID missing")
-
 
 if not COGNITO_CLIENT_ID:
     raise Exception("COGNITO_CLIENT_ID missing")
@@ -44,11 +42,9 @@ security = HTTPBearer()
 
 
 def get_jwks():
-
     url = f"{COGNITO_ISSUER}/.well-known/jwks.json"
 
     response = requests.get(url, timeout=10)
-
     response.raise_for_status()
 
     return response.json()
@@ -60,13 +56,14 @@ def get_jwks():
 
 
 def verify_token(token: str):
-
     try:
         jwks = get_jwks()
 
         headers = jwt.get_unverified_header(token)
 
-        key = next(key for key in jwks["keys"] if key["kid"] == headers["kid"])
+        key = next(
+            key for key in jwks["keys"] if key["kid"] == headers["kid"]
+        )
 
         payload = jwt.decode(
             token,
@@ -78,7 +75,10 @@ def verify_token(token: str):
 
         # Vida frontend sends ID token
         if payload.get("token_use") != "id":
-            raise HTTPException(status_code=401, detail="ID token required")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="ID token required",
+            )
 
         return payload
 
@@ -88,7 +88,10 @@ def verify_token(token: str):
     except Exception as e:
         print("JWT ERROR:", repr(e))
 
-        raise HTTPException(status_code=401, detail="Invalid authentication token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token",
+        )
 
 
 # ==================================================
@@ -100,7 +103,6 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ):
-
     token = credentials.credentials
 
     payload = verify_token(token)
@@ -108,7 +110,10 @@ def get_current_user(
     cognito_id = payload.get("sub")
 
     if not cognito_id:
-        raise HTTPException(status_code=401, detail="Invalid token payload")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
 
     user = (
         db.query(User)
@@ -118,6 +123,26 @@ def get_current_user(
     )
 
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
 
     return user
+
+
+# ==================================================
+# Admin Role Dependency
+# ==================================================
+
+
+def require_admin(
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "organization_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required",
+        )
+
+    return current_user
