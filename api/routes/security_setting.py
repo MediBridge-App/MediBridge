@@ -1,10 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
+
 from sqlalchemy.orm import Session
 
 from database import get_db
+
 from dependencies.auth import get_current_user
+
 from models.security_settings import SecuritySettings
+
 from models.user import User
+
 from schemas.security_settings import SecuritySettingsResponse, SecuritySettingsUpdate
 
 router = APIRouter(prefix="/security", tags=["Security"])

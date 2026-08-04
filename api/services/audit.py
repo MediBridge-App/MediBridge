@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from models.audit import AuditLog
 
@@ -22,7 +22,7 @@ def create_audit_log(
         event_type=event_type,
         action=action,
         details=details,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.utcnow(),
     )
 
     db.add(audit)

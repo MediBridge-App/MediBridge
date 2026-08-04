@@ -1,12 +1,11 @@
 import uuid
-from datetime import datetime, timezone
-
-from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 
 from database import SessionLocal
-from models.document import Document
+
 from models.organization import Organization
 from models.user import User
+from models.document import Document
 from models.user_notification_preferences import UserNotificationPreferences
 
 db = SessionLocal()
@@ -46,13 +45,10 @@ try:
 
     for item in organizations:
 
-        org = (
-            db.query(Organization)
-            .filter(Organization.id == item["id"])
-            .first()
-        )
+        org = db.query(Organization).filter(Organization.id == item["id"]).first()
 
         if org:
+
             org.name = item["name"]
             org.org_code = item["org_code"]
             org.type = item["type"]
@@ -61,20 +57,20 @@ try:
             org.language = "English (US)"
 
         else:
-            db.add(
-                Organization(
-                    id=item["id"],
-                    name=item["name"],
-                    org_code=item["org_code"],
-                    type=item["type"],
-                    timezone="America/Chicago",
-                    date_format="MM/DD/YYYY",
-                    language="English (US)",
-                )
+
+            org = Organization(
+                id=item["id"],
+                name=item["name"],
+                org_code=item["org_code"],
+                type=item["type"],
+                timezone="America/Chicago",
+                date_format="MM/DD/YYYY",
+                language="English (US)",
             )
 
-    db.commit()
+            db.add(org)
 
+    db.commit()
 
     # ==================================================
     # USER
@@ -89,22 +85,25 @@ try:
         user.email = "test@medibridge.com"
         user.full_name = "Test User"
         user.role = "provider"
+        # user.specialty = "Cardiology"
+        # user.npi_number = "1234567890"
 
     else:
 
-        db.add(
-            User(
-                id=USER_ID,
-                cognito_id="test-user",
-                organization_id=CLINIC_ID,
-                email="test@medibridge.com",
-                full_name="Test User",
-                role="provider",
-            )
+        user = User(
+            id=USER_ID,
+            cognito_id="test-user",
+            organization_id=CLINIC_ID,
+            email="test@medibridge.com",
+            full_name="Test User",
+            role="provider",
+            # specialty="Cardiology",
+            # npi_number="1234567890"
         )
 
-    db.commit()
+        db.add(user)
 
+    db.commit()
 
     # ==================================================
     # NOTIFICATION PREFERENCES
@@ -126,20 +125,19 @@ try:
 
     else:
 
-        db.add(
-            UserNotificationPreferences(
-                id=uuid.uuid4(),
-                user_id=USER_ID,
-                document_delivered=True,
-                document_read=True,
-                urgent_documents=True,
-                audit_events=False,
-                ai_processing_complete=True,
-            )
+        preferences = UserNotificationPreferences(
+            id=uuid.uuid4(),
+            user_id=USER_ID,
+            document_delivered=True,
+            document_read=True,
+            urgent_documents=True,
+            audit_events=False,
+            ai_processing_complete=True,
         )
 
-    db.commit()
+        db.add(preferences)
 
+    db.commit()
 
     # ==================================================
     # DOCUMENTS
@@ -190,16 +188,11 @@ try:
         },
     ]
 
-
     for item in documents:
 
         document_id = uuid.UUID(item["id"])
 
-        document = (
-            db.query(Document)
-            .filter(Document.id == document_id)
-            .first()
-        )
+        document = db.query(Document).filter(Document.id == document_id).first()
 
         if document:
 
@@ -223,29 +216,16 @@ try:
                 original_filename=item["original_filename"],
                 file_size=item["file_size"],
                 delivered_at=(
-                    datetime.now(timezone.utc)
-                    if item["status"] == "delivered"
-                    else None
+                    datetime.utcnow() if item["status"] == "delivered" else None
                 ),
-                read_at=(
-                    datetime.now(timezone.utc)
-                    if item["read"]
-                    else None
-                ),
+                read_at=datetime.utcnow() if item["read"] else None,
             )
 
             db.add(document)
 
-
     db.commit()
 
     print("Seed complete!")
-
-
-except SQLAlchemyError as e:
-
-    db.rollback()
-    print("Database error:", e)
 
 
 except Exception as e:
