@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from dependencies.auth import get_current_user, require_admin
+from dependencies.auth import require_admin
 from models.user import User
 from schemas.user import UserResponse, UserRoleUpdate, UserStatusUpdate
 
@@ -18,11 +18,15 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.get("", response_model=list[UserResponse])
-def get_users(db: Session = Depends(get_db), current_user=Depends(require_admin)):
-
-    user = current_user
-
-    users = db.query(User).filter(User.organization_id == user.organization_id).all()
+def get_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    users = (
+        db.query(User)
+        .filter(User.organization_id == current_user.organization_id)
+        .all()
+    )
 
     return users
 
@@ -38,19 +42,23 @@ def update_user_role(
     user_id: UUID,
     body: UserRoleUpdate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user: User = Depends(require_admin),
 ):
-
-    user = current_user
 
     target_user = (
         db.query(User)
-        .filter(User.id == user_id, User.organization_id == user.organization_id)
+        .filter(
+            User.id == user_id,
+            User.organization_id == current_user.organization_id,
+        )
         .first()
     )
 
     if not target_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
 
     allowed_roles = [
         "organization_admin",
@@ -61,7 +69,10 @@ def update_user_role(
     ]
 
     if body.role not in allowed_roles:
-        raise HTTPException(status_code=400, detail="Invalid role")
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid role",
+        )
 
     target_user.role = body.role
 
@@ -82,19 +93,23 @@ def update_user_status(
     user_id: UUID,
     body: UserStatusUpdate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user: User = Depends(require_admin),
 ):
-
-    user = current_user
 
     target_user = (
         db.query(User)
-        .filter(User.id == user_id, User.organization_id == user.organization_id)
+        .filter(
+            User.id == user_id,
+            User.organization_id == current_user.organization_id,
+        )
         .first()
     )
 
     if not target_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
 
     target_user.is_active = body.is_active
 
