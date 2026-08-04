@@ -1,152 +1,12 @@
 {
   "info": {
+    "_postman_id": "355ede48-dc88-44e4-823f-9c226c6a0a85",
     "name": "MediBridge API",
     "description": "MediBridge — Secure AI-Assisted Clinical Document Exchange.\n\nEndpoints pulled from the capstone proposal + the full endpoint list in the Role Assignment doc. Request bodies use IDs and enum values from database/seed_data.sql (Raissa — Engineer 5) so you can run these against a locally-seeded database with no edits.\n\nEnum values (source of truth, confirmed against seed_data.sql):\n- status: uploaded, ocr_complete, classified, routed, delivered, rejected, ocr_failed\n- document_type: referral, lab_result, discharge_summary, insurance_form, imaging\n- priority: urgent, normal, routine\n- role: organization_admin, provider, registered_nurse, referral_coordinator, medical_assistant (finalized by Olga on Slack — replaces earlier physician/admin/specialist placeholders)\n\nEdge-case docs added for error-handling / filtering tests (see 'Error Handling & Edge Cases' folder):\n- TX-1011 (doc_rejected_id) — status=rejected, recipient rejected as duplicate\n- TX-1012 (doc_ocr_failed_id) — status=ocr_failed, document_text.ocr_status=failed\n- TX-1013 (doc_permission_denied_id) — routed to Metro General only; a St. Mercy user's access attempt is denied (see audit_event_auth_failure_id)\n\n---\nATUALIZADO em 04/08/2026 apos auditoria de QA (comparacao com api/routes/*.py e openapi.json de producao - https://app.medibridge.click):\n- Corrigido /ai/analysis -> /ai/analyses (2 requests)\n- Adicionados 24 endpoints que existiam no backend mas nao estavam cobertos: Dashboard (4), AI stats/categories (2), Documents download-url/read (2), Organizations update (1), Notifications delete (1), Security (2), Notification Preferences (2), API Keys (3), Webhooks (3), Tasks (3), Internal AI (1 happy path + 1 caso negativo)\n- 'Register' mantido de proposito como caso de teste documentando que o endpoint nao existe (espera-se 404) - ver pasta Auth\n- Ver MediBridge_QA_Test_Plan.md para o racional completo de cada mudanca",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "57130378",
+    "_collection_link": "https://go.postman.co/collection/57130378-355ede48-dc88-44e4-823f-9c226c6a0a85?source=collection_link"
   },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{access_token}}",
-        "type": "string"
-      }
-    ]
-  },
-  "variable": [
-    {
-      "key": "base_url",
-      "value": "http://localhost:8000",
-      "type": "string"
-    },
-    {
-      "key": "access_token",
-      "value": "",
-      "type": "string",
-      "description": "Set after /auth/login"
-    },
-    {
-      "key": "org_stmercy_id",
-      "value": "a0000000-0000-4000-8000-000000000001",
-      "type": "string"
-    },
-    {
-      "key": "org_riverside_id",
-      "value": "a0000000-0000-4000-8000-000000000002",
-      "type": "string"
-    },
-    {
-      "key": "org_metro_id",
-      "value": "a0000000-0000-4000-8000-000000000003",
-      "type": "string"
-    },
-    {
-      "key": "user_maria_id",
-      "value": "b0000000-0000-4000-8000-000000000002",
-      "type": "string"
-    },
-    {
-      "key": "doc_delivered_id",
-      "value": "c0000000-0000-4000-8000-000000000001",
-      "type": "string",
-      "description": "TX-1001, status=delivered"
-    },
-    {
-      "key": "doc_uploaded_id",
-      "value": "c0000000-0000-4000-8000-000000000009",
-      "type": "string",
-      "description": "TX-1009, status=uploaded"
-    },
-    {
-      "key": "audit_event_id",
-      "value": "EVT-000001",
-      "type": "string"
-    },
-    {
-      "key": "notification_id",
-      "value": "22220000-0000-4000-8000-000000000001",
-      "type": "string"
-    },
-    {
-      "key": "doc_rejected_id",
-      "value": "c0000000-0000-4000-8000-000000000011",
-      "type": "string",
-      "description": "TX-1011, status=rejected"
-    },
-    {
-      "key": "doc_ocr_failed_id",
-      "value": "c0000000-0000-4000-8000-000000000012",
-      "type": "string",
-      "description": "TX-1012, status=ocr_failed"
-    },
-    {
-      "key": "doc_permission_denied_id",
-      "value": "c0000000-0000-4000-8000-000000000013",
-      "type": "string",
-      "description": "TX-1013, routed to Metro General only"
-    },
-    {
-      "key": "user_stmercy_physician_id",
-      "value": "b0000000-0000-4000-8000-000000000001",
-      "type": "string",
-      "description": "Dr. James Rivera (St. Mercy) — unauthorized org for doc_permission_denied_id"
-    },
-    {
-      "key": "audit_event_rejected_id",
-      "value": "EVT-000012",
-      "type": "string",
-      "description": "document_rejected event for TX-1011"
-    },
-    {
-      "key": "audit_event_ocr_failure_id",
-      "value": "EVT-000014",
-      "type": "string",
-      "description": "ai_processing (OCR failure) event for TX-1012"
-    },
-    {
-      "key": "audit_event_auth_failure_id",
-      "value": "EVT-000015",
-      "type": "string",
-      "description": "auth_failure event for TX-1013"
-    },
-    {
-      "key": "notification_rejected_id",
-      "value": "22220000-0000-4000-8000-000000000007",
-      "type": "string",
-      "description": "document_rejected notification"
-    },
-    {
-      "key": "notification_processing_error_id",
-      "value": "22220000-0000-4000-8000-000000000008",
-      "type": "string",
-      "description": "processing_error notification"
-    },
-    {
-      "key": "webhook_id",
-      "value": "",
-      "type": "string",
-      "description": "Set after POST /settings/webhooks (use the returned 'id')"
-    },
-    {
-      "key": "api_key_id",
-      "value": "",
-      "type": "string",
-      "description": "Set after POST /settings/api-keys (use the returned 'id', not the 'key')"
-    },
-    {
-      "key": "task_id",
-      "value": "",
-      "type": "string",
-      "description": "Set from a task ID returned by GET /tasks"
-    },
-    {
-      "key": "internal_api_key",
-      "value": "",
-      "type": "string",
-      "description": "AI_INTERNAL_API_KEY env var value - get from Ayesha/Secrets Manager (medibridge-dev). NOT the Cognito bearer token."
-    }
-  ],
   "item": [
     {
       "name": "Auth",
@@ -176,10 +36,38 @@
               ]
             },
             "description": "Este endpoint nao existe no backend atual (api/routes/auth.py so tem /login, /logout, /me). Mantido aqui de proposito para documentar o gap - espera-se 404 Not Found. Ver plano de QA, secao 2.1."
-          }
+          },
+          "response": []
         },
         {
           "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "const idToken =",
+                  "    response.id_token ||",
+                  "    response.data?.id_token;",
+                  "",
+                  "pm.test(\"ID token foi retornado\", function () {",
+                  "    pm.expect(idToken, \"id_token não encontrado na resposta\").to.be.a(\"string\");",
+                  "    pm.expect(idToken.length).to.be.greaterThan(10);",
+                  "});",
+                  "",
+                  "if (idToken) {",
+                  "    pm.environment.set(\"id_token\", idToken);",
+                  "    console.log(\"ID token salvo no ambiente.\");",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -190,7 +78,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"maria.santos@stmercy.org\",\n  \"password\": \"changeme123\"\n}"
+              "raw": "{\n  \"email\": \"maria.santos@stmercy.org\",\n  \"password\": \"Demo1234!Pass\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
@@ -202,12 +90,14 @@
                 "login"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Logout",
           "request": {
             "method": "POST",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/auth/logout",
               "host": [
@@ -218,12 +108,24 @@
                 "logout"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get current user (me)",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{id_token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/auth/me",
               "host": [
@@ -234,7 +136,8 @@
                 "me"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -244,7 +147,18 @@
         {
           "name": "Get inbox",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{id_token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/inbox?status=delivered",
               "host": [
@@ -262,12 +176,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get sent documents",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/sent",
               "host": [
@@ -278,12 +194,14 @@
                 "sent"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get document by ID",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/{{doc_delivered_id}}",
               "host": [
@@ -294,12 +212,14 @@
                 "{{doc_delivered_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get download URL",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/{{doc_delivered_id}}/download-url",
               "host": [
@@ -311,12 +231,14 @@
                 "download-url"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Mark document as read",
           "request": {
             "method": "PUT",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/{{doc_delivered_id}}/read",
               "host": [
@@ -328,14 +250,16 @@
                 "read"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Search documents",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/documents/search?q=lipid+panel",
+              "raw": "{{base_url}}/documents/search?q=lipid panel",
               "host": [
                 "{{base_url}}"
               ],
@@ -350,7 +274,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get presigned upload URL",
@@ -364,7 +289,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"original_filename\": \"new_referral.pdf\",\n  \"content_type\": \"application/pdf\"\n}"
+              "raw": "{\n  \"filename\": \"new_referral.pdf\",\n  \"content_type\": \"application/pdf\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/documents/upload-url",
@@ -376,7 +301,8 @@
                 "upload-url"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Send document",
@@ -402,7 +328,8 @@
                 "send"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update document status",
@@ -429,7 +356,8 @@
                 "status"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -440,6 +368,7 @@
           "name": "Get all audit events",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit",
               "host": [
@@ -449,12 +378,14 @@
                 "audit"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get single audit event",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit/{{audit_event_id}}",
               "host": [
@@ -465,12 +396,14 @@
                 "{{audit_event_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Export audit log (CSV)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit/export",
               "host": [
@@ -481,7 +414,8 @@
                 "export"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -492,6 +426,7 @@
           "name": "Get all notifications",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications",
               "host": [
@@ -501,12 +436,14 @@
                 "notifications"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Mark notification as read",
           "request": {
             "method": "PUT",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications/{{notification_id}}/read",
               "host": [
@@ -518,12 +455,14 @@
                 "read"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Mark all notifications as read",
           "request": {
             "method": "PUT",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications/read-all",
               "host": [
@@ -534,12 +473,14 @@
                 "read-all"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Delete notification",
           "request": {
             "method": "DELETE",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications/{{notification_id}}",
               "host": [
@@ -550,7 +491,8 @@
                 "{{notification_id}}"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -561,6 +503,7 @@
           "name": "Get AI stats",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/ai/stats",
               "host": [
@@ -571,12 +514,14 @@
                 "stats"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get AI categories",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/ai/categories",
               "host": [
@@ -587,12 +532,14 @@
                 "categories"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get all AI analyses",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/ai/analyses",
               "host": [
@@ -603,12 +550,14 @@
                 "analyses"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get AI analysis for a document",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/ai/analyses/{{doc_delivered_id}}",
               "host": [
@@ -620,7 +569,8 @@
                 "{{doc_delivered_id}}"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -631,6 +581,7 @@
           "name": "Get all organizations",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/organizations",
               "host": [
@@ -640,12 +591,14 @@
                 "organizations"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get organization by ID",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/organizations/{{org_stmercy_id}}",
               "host": [
@@ -656,7 +609,8 @@
                 "{{org_stmercy_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update organization",
@@ -683,7 +637,8 @@
               ]
             },
             "description": "So GET/PUT foram vistos no codigo com checagem por organization_id - confirmar em teste se ha checagem de role (ver plano de QA, secao 5.7)."
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -694,6 +649,7 @@
           "name": "Get org users",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/users",
               "host": [
@@ -703,7 +659,8 @@
                 "users"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update user role",
@@ -717,7 +674,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role\": \"organization_admin\"\n}"
+              "raw": "{\n  \"role\": \"provider\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/users/{{user_maria_id}}/role",
@@ -730,7 +687,8 @@
                 "role"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update user status (activate/deactivate)",
@@ -744,7 +702,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"is_active\": false\n}"
+              "raw": "{\n  \"is_active\": true\n}"
             },
             "url": {
               "raw": "{{base_url}}/users/{{user_maria_id}}/status",
@@ -757,7 +715,8 @@
                 "status"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -768,6 +727,7 @@
           "name": "Get dashboard stats",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/dashboard/stats",
               "host": [
@@ -778,12 +738,14 @@
                 "stats"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get dashboard activity",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/dashboard/activity",
               "host": [
@@ -794,12 +756,14 @@
                 "activity"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get document type breakdown",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/dashboard/document-types",
               "host": [
@@ -810,12 +774,14 @@
                 "document-types"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get recent documents",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/dashboard/recent",
               "host": [
@@ -826,7 +792,8 @@
                 "recent"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -837,6 +804,7 @@
           "name": "Get security settings",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/security/settings",
               "host": [
@@ -847,7 +815,8 @@
                 "settings"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update security settings",
@@ -861,7 +830,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"mfa_enabled\": true,\n  \"ip_allowlisting_enabled\": false,\n  \"session_timeout_minutes\": 30\n}"
+              "raw": "{\n  \"mfa_enabled\": true,\n  \"ip_allowlisting_enabled\": true,\n  \"session_timeout_minutes\": 15\n}"
             },
             "url": {
               "raw": "{{base_url}}/security/settings",
@@ -873,7 +842,8 @@
                 "settings"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -884,6 +854,7 @@
           "name": "Get notification preferences",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/settings/notifications",
               "host": [
@@ -894,7 +865,8 @@
                 "notifications"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update notification preferences",
@@ -920,7 +892,8 @@
                 "notifications"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -931,6 +904,7 @@
           "name": "Get API keys",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/settings/api-keys",
               "host": [
@@ -941,7 +915,8 @@
                 "api-keys"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Create API key",
@@ -968,12 +943,14 @@
               ]
             },
             "description": "Copie o campo 'key' da resposta (so aparece uma vez) e salve na variavel {{api_key_id}} usando o 'id' retornado, para o request de delete abaixo."
-          }
+          },
+          "response": []
         },
         {
           "name": "Delete API key",
           "request": {
             "method": "DELETE",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/settings/api-keys/{{api_key_id}}",
               "host": [
@@ -985,7 +962,8 @@
                 "{{api_key_id}}"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -996,6 +974,7 @@
           "name": "Get webhooks",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/settings/webhooks",
               "host": [
@@ -1006,7 +985,8 @@
                 "webhooks"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Create webhook",
@@ -1033,12 +1013,14 @@
               ]
             },
             "description": "Salve o 'id' retornado na variavel {{webhook_id}} para o request de delete abaixo."
-          }
+          },
+          "response": []
         },
         {
           "name": "Delete webhook",
           "request": {
             "method": "DELETE",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/settings/webhooks/{{webhook_id}}",
               "host": [
@@ -1050,7 +1032,8 @@
                 "{{webhook_id}}"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -1061,6 +1044,7 @@
           "name": "Get all tasks",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/tasks",
               "host": [
@@ -1070,24 +1054,27 @@
                 "tasks"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get task by ID",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/tasks/{{task_id}}",
+              "raw": "{{base_url}}/tasks/00000000-0000-4000-8000-000000000000",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "tasks",
-                "{{task_id}}"
+                "00000000-0000-4000-8000-000000000000"
               ]
             },
             "description": "Preencha {{task_id}} com um ID retornado por 'Get all tasks' (nao ha task seedada conhecida)."
-          }
+          },
+          "response": []
         },
         {
           "name": "Update task status",
@@ -1115,7 +1102,8 @@
               ]
             },
             "description": "Valor de 'status' nao tem enum confirmado no codigo revisado - validar valores aceitos rodando este teste com string invalida tambem (ver plano de QA)."
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -1125,10 +1113,10 @@
         {
           "name": "Create or update AI analysis (internal)",
           "request": {
-            "method": "POST",
             "auth": {
               "type": "noauth"
             },
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -1156,15 +1144,16 @@
               ]
             },
             "description": "Endpoint interno usado pelo Lambda da Ayesha. Usa header x-api-key, NAO Bearer JWT - por isso o auth deste request esta setado como 'noauth' pra sobrescrever o Bearer herdado da collection."
-          }
+          },
+          "response": []
         },
         {
           "name": "Internal AI - missing x-api-key (expect 401/422)",
           "request": {
-            "method": "POST",
             "auth": {
               "type": "noauth"
             },
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -1187,7 +1176,8 @@
               ]
             },
             "description": "Caso negativo: sem header x-api-key. Esperado 401 ou 422 (FastAPI Header obrigatorio)."
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -1198,6 +1188,7 @@
           "name": "Get inbox filtered by status=rejected",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/inbox?status=rejected",
               "host": [
@@ -1214,12 +1205,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get inbox filtered by status=ocr_failed",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/inbox?status=ocr_failed",
               "host": [
@@ -1236,12 +1229,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get rejected document by ID (TX-1011)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/{{doc_rejected_id}}",
               "host": [
@@ -1252,12 +1247,14 @@
                 "{{doc_rejected_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get OCR-failed document by ID (TX-1012)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/{{doc_ocr_failed_id}}",
               "host": [
@@ -1268,12 +1265,14 @@
                 "{{doc_ocr_failed_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Attempt unauthorized access to routed document (TX-1013, expect 403)",
+          "name": "Attempt unauthorized access to routed document (TX-1013, expect 404)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/documents/{{doc_permission_denied_id}}",
               "host": [
@@ -1285,12 +1284,14 @@
               ]
             },
             "description": "Run this while authenticated as user_stmercy_physician_id (an org not granted document_access to TX-1013). Expected: 403 Forbidden, and a new auth_failure row should appear in audit_logs."
-          }
+          },
+          "response": []
         },
         {
           "name": "Get audit event (document_rejected)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit/{{audit_event_rejected_id}}",
               "host": [
@@ -1301,12 +1302,14 @@
                 "{{audit_event_rejected_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get audit event (OCR failure)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit/{{audit_event_ocr_failure_id}}",
               "host": [
@@ -1317,12 +1320,14 @@
                 "{{audit_event_ocr_failure_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get audit event (auth_failure)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/audit/{{audit_event_auth_failure_id}}",
               "host": [
@@ -1333,12 +1338,14 @@
                 "{{audit_event_auth_failure_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Get notification (document_rejected)",
+          "name": "Get notification (document_rejected) NOT IMPLEMENTED - expect 405",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications/{{notification_rejected_id}}",
               "host": [
@@ -1349,12 +1356,14 @@
                 "{{notification_rejected_id}}"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
-          "name": "Get notification (processing_error)",
+          "name": "Get notification (processing_error) - NOT IMPLEMENTED - expect 405",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{base_url}}/notifications/{{notification_processing_error_id}}",
               "host": [
@@ -1365,9 +1374,154 @@
                 "{{notification_processing_error_id}}"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{id_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "description": "Set after /auth/login"
+    },
+    {
+      "key": "org_stmercy_id",
+      "value": "a0000000-0000-4000-8000-000000000001"
+    },
+    {
+      "key": "org_riverside_id",
+      "value": "a0000000-0000-4000-8000-000000000002"
+    },
+    {
+      "key": "org_metro_id",
+      "value": "a0000000-0000-4000-8000-000000000003"
+    },
+    {
+      "key": "user_maria_id",
+      "value": "b0000000-0000-4000-8000-000000000002"
+    },
+    {
+      "key": "doc_delivered_id",
+      "value": "c0000000-0000-4000-8000-000000000001",
+      "description": "TX-1001, status=delivered"
+    },
+    {
+      "key": "doc_uploaded_id",
+      "value": "c0000000-0000-4000-8000-000000000009",
+      "description": "TX-1009, status=uploaded"
+    },
+    {
+      "key": "audit_event_id",
+      "value": "EVT-000001"
+    },
+    {
+      "key": "notification_id",
+      "value": "22220000-0000-4000-8000-000000000001"
+    },
+    {
+      "key": "doc_rejected_id",
+      "value": "c0000000-0000-4000-8000-000000000011",
+      "description": "TX-1011, status=rejected"
+    },
+    {
+      "key": "doc_ocr_failed_id",
+      "value": "c0000000-0000-4000-8000-000000000012",
+      "description": "TX-1012, status=ocr_failed"
+    },
+    {
+      "key": "doc_permission_denied_id",
+      "value": "c0000000-0000-4000-8000-000000000013",
+      "description": "TX-1013, routed to Metro General only"
+    },
+    {
+      "key": "user_stmercy_physician_id",
+      "value": "b0000000-0000-4000-8000-000000000001",
+      "description": "Dr. James Rivera (St. Mercy) — unauthorized org for doc_permission_denied_id"
+    },
+    {
+      "key": "audit_event_rejected_id",
+      "value": "EVT-000012",
+      "description": "document_rejected event for TX-1011"
+    },
+    {
+      "key": "audit_event_ocr_failure_id",
+      "value": "EVT-000014",
+      "description": "ai_processing (OCR failure) event for TX-1012"
+    },
+    {
+      "key": "audit_event_auth_failure_id",
+      "value": "EVT-000015",
+      "description": "auth_failure event for TX-1013"
+    },
+    {
+      "key": "notification_rejected_id",
+      "value": "22220000-0000-4000-8000-000000000007",
+      "description": "document_rejected notification"
+    },
+    {
+      "key": "notification_processing_error_id",
+      "value": "22220000-0000-4000-8000-000000000008",
+      "description": "processing_error notification"
+    },
+    {
+      "key": "webhook_id",
+      "value": "",
+      "description": "Set after POST /settings/webhooks (use the returned 'id')"
+    },
+    {
+      "key": "api_key_id",
+      "value": "",
+      "description": "Set after POST /settings/api-keys (use the returned 'id', not the 'key')"
+    },
+    {
+      "key": "task_id",
+      "value": "",
+      "description": "Set from a task ID returned by GET /tasks"
+    },
+    {
+      "key": "internal_api_key",
+      "value": "",
+      "description": "AI_INTERNAL_API_KEY env var value - get from Ayesha/Secrets Manager (medibridge-dev). NOT the Cognito bearer token."
     }
   ]
 }
