@@ -203,7 +203,11 @@ try:
                 file_s3_key=item["file_s3_key"],
                 original_filename=item["original_filename"],
                 file_size=item["file_size"],
-                delivered_at=(datetime.now(timezone.utc) if item["status"] == "delivered" else None),
+                delivered_at=(
+                    datetime.now(timezone.utc)
+                    if item["status"] == "delivered"
+                    else None
+                ),
                 read_at=datetime.now(timezone.utc) if item["read"] else None)
 
             db.add(document)
