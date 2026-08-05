@@ -31,9 +31,12 @@ def test_login_invalid_password_returns_401(base_url):
 
 
 def test_me_returns_current_user(base_url, auth_headers):
+    # Unlike /auth/login (which wraps the user under a "user" key alongside
+    # the tokens), /auth/me returns the user fields flat at the top level —
+    # see api/routes/auth.py::get_me.
     response = requests.get(f"{base_url}/auth/me", headers=auth_headers)
     assert response.status_code == 200
-    body = response.json()["user"]
+    body = response.json()
     assert body["email"] == os.getenv("DEMO_USER_1_EMAIL")
 
 
