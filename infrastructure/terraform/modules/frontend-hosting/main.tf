@@ -31,6 +31,52 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
 }
 
 # ---------------------------------------------------------------------------
+# Custom domain: app.<domain> served by CloudFront over HTTPS.
+# The certificate MUST be in us-east-1 (CloudFront requirement), hence the
+# aws.us_east_1 provider. Validation records go in the Route 53 zone (Route 53
+# is global, so the default provider is fine for them).
+# ---------------------------------------------------------------------------
+locals {
+  frontend_fqdn = "app.${var.domain_name}"
+}
+
+resource "aws_acm_certificate" "frontend" {
+  provider          = aws.us_east_1
+  domain_name       = local.frontend_fqdn
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name = "${var.name_prefix}-frontend-cert"
+  }
+}
+
+resource "aws_route53_record" "frontend_cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.frontend.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      type   = dvo.resource_record_type
+      record = dvo.resource_record_value
+    }
+  }
+
+  zone_id = var.hosted_zone_id
+  name    = each.value.name
+  type    = each.value.type
+  records = [each.value.record]
+  ttl     = 60
+}
+
+resource "aws_acm_certificate_validation" "frontend" {
+  provider                = aws.us_east_1
+  certificate_arn         = aws_acm_certificate.frontend.arn
+  validation_record_fqdns = [for r in aws_route53_record.frontend_cert_validation : r.fqdn]
+}
+
+# ---------------------------------------------------------------------------
 # CloudFront distribution — the CDN. Serves the SPA over HTTPS from edge
 # locations, pulling the files from the private S3 bucket via the OAC.
 # ---------------------------------------------------------------------------
@@ -38,6 +84,10 @@ resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   default_root_object = "index.html"
   comment             = "${var.name_prefix} frontend"
+
+  # The custom domain(s) this distribution answers to. Must be covered by the
+  # ACM certificate below, or CloudFront rejects the config.
+  aliases = [local.frontend_fqdn]
 
   # WHERE the files come from: our private S3 bucket, reached with the OAC badge.
   origin {
@@ -79,10 +129,12 @@ resource "aws_cloudfront_distribution" "frontend" {
     }
   }
 
-  # Using the default *.cloudfront.net domain for now, so use CloudFront's own
-  # certificate. We'll swap in an ACM cert + custom domain later.
+  # Serve HTTPS on app.<domain> using the ACM cert (validated above). sni-only
+  # is the standard, no-extra-cost option; modern browsers all support SNI.
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn      = aws_acm_certificate_validation.frontend.certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
 
   tags = {
@@ -115,4 +167,19 @@ resource "aws_s3_bucket_policy" "frontend" {
       }
     ]
   })
+}
+
+# ---------------------------------------------------------------------------
+# DNS: point app.<domain> at the CloudFront distribution (alias A record).
+# ---------------------------------------------------------------------------
+resource "aws_route53_record" "frontend" {
+  zone_id = var.hosted_zone_id
+  name    = local.frontend_fqdn
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.frontend.domain_name
+    zone_id                = aws_cloudfront_distribution.frontend.hosted_zone_id
+    evaluate_target_health = false
+  }
 }

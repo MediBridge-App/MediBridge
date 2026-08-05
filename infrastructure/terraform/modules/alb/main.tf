@@ -56,7 +56,7 @@ resource "aws_lb_target_group" "this" {
 # TLS certificate for app.<domain>, validated via DNS in the hosted zone
 # ---------------------------------------------------------------------------
 resource "aws_acm_certificate" "this" {
-  domain_name       = local.app_fqdn
+  domain_name       = local.backend_fqdn
   validation_method = "DNS"
 
   # Lets Terraform replace the cert without a gap if the domain ever changes.
@@ -135,7 +135,7 @@ resource "aws_lb_listener" "http" {
 # ---------------------------------------------------------------------------
 resource "aws_route53_record" "app" {
   zone_id = var.hosted_zone_id
-  name    = local.app_fqdn
+  name    = local.backend_fqdn
   type    = "A"
 
   alias {
@@ -146,5 +146,7 @@ resource "aws_route53_record" "app" {
 }
 
 locals {
-  app_fqdn = "app.${var.domain_name}"
+  # Backend API lives at api.<domain>. The frontend takes app.<domain>
+  # (served by CloudFront, in the frontend-hosting module).
+  backend_fqdn = "api.${var.domain_name}"
 }

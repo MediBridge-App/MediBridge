@@ -104,7 +104,7 @@ module "ecs" {
   db_port              = module.rds.port
   cognito_user_pool_id = module.cognito.user_pool_id
   cognito_client_id    = module.cognito.client_id
-  frontend_url         = module.frontend_hosting.cloudfront_url
+  frontend_url         = module.frontend_hosting.app_url
 
   # Start at 0 until Bella has pushed an image. With no image to pull the
   # service restart-loops and the ALB reports the target permanently unhealthy.
@@ -138,6 +138,14 @@ module "lambda" {
 # }
 
 module "frontend_hosting" {
-  source      = "./modules/frontend-hosting"
-  name_prefix = local.name_prefix
+  source         = "./modules/frontend-hosting"
+  name_prefix    = local.name_prefix
+  domain_name    = var.domain_name
+  hosted_zone_id = var.hosted_zone_id
+
+  # CloudFront's cert must be created in us-east-1, so pass both providers.
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
 }
