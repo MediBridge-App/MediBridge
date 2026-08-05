@@ -37,5 +37,10 @@ variable "app_secrets_arn" {
 variable "bedrock_model_id" {
   type        = string
   default     = "us.amazon.nova-micro-v1:0"
-  description = "Bedrock model / inference-profile ID the worker uses. The worker reads it as BEDROCK_MODEL_ID; required, so it must be set."
+  description = "Amazon Bedrock inference profile ID used for document analysis."
+
+  validation {
+    condition     = var.bedrock_model_id == "us.amazon.nova-micro-v1:0"
+    error_message = "The worker must use the Amazon Nova Micro US inference profile through Amazon Bedrock."
+  }
 }

@@ -4,6 +4,17 @@ variable "aws_region" {
   default     = "us-east-2"
 }
 
+variable "bedrock_model_id" {
+  description = "Amazon Bedrock inference profile used by the document-analysis worker."
+  type        = string
+  default     = "us.amazon.nova-micro-v1:0"
+
+  validation {
+    condition     = var.bedrock_model_id == "us.amazon.nova-micro-v1:0"
+    error_message = "MediBridge must use the Amazon Nova Micro US inference profile through Amazon Bedrock."
+  }
+}
+
 variable "project" {
   description = "Project name, used in resource naming and tags."
   type        = string
