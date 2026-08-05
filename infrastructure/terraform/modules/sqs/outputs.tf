@@ -17,3 +17,8 @@ output "dlq_arn" {
   description = "Dead-letter queue ARN. Watch its depth — messages here means processing is failing."
   value       = aws_sqs_queue.dlq.arn
 }
+
+output "dlq_name" {
+  description = "Dead-letter queue name, used by CloudWatch alarms."
+  value       = aws_sqs_queue.dlq.name
+}

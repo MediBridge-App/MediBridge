@@ -33,3 +33,18 @@ variable "app_secrets_arn" {
   type        = string
   description = "ARN of the application secret containing AI_INTERNAL_API_KEY."
 }
+
+variable "bedrock_model_id" {
+  type        = string
+  description = "Amazon Bedrock inference profile ID used for document analysis."
+
+  validation {
+    condition     = var.bedrock_model_id == "us.amazon.nova-micro-v1:0"
+    error_message = "The worker must use the Amazon Nova Micro US inference profile through Amazon Bedrock."
+  }
+}
+
+variable "dlq_queue_name" {
+  type        = string
+  description = "Processing dead-letter queue name used for the CloudWatch depth alarm."
+}

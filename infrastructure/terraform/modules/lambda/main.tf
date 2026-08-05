@@ -20,6 +20,25 @@
 
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+locals {
+  bedrock_foundation_model_id = trimprefix(var.bedrock_model_id, "us.")
+
+  bedrock_inference_profile_arn = join(":", [
+    "arn",
+    "aws",
+    "bedrock",
+    data.aws_region.current.name,
+    data.aws_caller_identity.current.account_id,
+    "inference-profile/${var.bedrock_model_id}",
+  ])
+
+  bedrock_destination_regions = ["us-east-1", "us-east-2", "us-west-2"]
+
+  bedrock_destination_model_arns = [
+    for region in local.bedrock_destination_regions :
+    "arn:aws:bedrock:${region}::foundation-model/${local.bedrock_foundation_model_id}"
+  ]
+}
 
 # ---------------------------------------------------------------------------
 # Execution role — what the worker code is allowed to do. Least privilege:
@@ -84,15 +103,24 @@ data "aws_iam_policy_document" "worker" {
     resources = ["*"] # Textract has no per-resource ARNs to scope to.
   }
 
-  # Classification. Anthropic models only, plus the cross-region inference
-  # profiles the newer models require (the "us." prefix Ayesha will hit).
+  # Document classification through the Amazon Nova Micro US inference profile.
+  # AWS requires access to both the profile and every destination model.
   statement {
-    sid     = "Bedrock"
-    actions = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
-    resources = [
-      "arn:aws:bedrock:*::foundation-model/anthropic.*",
-      "arn:aws:bedrock:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:inference-profile/*",
-    ]
+    sid       = "BedrockProfile"
+    actions   = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
+    resources = [local.bedrock_inference_profile_arn]
+  }
+
+  statement {
+    sid       = "BedrockNovaDestinations"
+    actions   = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
+    resources = local.bedrock_destination_model_arns
+
+    condition {
+      test     = "StringLike"
+      variable = "bedrock:InferenceProfileArn"
+      values   = [local.bedrock_inference_profile_arn]
+    }
   }
 
   # Read the internal backend API key at runtime.
@@ -147,9 +175,10 @@ resource "aws_lambda_function" "worker" {
 
   environment {
     variables = {
-      DOCUMENT_BUCKET = var.document_bucket
-      BACKEND_API_URL = var.backend_api_url
-      APP_SECRETS_ARN = var.app_secrets_arn
+      DOCUMENT_BUCKET  = var.document_bucket
+      BACKEND_API_URL  = var.backend_api_url
+      APP_SECRETS_ARN  = var.app_secrets_arn
+      BEDROCK_MODEL_ID = var.bedrock_model_id
     }
   }
 
@@ -167,4 +196,42 @@ resource "aws_lambda_event_source_mapping" "sqs" {
   event_source_arn = var.source_queue_arn
   function_name    = aws_lambda_function.worker.arn
   batch_size       = 1
+}
+
+resource "aws_cloudwatch_metric_alarm" "worker_errors" {
+  alarm_name        = "${var.name_prefix}-worker-errors"
+  alarm_description = "The MediBridge document worker returned one or more errors."
+
+  namespace   = "AWS/Lambda"
+  metric_name = "Errors"
+  statistic   = "Sum"
+  period      = 300
+
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    FunctionName = aws_lambda_function.worker.function_name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "dlq_messages" {
+  alarm_name        = "${var.name_prefix}-processing-dlq-messages"
+  alarm_description = "The MediBridge processing dead-letter queue contains one or more messages."
+
+  namespace   = "AWS/SQS"
+  metric_name = "ApproximateNumberOfMessagesVisible"
+  statistic   = "Maximum"
+  period      = 300
+
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    QueueName = var.dlq_queue_name
+  }
 }
