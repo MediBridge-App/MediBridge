@@ -21,6 +21,7 @@
 
 - [Overview](#overview)
 - [The Problem](#the-problem)
+- [Live Environment](#live-environment)
 - [Key Features](#key-features)
 - [System Architecture](#system-architecture)
 - [Tech Stack](#tech-stack)
@@ -53,6 +54,15 @@ A large share of medical communication in the U.S. still happens over fax. Paper
 - Reducing administrative burden with AI-assisted classification, summarization, and tagging
 - Providing centralized, encrypted storage with full audit logging
 - Demonstrating a scalable, cloud-native architecture built with HIPAA security principles in mind
+
+## Live Environment
+
+| | |
+|---|---|
+| **App** | [app.medibridge.click](https://app.medibridge.click) |
+| **API** | [api.medibridge.click](https://api.medibridge.click) |
+
+This is the team's shared `dev` deployment, seeded with realistic demo data. See [Security & Compliance](#security--compliance) for the current caveats before treating it as production-ready.
 
 ## Key Features
 
@@ -197,7 +207,7 @@ All routes are prefixed as shown below and served from the FastAPI app in [`api/
 | `GET`/`POST`/`DELETE` | `/settings/webhooks` | Manage outbound webhooks |
 | `GET` | `/health` | Health check |
 
-Interactive OpenAPI docs are available at `/docs` when running against a non-production environment.
+Interactive OpenAPI docs are available at `/docs`. The app gates `/docs`, `/redoc`, and `/openapi.json` behind `ENVIRONMENT=production`, but that variable isn't currently passed to the ECS task definition (`infrastructure/terraform/modules/ecs`), so the app falls back to its `development` default and the docs are reachable in the deployed environment today as well. Tracked as a follow-up for Olga to set `ENVIRONMENT=production` in the ECS task definition.
 
 ## Security & Compliance
 
@@ -214,7 +224,7 @@ MediBridge is designed with HIPAA security principles in mind:
 - **Immutable audit logging** of every send, status change, and read
 - **Role-based, organization-scoped access control** so users only see documents belonging to their own organization
 
-> ⚠️ This project was built for educational/demonstration purposes as part of an ADA DEVELOPERS ACADEMY capstone. It is **not** a HIPAA-compliant system as deployed — production use would additionally require an executed AWS Business Associate Addendum (BAA) and a full compliance review.
+> ⚠️ This project was built for educational/demonstration purposes as part of an ADA capstone. It is **not** a HIPAA-compliant system as deployed — production use would additionally require an executed AWS Business Associate Addendum (BAA) and a full compliance review.
 
 ## Getting Started
 
