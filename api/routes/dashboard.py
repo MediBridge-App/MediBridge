@@ -1,5 +1,7 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends
-from sqlalchemy import func
+from sqlalchemy import case, func, or_
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -10,67 +12,185 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 
 # ==================================================
-# Dashboard Stats
-# GET /dashboard/stats
+# Helpers
 # ==================================================
+def calculate_change(current: int, previous: int) -> float:
+    if previous == 0:
+        return 100.0 if current > 0 else 0.0
+    return round(((current - previous) / previous) * 100, 1)
 
 
+# ==================================================
+# Dashboard Stats
+# ==================================================
 @router.get("/stats")
 def dashboard_stats(
-    db: Session = Depends(get_db), current_user=Depends(get_current_user)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
-
     org_id = current_user.organization_id
 
-    documents_sent = db.query(Document).filter(Document.sender_org_id == org_id).count()
+    now = datetime.now(timezone.utc)
+    current_start = now - timedelta(days=7)
+    previous_start = now - timedelta(days=14)
 
-    documents_received = (
-        db.query(Document).filter(Document.recipient_org_id == org_id).count()
-    )
+    # ----------------------------------------
+    # Single aggregated query (FAST 🚀)
+    # ----------------------------------------
+    stats = db.query(
+        # totals
+        func.count(case((Document.sender_org_id == org_id, 1))).label("sent"),
+        func.count(case((Document.recipient_org_id == org_id, 1))).label("received"),
+        func.count(
+            case(
+                (
+                    (Document.recipient_org_id == org_id)
+                    & (Document.status != "delivered"),
+                    1,
+                )
+            )
+        ).label("pending"),
+        func.count(
+            case(
+                (
+                    (Document.recipient_org_id == org_id)
+                    & (
+                        Document.status.in_(
+                            ["ocr_complete", "classified", "routed", "delivered"]
+                        )
+                    ),
+                    1,
+                )
+            )
+        ).label("ai_processed"),
 
-    pending_review = (
-        db.query(Document)
-        .filter(Document.recipient_org_id == org_id, Document.status != "delivered")
-        .count()
-    )
+        # current period
+        func.count(
+            case(
+                (
+                    (Document.sender_org_id == org_id)
+                    & (Document.created_at >= current_start),
+                    1,
+                )
+            )
+        ).label("sent_current"),
+        func.count(
+            case(
+                (
+                    (Document.sender_org_id == org_id)
+                    & (Document.created_at >= previous_start)
+                    & (Document.created_at < current_start),
+                    1,
+                )
+            )
+        ).label("sent_previous"),
 
-    ai_processed = (
-        db.query(Document)
-        .filter(
-            Document.recipient_org_id == org_id,
-            Document.status.in_(["ocr_complete", "classified", "routed", "delivered"]),
-        )
-        .count()
-    )
+        func.count(
+            case(
+                (
+                    (Document.recipient_org_id == org_id)
+                    & (Document.created_at >= current_start),
+                    1,
+                )
+            )
+        ).label("received_current"),
+        func.count(
+            case(
+                (
+                    (Document.recipient_org_id == org_id)
+                    & (Document.created_at >= previous_start)
+                    & (Document.created_at < current_start),
+                    1,
+                )
+            )
+        ).label("received_previous"),
+
+        func.count(
+            case(
+                (
+                    (Document.recipient_org_id == org_id)
+                    & (Document.status != "delivered")
+                    & (Document.created_at >= current_start),
+                    1,
+                )
+            )
+        ).label("pending_current"),
+        func.count(
+            case(
+                (
+                    (Document.recipient_org_id == org_id)
+                    & (Document.status != "delivered")
+                    & (Document.created_at >= previous_start)
+                    & (Document.created_at < current_start),
+                    1,
+                )
+            )
+        ).label("pending_previous"),
+
+        func.count(
+            case(
+                (
+                    (Document.recipient_org_id == org_id)
+                    & (
+                        Document.status.in_(
+                            ["ocr_complete", "classified", "routed", "delivered"]
+                        )
+                    )
+                    & (Document.created_at >= current_start),
+                    1,
+                )
+            )
+        ).label("ai_current"),
+        func.count(
+            case(
+                (
+                    (Document.recipient_org_id == org_id)
+                    & (
+                        Document.status.in_(
+                            ["ocr_complete", "classified", "routed", "delivered"]
+                        )
+                    )
+                    & (Document.created_at >= previous_start)
+                    & (Document.created_at < current_start),
+                    1,
+                )
+            )
+        ).label("ai_previous"),
+    ).one()
 
     return {
-        "documents_sent": documents_sent,
-        "documents_received": documents_received,
-        "pending_review": pending_review,
-        "ai_processed": ai_processed,
-        "sent_change_pct": 0,
-        "received_change_pct": 0,
-        "pending_change_pct": 0,
-        "ai_change_pct": 0,
+        "documents_sent": stats.sent,
+        "documents_received": stats.received,
+        "pending_review": stats.pending,
+        "ai_processed": stats.ai_processed,
+        "sent_change_pct": calculate_change(stats.sent_current, stats.sent_previous),
+        "received_change_pct": calculate_change(
+            stats.received_current, stats.received_previous
+        ),
+        "pending_change_pct": calculate_change(
+            stats.pending_current, stats.pending_previous
+        ),
+        "ai_change_pct": calculate_change(stats.ai_current, stats.ai_previous),
     }
 
 
 # ==================================================
 # Recent Activity
-# GET /dashboard/activity
 # ==================================================
-
-
 @router.get("/activity")
 def dashboard_activity(
-    db: Session = Depends(get_db), current_user=Depends(get_current_user)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
+    org_id = current_user.organization_id
 
     documents = (
         db.query(Document)
         .filter(
-            (Document.sender_org_id == current_user.organization_id)
-            | (Document.recipient_org_id == current_user.organization_id)
+            or_(
+                Document.sender_org_id == org_id,
+                Document.recipient_org_id == org_id,
+            )
         )
         .order_by(Document.created_at.desc())
         .limit(10)
@@ -79,56 +199,68 @@ def dashboard_activity(
 
     return [
         {
-            "date": document.created_at,
-            "document_id": document.id,
-            "subject": document.subject,
-            "status": document.status,
+            "date": doc.created_at,
+            "document_id": doc.id,
+            "subject": doc.subject,
+            "status": doc.status,
         }
-        for document in documents
+        for doc in documents
     ]
 
 
 # ==================================================
 # Document Types
-# GET /dashboard/document-types
 # ==================================================
-
-
 @router.get("/document-types")
 def document_types(
-    db: Session = Depends(get_db), current_user=Depends(get_current_user)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
-
     results = (
-        db.query(Document.document_type, func.count(Document.id))
+        db.query(
+            Document.document_type,
+            func.count(Document.id),
+        )
         .filter(Document.recipient_org_id == current_user.organization_id)
         .group_by(Document.document_type)
         .all()
     )
 
-    return [{"type": item[0], "count": item[1]} for item in results]
+    return [
+        {"type": row[0], "count": row[1]}
+        for row in results
+    ]
 
 
 # ==================================================
 # Recent Documents
-# GET /dashboard/recent
 # ==================================================
-
-
 @router.get("/recent")
 def recent_documents(
-    db: Session = Depends(get_db), current_user=Depends(get_current_user)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
+    org_id = current_user.organization_id
 
     documents = (
         db.query(Document)
         .filter(
-            (Document.sender_org_id == current_user.organization_id)
-            | (Document.recipient_org_id == current_user.organization_id)
+            or_(
+                Document.sender_org_id == org_id,
+                Document.recipient_org_id == org_id,
+            )
         )
         .order_by(Document.created_at.desc())
         .limit(10)
         .all()
     )
 
-    return documents
+    return [
+        {
+            "id": doc.id,
+            "subject": doc.subject,
+            "status": doc.status,
+            "created_at": doc.created_at,
+        }
+        for doc in documents
+    ]
