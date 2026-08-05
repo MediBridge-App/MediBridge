@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from dependencies.auth import require_admin
+from dependencies.auth import require_admin, get_current_user
 from models.user import User
 from schemas.user import UserResponse, UserRoleUpdate, UserStatusUpdate
 
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 @router.get("", response_model=list[UserResponse])
 def get_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
 ):
     users = (
         db.query(User)
