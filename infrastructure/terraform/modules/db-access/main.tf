@@ -107,4 +107,12 @@ resource "aws_instance" "jump" {
   tags = {
     Name = "${var.name_prefix}-db-jump"
   }
+
+  # The AMI comes from an SSM "latest" parameter, so it changes whenever AWS
+  # publishes a new Amazon Linux image — which would otherwise destroy and
+  # recreate the jump host (and break active DB tunnels) on an unrelated apply.
+  # Ignore AMI drift; recreate deliberately when we actually want to patch it.
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
