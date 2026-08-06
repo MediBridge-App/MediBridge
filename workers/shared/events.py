@@ -18,7 +18,7 @@ def parse_sns_message(record: dict[str, Any]) -> dict[str, Any]:
 
 def validate_document_sent(event):
     schema_path = (
-        Path(__file__).resolve().parents[2]
+        Path(__file__).resolve().parents[1]
         / "contracts"
         / "events"
         / "document-sent.schema.json"
@@ -33,7 +33,7 @@ def validate_document_analysis(
     analysis: dict[str, Any],
 ) -> dict[str, Any]:
     schema_path = (
-        Path(__file__).resolve().parents[2]
+        Path(__file__).resolve().parents[1]
         / "contracts"
         / "ai"
         / "document-analysis.schema.json"
