@@ -221,9 +221,11 @@ resource "aws_ecs_service" "backend" {
   # Give a new task time to boot before the ALB starts failing it.
   health_check_grace_period_seconds = 60
 
-  # No lifecycle/ignore_changes block on purpose. Terraform is currently the
-  # only way to deploy — there is no CD pipeline. Ignoring task_definition
-  # here would make `apply` silently do nothing when the image tag changes.
-  # Add `ignore_changes = [task_definition]` only once a deploy workflow
-  # exists and owns rolling out new images.
+  # The backend is deployed out-of-band (image push + `aws ecs update-service
+  # --force-new-deployment`), so the DEPLOY process owns which task-definition
+  # revision and how many tasks run — not Terraform. Ignoring these stops
+  # Terraform from reverting a live deploy on the next apply.
+  lifecycle {
+    ignore_changes = [task_definition, desired_count]
+  }
 }

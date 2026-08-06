@@ -4,6 +4,17 @@ variable "aws_region" {
   default     = "us-east-2"
 }
 
+variable "bedrock_model_id" {
+  description = "Amazon Bedrock inference profile used by the document-analysis worker."
+  type        = string
+  default     = "us.amazon.nova-micro-v1:0"
+
+  validation {
+    condition     = var.bedrock_model_id == "us.amazon.nova-micro-v1:0"
+    error_message = "MediBridge must use the Amazon Nova Micro US inference profile through Amazon Bedrock."
+  }
+}
+
 variable "project" {
   description = "Project name, used in resource naming and tags."
   type        = string
@@ -42,4 +53,9 @@ variable "domain_name" {
 variable "hosted_zone_id" {
   description = "Route 53 hosted zone ID for domain_name."
   type        = string
+}
+
+variable "alarm_emails" {
+  description = "Emails that receive CloudWatch alarm notifications. Each address confirms its own subscription from its inbox after apply."
+  type        = list(string)
 }

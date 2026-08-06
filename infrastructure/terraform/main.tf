@@ -129,13 +129,23 @@ module "lambda" {
   kms_key_arn      = module.kms.key_arn
   backend_api_url  = module.alb.url
   app_secrets_arn  = module.secrets.app_secrets_arn
+  bedrock_model_id = var.bedrock_model_id
 }
 
-# module "observability" {
-#   source      = "./modules/observability"
-#   name_prefix = local.name_prefix
-#   kms_key_arn = module.kms.key_arn
-# }
+module "observability" {
+  source               = "./modules/observability"
+  name_prefix          = local.name_prefix
+  kms_key_arn          = module.kms.key_arn
+  alarm_emails         = var.alarm_emails
+  lambda_function_name = module.lambda.function_name
+  dlq_arn              = module.sqs.dlq_arn
+
+  # Phase 2 — backend + database health. ALB arn_suffixes are AWS-generated so
+  # they must be wired from the module; ECS/RDS names are derived inside the
+  # module from name_prefix (so an -target apply doesn't pull in their drift).
+  alb_arn_suffix          = module.alb.arn_suffix
+  target_group_arn_suffix = module.alb.target_group_arn_suffix
+}
 
 module "frontend_hosting" {
   source         = "./modules/frontend-hosting"
