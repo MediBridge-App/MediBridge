@@ -1,5 +1,4 @@
 import time
-import pytest
 import requests
 
 RECIPIENT_ORG_ID = "a0000000-0000-4000-8000-000000000002"  # Riverside Cardiology
@@ -20,19 +19,6 @@ _MINIMAL_PDF = (
 
 POLL_INTERVAL_SECONDS = 5
 POLL_TIMEOUT_SECONDS = 90
-
-@pytest.mark.xfail(
-    reason=(
-        "The live medibridge-dev-worker Lambda is still running the Terraform "
-        "placeholder handler (infrastructure/terraform/modules/lambda/main.tf), "
-        "not the real workers/handler.py from the repo. SNS publish succeeds and "
-        "the Lambda is invoked (confirmed via CloudWatch), but it returns in ~2ms "
-        "with no Textract/Bedrock calls, so no ai_analyses row is ever created. "
-        "Not a backend regression — Ayesha needs to deploy the real handler code "
-        "to the live function. Flagged to her 08/04."
-    ),
-    strict=True,
-)
 
 def test_document_send_triggers_ai_analysis(base_url, auth_headers, auth_headers_user2):
     # 1. Get a real presigned upload URL and actually upload something, so
