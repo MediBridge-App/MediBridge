@@ -5,6 +5,22 @@ from typing import Any
 from jsonschema import validate
 
 
+def _contracts_root() -> Path:
+    """Locate contracts in both source-repository and Lambda layouts."""
+    module_path = Path(__file__).resolve()
+    candidates = (
+        module_path.parents[1] / "contracts",  # Lambda: /var/task/contracts
+        module_path.parents[2] / "contracts",  # Repository: <repo>/contracts
+    )
+
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+
+    searched = ", ".join(str(candidate) for candidate in candidates)
+    raise FileNotFoundError(f"Contracts directory not found; searched: {searched}")
+
+
 def parse_sns_message(record: dict[str, Any]) -> dict[str, Any]:
     """Extract and parse an event carried inside an SNS-to-SQS record."""
 
@@ -18,8 +34,7 @@ def parse_sns_message(record: dict[str, Any]) -> dict[str, Any]:
 
 def validate_document_sent(event):
     schema_path = (
-        Path(__file__).resolve().parents[1]
-        / "contracts"
+        _contracts_root()
         / "events"
         / "document-sent.schema.json"
     )
@@ -33,8 +48,7 @@ def validate_document_analysis(
     analysis: dict[str, Any],
 ) -> dict[str, Any]:
     schema_path = (
-        Path(__file__).resolve().parents[1]
-        / "contracts"
+        _contracts_root()
         / "ai"
         / "document-analysis.schema.json"
     )
