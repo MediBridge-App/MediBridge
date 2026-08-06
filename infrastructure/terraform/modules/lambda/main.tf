@@ -84,12 +84,16 @@ data "aws_iam_policy_document" "worker" {
     resources = ["*"] # Textract has no per-resource ARNs to scope to.
   }
 
-  # Classification. Anthropic models only, plus the cross-region inference
-  # profiles the newer models require (the "us." prefix Ayesha will hit).
+  # Classification. Covers the Amazon Nova model the worker uses today
+  # (us.amazon.nova-micro-v1:0, invoked via a cross-region inference profile)
+  # AND Anthropic models, so switching bedrock_model_id later needs no IAM
+  # change. Invoking a cross-region profile needs BOTH the inference-profile ARN
+  # and the underlying foundation-model ARNs in the destination regions.
   statement {
     sid     = "Bedrock"
     actions = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
     resources = [
+      "arn:aws:bedrock:*::foundation-model/amazon.nova-*",
       "arn:aws:bedrock:*::foundation-model/anthropic.*",
       "arn:aws:bedrock:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:inference-profile/*",
     ]
