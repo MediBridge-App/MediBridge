@@ -1,5 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -22,7 +21,7 @@ class AIAnalysisResponse(BaseModel):
 
     urgency_detected: bool
 
-    confidence_score: Decimal | None
+    confidence_score: float | None
 
     processing_time_ms: int | None
 

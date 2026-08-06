@@ -82,6 +82,8 @@ def create_or_update_analysis(
             details={
                 "source": "lambda",
                 "model": body.model_used,
+                "confidence_score": body.confidence_score,
+                "processing_time_ms": body.processing_time_ms,
             },
         )
 
@@ -131,10 +133,12 @@ def create_or_update_analysis(
     except HTTPException:
         raise
 
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         db.rollback()
+
+        print("AI ANALYSIS ERROR:", str(e))
 
         raise HTTPException(
             status_code=500,
-            detail="Unable to save AI analysis",
+            detail=str(e),
         )
