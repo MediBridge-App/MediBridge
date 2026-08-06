@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from dependencies.auth import get_current_user
 from models.audit import AuditLog
+from models.document import Document
 from models.organization import Organization
 from models.user import User
 from schemas.audit import AuditResponse
@@ -23,18 +24,17 @@ router = APIRouter(
 # GET /audit
 # ==================================================
 
-
 @router.get("", response_model=list[AuditResponse])
 def get_audit_logs(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-
     logs = (
         db.query(
             AuditLog,
             User.full_name.label("user_name"),
             Organization.name.label("org_name"),
+            Document.tx_ref.label("tx_ref"),
         )
         .outerjoin(
             User,
@@ -44,9 +44,12 @@ def get_audit_logs(
             Organization,
             AuditLog.organization_id == Organization.id,
         )
+        .outerjoin(
+            Document,
+            AuditLog.document_id == Document.id,
+        )
         .filter(
-            AuditLog.organization_id
-            == current_user.organization_id
+            AuditLog.organization_id == current_user.organization_id
         )
         .order_by(
             AuditLog.created_at.desc()
@@ -63,11 +66,13 @@ def get_audit_logs(
             },
             "user_name": user_name,
             "org_name": org_name,
+            "tx_ref": tx_ref or "TX-UNKNOWN",
         }
         for (
             log,
             user_name,
             org_name,
+            tx_ref,
         ) in logs
     ]
 
@@ -77,18 +82,22 @@ def get_audit_logs(
 # GET /audit/export
 # ==================================================
 
-
 @router.get("/export")
 def export_audit_logs(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-
     logs = (
-        db.query(AuditLog)
+        db.query(
+            AuditLog,
+            Document.tx_ref.label("tx_ref"),
+        )
+        .outerjoin(
+            Document,
+            AuditLog.document_id == Document.id,
+        )
         .filter(
-            AuditLog.organization_id
-            == current_user.organization_id
+            AuditLog.organization_id == current_user.organization_id
         )
         .order_by(
             AuditLog.created_at.desc()
@@ -105,7 +114,7 @@ def export_audit_logs(
             "event_id",
             "event_type",
             "action",
-            "document_id",
+            "tx_ref",
             "user_id",
             "organization_id",
             "ip_address",
@@ -114,29 +123,19 @@ def export_audit_logs(
         ]
     )
 
-    for log in logs:
+    for log, tx_ref in logs:
         writer.writerow(
             [
                 log.event_id,
                 log.event_type,
                 log.action,
-                (
-                    str(log.document_id)
-                    if log.document_id
-                    else ""
-                ),
-                (
-                    str(log.user_id)
-                    if log.user_id
-                    else ""
-                ),
-                (
-                    str(log.organization_id)
-                    if log.organization_id
-                    else ""
-                ),
-                log.ip_address,
-                log.hash,
+                tx_ref or "",
+                str(log.user_id) if log.user_id else "",
+                str(log.organization_id)
+                if log.organization_id
+                else "",
+                log.ip_address or "",
+                log.hash or "",
                 log.created_at,
             ]
         )
@@ -159,19 +158,18 @@ def export_audit_logs(
 # GET /audit/{event_id}
 # ==================================================
 
-
 @router.get("/{event_id}", response_model=AuditResponse)
 def get_audit_event(
     event_id: str,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-
     audit = (
         db.query(
             AuditLog,
             User.full_name.label("user_name"),
             Organization.name.label("org_name"),
+            Document.tx_ref.label("tx_ref"),
         )
         .outerjoin(
             User,
@@ -181,10 +179,13 @@ def get_audit_event(
             Organization,
             AuditLog.organization_id == Organization.id,
         )
+        .outerjoin(
+            Document,
+            AuditLog.document_id == Document.id,
+        )
         .filter(
             AuditLog.event_id == event_id,
-            AuditLog.organization_id
-            == current_user.organization_id,
+            AuditLog.organization_id == current_user.organization_id,
         )
         .first()
     )
@@ -195,7 +196,7 @@ def get_audit_event(
             detail="Audit event not found",
         )
 
-    log, user_name, org_name = audit
+    log, user_name, org_name, tx_ref = audit
 
     return {
         **{
@@ -205,4 +206,5 @@ def get_audit_event(
         },
         "user_name": user_name,
         "org_name": org_name,
+        "tx_ref": tx_ref or "TX-UNKNOWN",
     }

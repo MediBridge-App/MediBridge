@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, aliased
@@ -285,6 +285,7 @@ def search_documents(
 @router.get("/{doc_id}/download-url")
 def get_download_url(
     doc_id: UUID,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -318,6 +319,7 @@ def get_download_url(
             user_id=current_user.id,
             organization_id=current_user.organization_id,
             details={},
+            request=request
         )
 
         db.commit()
@@ -431,6 +433,7 @@ def get_document(
 @router.put("/{doc_id}/read", response_model=DocumentResponse)
 def mark_document_read(
     doc_id: UUID,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -465,6 +468,7 @@ def mark_document_read(
                 user_id=current_user.id,
                 organization_id=current_user.organization_id,
                 details={},
+                request=request
             )
 
             db.commit()
@@ -498,6 +502,7 @@ def mark_document_read(
 @router.post("/send", response_model=DocumentResponse)
 def send_document(
     document: DocumentCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -545,6 +550,7 @@ def send_document(
                 "document_type": new_document.document_type,
                 "subject": new_document.subject,
             },
+            request=request
         )
 
         # Create notifications for recipient users
@@ -616,6 +622,7 @@ def send_document(
 def update_document_status(
     doc_id: UUID,
     body: DocumentStatusUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -676,6 +683,7 @@ def update_document_status(
                 "old_status": old_status,
                 "new_status": body.status,
             },
+            request=request
         )
 
         db.commit()
