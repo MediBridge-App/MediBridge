@@ -13,7 +13,6 @@ from models.organization import Organization
 from models.user import User
 from schemas.audit import AuditResponse
 
-
 router = APIRouter(
     prefix="/audit",
     tags=["Audit"],
