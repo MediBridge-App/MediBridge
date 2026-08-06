@@ -61,7 +61,6 @@ resource "aws_cloudwatch_metric_alarm" "dlq_not_empty" {
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [aws_sns_topic.alarms.arn]
-  ok_actions    = [aws_sns_topic.alarms.arn]
 }
 
 # ---------------------------------------------------------------------------
@@ -83,7 +82,6 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [aws_sns_topic.alarms.arn]
-  ok_actions    = [aws_sns_topic.alarms.arn]
 }
 
 # ---------------------------------------------------------------------------
@@ -111,7 +109,6 @@ resource "aws_cloudwatch_metric_alarm" "alb_no_healthy_hosts" {
   treat_missing_data  = "breaching"
 
   alarm_actions = [aws_sns_topic.alarms.arn]
-  ok_actions    = [aws_sns_topic.alarms.arn]
 }
 
 # Backend returning server errors.
@@ -131,7 +128,6 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [aws_sns_topic.alarms.arn]
-  ok_actions    = [aws_sns_topic.alarms.arn]
 }
 
 # Backend slow — average response time over 2s for 15 minutes.
@@ -151,7 +147,6 @@ resource "aws_cloudwatch_metric_alarm" "alb_latency" {
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [aws_sns_topic.alarms.arn]
-  ok_actions    = [aws_sns_topic.alarms.arn]
 }
 
 # Backend CPU pinned high.
@@ -174,7 +169,6 @@ resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [aws_sns_topic.alarms.arn]
-  ok_actions    = [aws_sns_topic.alarms.arn]
 }
 
 # Database disk filling up — free storage under 2 GB.
@@ -194,7 +188,6 @@ resource "aws_cloudwatch_metric_alarm" "rds_low_storage" {
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [aws_sns_topic.alarms.arn]
-  ok_actions    = [aws_sns_topic.alarms.arn]
 }
 
 # Database CPU pinned high.
@@ -214,5 +207,4 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [aws_sns_topic.alarms.arn]
-  ok_actions    = [aws_sns_topic.alarms.arn]
 }
