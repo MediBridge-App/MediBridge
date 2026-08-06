@@ -129,6 +129,7 @@ module "lambda" {
   kms_key_arn      = module.kms.key_arn
   backend_api_url  = module.alb.url
   app_secrets_arn  = module.secrets.app_secrets_arn
+  bedrock_model_id = var.bedrock_model_id
 }
 
 module "observability" {

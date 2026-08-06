@@ -20,6 +20,25 @@
 
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+locals {
+  bedrock_foundation_model_id = trimprefix(var.bedrock_model_id, "us.")
+
+  bedrock_inference_profile_arn = join(":", [
+    "arn",
+    "aws",
+    "bedrock",
+    data.aws_region.current.name,
+    data.aws_caller_identity.current.account_id,
+    "inference-profile/${var.bedrock_model_id}",
+  ])
+
+  bedrock_destination_regions = ["us-east-1", "us-east-2", "us-west-2"]
+
+  bedrock_destination_model_arns = [
+    for region in local.bedrock_destination_regions :
+    "arn:aws:bedrock:${region}::foundation-model/${local.bedrock_foundation_model_id}"
+  ]
+}
 
 # ---------------------------------------------------------------------------
 # Execution role — what the worker code is allowed to do. Least privilege:
@@ -84,19 +103,24 @@ data "aws_iam_policy_document" "worker" {
     resources = ["*"] # Textract has no per-resource ARNs to scope to.
   }
 
-  # Classification. Covers the Amazon Nova model the worker uses today
-  # (us.amazon.nova-micro-v1:0, invoked via a cross-region inference profile)
-  # AND Anthropic models, so switching bedrock_model_id later needs no IAM
-  # change. Invoking a cross-region profile needs BOTH the inference-profile ARN
-  # and the underlying foundation-model ARNs in the destination regions.
+  # Document classification through the Amazon Nova Micro US inference profile.
+  # AWS requires access to both the profile and every destination model.
   statement {
-    sid     = "Bedrock"
-    actions = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
-    resources = [
-      "arn:aws:bedrock:*::foundation-model/amazon.nova-*",
-      "arn:aws:bedrock:*::foundation-model/anthropic.*",
-      "arn:aws:bedrock:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:inference-profile/*",
-    ]
+    sid       = "BedrockProfile"
+    actions   = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
+    resources = [local.bedrock_inference_profile_arn]
+  }
+
+  statement {
+    sid       = "BedrockNovaDestinations"
+    actions   = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
+    resources = local.bedrock_destination_model_arns
+
+    condition {
+      test     = "StringLike"
+      variable = "bedrock:InferenceProfileArn"
+      values   = [local.bedrock_inference_profile_arn]
+    }
   }
 
   # Read the internal backend API key at runtime.
