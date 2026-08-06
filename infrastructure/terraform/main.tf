@@ -131,11 +131,14 @@ module "lambda" {
   app_secrets_arn  = module.secrets.app_secrets_arn
 }
 
-# module "observability" {
-#   source      = "./modules/observability"
-#   name_prefix = local.name_prefix
-#   kms_key_arn = module.kms.key_arn
-# }
+module "observability" {
+  source               = "./modules/observability"
+  name_prefix          = local.name_prefix
+  kms_key_arn          = module.kms.key_arn
+  alarm_email          = var.alarm_email
+  lambda_function_name = module.lambda.function_name
+  dlq_arn              = module.sqs.dlq_arn
+}
 
 module "frontend_hosting" {
   source      = "./modules/frontend-hosting"
