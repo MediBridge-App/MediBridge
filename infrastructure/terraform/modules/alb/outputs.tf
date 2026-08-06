@@ -17,3 +17,13 @@ output "listener_arn" {
   description = "HTTPS listener ARN — the ECS service depends on a listener being attached to the target group."
   value       = aws_lb_listener.https.arn
 }
+
+output "arn_suffix" {
+  description = "ALB ARN suffix (app/name/id) — the LoadBalancer dimension for CloudWatch ALB metrics."
+  value       = aws_lb.this.arn_suffix
+}
+
+output "target_group_arn_suffix" {
+  description = "Target group ARN suffix — the TargetGroup dimension for CloudWatch ALB metrics."
+  value       = aws_lb_target_group.this.arn_suffix
+}

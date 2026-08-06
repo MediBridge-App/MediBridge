@@ -44,7 +44,7 @@ variable "hosted_zone_id" {
   type        = string
 }
 
-variable "alarm_email" {
-  description = "Email that receives CloudWatch alarm notifications. Confirm the subscription from your inbox after apply."
-  type        = string
+variable "alarm_emails" {
+  description = "Emails that receive CloudWatch alarm notifications. Each address confirms its own subscription from its inbox after apply."
+  type        = list(string)
 }
