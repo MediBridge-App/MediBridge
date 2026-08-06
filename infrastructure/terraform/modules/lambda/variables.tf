@@ -33,3 +33,9 @@ variable "app_secrets_arn" {
   type        = string
   description = "ARN of the application secret containing AI_INTERNAL_API_KEY."
 }
+
+variable "bedrock_model_id" {
+  type        = string
+  default     = "us.amazon.nova-micro-v1:0"
+  description = "Bedrock model / inference-profile ID the worker uses. The worker reads it as BEDROCK_MODEL_ID; required, so it must be set."
+}

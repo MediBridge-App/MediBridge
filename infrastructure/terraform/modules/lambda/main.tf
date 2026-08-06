@@ -147,9 +147,10 @@ resource "aws_lambda_function" "worker" {
 
   environment {
     variables = {
-      DOCUMENT_BUCKET = var.document_bucket
-      BACKEND_API_URL = var.backend_api_url
-      APP_SECRETS_ARN = var.app_secrets_arn
+      DOCUMENT_BUCKET  = var.document_bucket
+      BACKEND_API_URL  = var.backend_api_url
+      APP_SECRETS_ARN  = var.app_secrets_arn
+      BEDROCK_MODEL_ID = var.bedrock_model_id
     }
   }
 

@@ -43,3 +43,8 @@ variable "hosted_zone_id" {
   description = "Route 53 hosted zone ID for domain_name."
   type        = string
 }
+
+variable "alarm_emails" {
+  description = "Emails that receive CloudWatch alarm notifications. Each address confirms its own subscription from its inbox after apply."
+  type        = list(string)
+}
