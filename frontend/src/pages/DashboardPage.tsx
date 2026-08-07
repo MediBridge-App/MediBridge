@@ -128,13 +128,14 @@ export default function DashboardPage() {
                         subject: string
                         status: string
                         priority: string
+                        org_name: string | null
                         created_at: string
                     }) => ({
                         id: doc.tx_ref || 'Unknown',
                         txRef: doc.tx_ref || 'Unknown',
                         documentType: doc.document_type as DocumentType,
                         subject: doc.subject || 'Untitled',
-                        senderOrgName: 'Healthcare Org',
+                        senderOrgName: doc.org_name || 'Unknown Organization',
                         status: doc.status as DocumentStatus,
                         priority: doc.priority as DocumentPriority,
                         timeAgo: new Date(doc.created_at).toLocaleDateString('en-US', {

@@ -4,7 +4,7 @@ const PIPELINE = [
     { step: 'Upload', sub: 'S3 Storage', icon: '☁️', color: '#0e7490' },
     { step: 'SNS Event', sub: 'document.sent', icon: '📡', color: '#0284c7' },
     { step: 'SQS Queue', sub: 'Fan-out', icon: '📬', color: '#7c3aed' },
-    { step: 'AI Lambda', sub: 'Claude claude-haiku-4-5', icon: '🧠', color: '#7c3aed' },
+    { step: 'AI Lambda', sub: 'Amazon Nova Micro', icon: '🧠', color: '#7c3aed' },
     { step: 'Notification', sub: 'Lambda fn', icon: '🔔', color: '#d97706' },
     { step: 'Audit Log', sub: 'Lambda fn', icon: '🔒', color: '#059669' },
     { step: 'Delivered', sub: 'Recipient notified', icon: '✅', color: '#059669' },

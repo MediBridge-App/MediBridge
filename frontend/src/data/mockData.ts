@@ -385,7 +385,7 @@ export const MOCK_AI_ANALYSES: Analysis[] = [
     confidence: 97,
     urgencyFlag: false,
     processingMs: 840,
-    model: 'Claude claude-haiku-4-5',
+    model: 'Amazon Nova Micro',
     entities: ['WBC: 6.2', 'Hgb: 11.4', 'CMP: Normal'],
   },
   {
@@ -397,7 +397,7 @@ export const MOCK_AI_ANALYSES: Analysis[] = [
     confidence: 99,
     urgencyFlag: true,
     processingMs: 1120,
-    model: 'Claude claude-haiku-4-5',
+    model: 'Amazon Nova Micro',
     entities: ['Age: 58M', 'ST changes', 'Echocardiogram'],
   },
   {
@@ -409,7 +409,7 @@ export const MOCK_AI_ANALYSES: Analysis[] = [
     confidence: 95,
     urgencyFlag: false,
     processingMs: 1340,
-    model: 'Claude claude-haiku-4-5',
+    model: 'Amazon Nova Micro',
     entities: ['Appendectomy', 'Day 2 post-op', '7-day follow-up'],
   },
   {
@@ -421,7 +421,7 @@ export const MOCK_AI_ANALYSES: Analysis[] = [
     confidence: 92,
     urgencyFlag: true,
     processingMs: 980,
-    model: 'Claude claude-haiku-4-5',
+    model: 'Amazon Nova Micro',
     entities: ["Adalimumab 40mg", "Crohn's disease", 'June 17 deadline'],
   },
 ]

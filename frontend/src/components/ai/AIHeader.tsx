@@ -24,7 +24,7 @@ export default function AIHeader({ activeTab, onTabChange }: AIHeaderProps) {
                     <div>
                         <h2 className="text-base font-bold text-slate-800">AI Analysis</h2>
                         <p className="text-xs text-slate-500">
-                            Powered by Claude claude-haiku-4-5 via AWS Lambda
+                            Powered by Amazon Nova Micro via AWS Bedrock
                         </p>
                     </div>
                 </div>

@@ -10,6 +10,7 @@ type ApiAuditLog = {
     id: string
     event_id: string
     document_id: string | null
+    tx_ref: string | null
     user_id: string | null
     organization_id: string | null
     user_name: string | null
@@ -27,11 +28,9 @@ function formatTimestamp(isoString: string): string {
     return date.toLocaleString('sv-SE') // gives "YYYY-MM-DD HH:mm:ss" style, matches mock format
 }
 
-// Bella added user_name and org_name directly to this response — confirmed
-// via a real GET /audit call. Falls back to the raw UUID only if a name is
-// somehow missing (e.g. a system-generated event with no user attached).
-// Note: document_id is still just a UUID, not a tx_ref — no fix for that
-// yet, still shows the raw id.
+// Bella added user_name, org_name, and a real tx_ref field directly to this
+// response — confirmed via a real GET /audit call. tx_ref now shows the
+// actual TX-XXXXXX reference instead of the raw document_id UUID.
 function mapAuditLog(log: ApiAuditLog) {
     return {
         id: log.id,
@@ -40,7 +39,7 @@ function mapAuditLog(log: ApiAuditLog) {
         user: log.user_name ?? 'System',
         userId: log.user_id ?? '—',
         action: log.action,
-        txRef: log.document_id ?? null,
+        txRef: log.tx_ref ?? null,
         ipAddress: log.ip_address ?? '—',
         timestamp: formatTimestamp(log.created_at),
         hash: log.hash ?? '—',
