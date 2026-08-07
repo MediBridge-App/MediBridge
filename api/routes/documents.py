@@ -547,7 +547,7 @@ def send_document(
             user_id=current_user.id,
             organization_id=current_user.organization_id,
             details={
-                "document_type": new_document.document_type,
+                "document_type": new_document.document_type.value,
                 "subject": new_document.subject,
             },
             request=request
@@ -569,7 +569,7 @@ def send_document(
                 document_id=new_document.id,
                 type="document_received",
                 message=(
-                    f"New {new_document.document_type} "
+                    f"New {new_document.document_type.value} "
                     "document received"
                 ),
                 is_read=False,
