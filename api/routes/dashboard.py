@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from dependencies.auth import get_current_user
 from models.document import Document
+from models.organization import Organization
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -243,7 +244,14 @@ def recent_documents(
     org_id = current_user.organization_id
 
     documents = (
-        db.query(Document)
+        db.query(
+            Document,
+            Organization.name.label("org_name"),
+        )
+        .outerjoin(
+            Organization,
+            Document.sender_org_id == Organization.id,  
+        )
         .filter(
             or_(
                 Document.sender_org_id == org_id,

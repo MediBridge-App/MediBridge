@@ -11,7 +11,8 @@ class AuditResponse(BaseModel):
     document_id: UUID | None = None
     user_id: UUID | None = None
     organization_id: UUID | None = None
-
+    tx_ref: str | None = None
+    
     user_name: str | None = None
     org_name: str | None = None
 

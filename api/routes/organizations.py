@@ -10,6 +10,7 @@ from models.organization import Organization
 from models.user import User
 from schemas.organization import OrganizationResponse, OrganizationUpdate
 
+
 router = APIRouter(
     prefix="/organizations",
     tags=["Organizations"],
