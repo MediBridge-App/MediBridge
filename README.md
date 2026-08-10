@@ -75,7 +75,7 @@ This is the team's shared `dev` deployment, seeded with realistic demo data. See
 | **Inbox with AI Summaries** | Every received document shows its status plus an AI-generated summary and tags for fast triage |
 | **AI Analysis Dashboard** | Aggregate stats, category breakdown, and a full history of every AI analysis run |
 | **Real-Time Status Tracking** | Documents move through `uploaded → ocr_complete/ocr_failed → classified → routed → delivered` (or `rejected`) |
-| **Immutable Audit Trail** | Every send, read, and status change is logged and exportable as CSV |
+| **Tamper-Evident Audit Trail** | Every send, read, and status change is logged (append-only, with a SHA-256 hash per entry) and exportable as CSV |
 | **Security Settings** | MFA support, session controls, API keys, and outbound webhooks, all Cognito-backed |
 | **Notifications** | In-app notifications with per-user preferences |
 | **Task Follow-ups** | AI-recommended follow-up tasks generated from document analysis |
@@ -133,7 +133,7 @@ All services log to **Amazon CloudWatch**; secrets are stored in **AWS Secrets M
 | **Networking** | Amazon VPC, Application Load Balancer, Amazon CloudFront |
 | **Security** | AWS KMS, AWS Secrets Manager, IAM least-privilege, Security Groups |
 | **Infrastructure as Code** | Terraform, modularized per AWS service (network, kms, s3, secrets, rds, cognito, ecr, alb, ecs, sqs, lambda, frontend-hosting, iam, db-access) |
-| **Monitoring** | Amazon CloudWatch (logs, dashboards, alarms — module scaffolded, not yet wired in) |
+| **Monitoring** | Amazon CloudWatch — CMK-encrypted log groups plus metric alarms (DLQ depth, Lambda errors, ALB healthy-hosts/5xx/latency, ECS CPU) wired to an SNS email topic |
 
 ## Database Schema
 
@@ -213,7 +213,7 @@ Interactive OpenAPI docs are available at `/docs`. The app gates `/docs`, `/redo
 
 MediBridge is designed with HIPAA security principles in mind:
 
-- **Encryption at rest** for RDS, S3, and SQS via AWS KMS
+- **Encryption at rest** for RDS, S3, SQS, Secrets Manager, and CloudWatch Logs via a customer-managed AWS KMS key
 - **Encryption in transit** using HTTPS/TLS for all client–server communication
 - **Least-privilege IAM** roles scoped per service
 - **Private networking** — RDS runs in private subnets behind a NAT Gateway and is not reachable from the public internet, regardless of security group configuration
@@ -221,10 +221,24 @@ MediBridge is designed with HIPAA security principles in mind:
 - **Centralized secrets** management via AWS Secrets Manager — no credentials are committed to the repo
 - **Cognito-backed authentication** with MFA support
 - **Time-limited access** — document downloads use short-lived presigned S3 URLs
-- **Immutable audit logging** of every send, status change, and read
+- **Append-only, tamper-evident audit trail** — every send, status change, and read is logged with a SHA-256 hash per entry (the API exposes no update/delete route)
 - **Role-based, organization-scoped access control** so users only see documents belonging to their own organization
 
 > ⚠️ This project was built for educational/demonstration purposes as part of an ADA capstone. It is **not** a HIPAA-compliant system as deployed — production use would additionally require an executed AWS Business Associate Addendum (BAA) and a full compliance review.
+
+### How our controls map to the HIPAA Security Rule
+
+For learning purposes, the table below shows how MediBridge's technical controls align with the HIPAA Security Rule's Technical Safeguards (45 CFR §164.312). This is an educational mapping of design intent, **not** a compliance attestation — HIPAA compliance also requires Administrative and Physical Safeguards, a BAA, and formal review, none of which are in scope here.
+
+| HIPAA Technical Safeguard | Our control |
+|---|---|
+| Access control — §164.312(a)(1) | Cognito-backed auth; role-based, organization-scoped data access; RDS in private subnets with no public ingress |
+| Unique user identification — §164.312(a)(2)(i) | Each user is a distinct Cognito identity tied to one organization |
+| Encryption & decryption (at rest) — §164.312(a)(2)(iv) | Customer-managed KMS key encrypts RDS, S3, SQS, Secrets Manager, and CloudWatch Logs |
+| Audit controls — §164.312(b) | Append-only audit trail of every send, read, and status change, exportable as CSV |
+| Integrity — §164.312(c)(1) | SHA-256 hash per audit entry; S3 object versioning on the document bucket |
+| Person/entity authentication — §164.312(d) | Cognito + JWT verification (issuer, audience, token-use checked); MFA supported |
+| Transmission security — §164.312(e)(1), (e)(2)(ii) | HTTPS/TLS for all client traffic; `rds.force_ssl` on database connections; presigned, time-limited S3 URLs |
 
 ## Getting Started
 

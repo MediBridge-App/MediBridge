@@ -14,9 +14,9 @@ resource "aws_cloudwatch_log_group" "backend" {
   name              = "/ecs/${var.name_prefix}-backend"
   retention_in_days = var.log_retention_days
 
-  # Not CMK-encrypted: CloudWatch Logs needs an explicit statement in the KMS
-  # key policy, which the kms module doesn't have yet. Logs are encrypted with
-  # an AWS-managed key meanwhile, and by rule contain no PHI. Phase 3 item.
+  # CMK-encrypted at rest. Requires the AllowCloudWatchLogsToUseKey statement in
+  # the kms module's key policy — without it, CreateLogGroup fails AccessDenied.
+  kms_key_id = var.kms_key_arn
 }
 
 resource "aws_ecs_cluster" "this" {
