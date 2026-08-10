@@ -160,6 +160,10 @@ data "archive_file" "placeholder" {
 resource "aws_cloudwatch_log_group" "worker" {
   name              = "/aws/lambda/${var.name_prefix}-worker"
   retention_in_days = 30
+
+  # CMK-encrypted at rest via the shared key. Depends on the CloudWatch Logs
+  # grant in the kms module's key policy (AllowCloudWatchLogsToUseKey).
+  kms_key_id = var.kms_key_arn
 }
 
 resource "aws_lambda_function" "worker" {

@@ -15,6 +15,7 @@
 # Inherits common tags via the provider default_tags block in the root config.
 
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 
 # Key policy. The first statement is the AWS default — the account root keeps
 # full control, so IAM policies (like our admin role) continue to govern the
@@ -41,6 +42,32 @@ data "aws_iam_policy_document" "main" {
     principals {
       type        = "Service"
       identifiers = ["sns.amazonaws.com"]
+    }
+  }
+
+  # CloudWatch Logs can only write to a CMK-encrypted log group if the key
+  # policy explicitly lets the regional logs service principal use the key.
+  # Scoped by encryption context to log groups in THIS account and region, so
+  # the grant can't be used to encrypt/decrypt anything but our own log data.
+  statement {
+    sid    = "AllowCloudWatchLogsToUseKey"
+    effect = "Allow"
+    actions = [
+      "kms:Encrypt*",
+      "kms:Decrypt*",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:Describe*",
+    ]
+    resources = ["*"]
+    principals {
+      type        = "Service"
+      identifiers = ["logs.${data.aws_region.current.name}.amazonaws.com"]
+    }
+    condition {
+      test     = "ArnLike"
+      variable = "kms:EncryptionContext:aws:logs:arn"
+      values   = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:*"]
     }
   }
 }
