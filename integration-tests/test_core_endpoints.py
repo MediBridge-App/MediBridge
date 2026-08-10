@@ -1,4 +1,3 @@
-import pytest
 import requests
 
 
@@ -6,17 +5,6 @@ def test_get_organizations(base_url, auth_headers):
     response = requests.get(f"{base_url}/organizations", headers=auth_headers)
     assert response.status_code == 200
     assert isinstance(response.json(), list)
-
-@pytest.mark.xfail(
-    reason=(
-        "GET /users now requires require_admin (api/routes/users.py), but this "
-        "was never one of the 3 admin-only routes from the PR #64 security fix "
-        "(PUT /users/{id}/role, PUT /users/{id}/status, PUT /organizations/{id}). "
-        "Any authenticated non-admin org member should be able to list their own "
-        "org's users (used by the Security page) — flagged to Bella 08/04."
-    ),
-    strict=True,
-)
 
 
 def test_get_users(base_url, auth_headers):
@@ -98,15 +86,6 @@ def test_api_keys(base_url, auth_headers):
 
 
 
-
-@pytest.mark.xfail(
-    reason=(
-        "Same root cause as test_get_users above: GET /users now requires "
-        "require_admin, so both orgs just get {'detail': 'Admin privileges "
-        "required'} instead of their actual user lists — flagged to Bella 08/04."
-    ),
-    strict=True,
-)
 
 def test_users_endpoint_respects_authenticated_org(
     base_url, auth_headers, auth_headers_user2
