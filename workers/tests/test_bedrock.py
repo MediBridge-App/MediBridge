@@ -1,7 +1,7 @@
 import json
 import unittest
-from unittest import mock
 from pathlib import Path
+from unittest import mock
 
 from shared.bedrock import analyze_document_text
 
