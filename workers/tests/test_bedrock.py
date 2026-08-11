@@ -1,5 +1,6 @@
 import json
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from shared.bedrock import analyze_document_text
@@ -37,16 +38,23 @@ class TestAnalyzeDocumentText(unittest.TestCase):
             fixture_path.read_text(encoding="utf-8")
         )
 
-    def test_returns_validated_analysis(self):
+    def test_returns_validated_analysis_with_measured_processing_time(self):
         client = FakeBedrockClient(json.dumps(self.analysis))
 
-        result = analyze_document_text(
-            "Synthetic CBC document text.",
-            client=client,
-            model_id="test-model",
-        )
+        with mock.patch(
+            "shared.bedrock.time.perf_counter",
+            side_effect=[10.0, 10.25],
+        ):
+            result = analyze_document_text(
+                "Synthetic CBC document text.",
+                client=client,
+                model_id="test-model",
+            )
 
-        self.assertEqual(result, self.analysis)
+        expected = dict(self.analysis)
+        expected["processing_time_ms"] = 250
+
+        self.assertEqual(result, expected)
         self.assertEqual(client.request["modelId"], "test-model")
         self.assertEqual(
             client.request["inferenceConfig"]["temperature"],

@@ -98,8 +98,14 @@ class TestHandler(unittest.TestCase):
 
         self.assertEqual(result["statusCode"], 200)
         self.assertEqual(result["processed_count"], 1)
-        self.assertEqual(result["analyses"], [expected_analysis])
+        actual_analysis = dict(result["analyses"][0])
+        expected_without_time = dict(expected_analysis)
+        expected_without_time.pop("processing_time_ms", None)
+        processing_time_ms = actual_analysis.pop("processing_time_ms")
 
+        self.assertEqual(actual_analysis, expected_without_time)
+        self.assertIsInstance(processing_time_ms, int)
+        self.assertGreaterEqual(processing_time_ms, 0)
         self.assertEqual(
             textract_client.request["Document"]["S3Object"],
             {
@@ -126,7 +132,7 @@ class TestHandler(unittest.TestCase):
                 "recommendation_type": expected_analysis["recommendation_type"],
                 "urgency_detected": expected_analysis["urgency_detected"],
                 "confidence_score": expected_analysis["confidence_score"],
-                "processing_time_ms": expected_analysis.get("processing_time_ms"),
+                "processing_time_ms": processing_time_ms,
                 "model_used": "test-model",
                 "status": "complete",
             },
