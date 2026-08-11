@@ -1,4 +1,5 @@
 import json
+import time
 from typing import Any
 
 from shared.events import validate_document_analysis
@@ -33,6 +34,7 @@ def analyze_document_text(
     if not document_text.strip():
         raise ValueError("document_text must not be empty")
 
+    started_at = time.perf_counter()
     response = client.converse(
         modelId=model_id,
         system=[{"text": SYSTEM_PROMPT}],
@@ -48,6 +50,10 @@ def analyze_document_text(
         },
     )
 
+    processing_time_ms = round(
+        (time.perf_counter() - started_at) * 1000
+    )
+
     content_blocks = response["output"]["message"]["content"]
     response_text = "".join(
         block["text"]
@@ -56,4 +62,6 @@ def analyze_document_text(
     )
 
     analysis = json.loads(response_text)
-    return validate_document_analysis(analysis)
+    validated_analysis = validate_document_analysis(analysis)
+    validated_analysis["processing_time_ms"] = processing_time_ms
+    return validated_analysis
