@@ -19,7 +19,7 @@ type ApiAnalysis = {
     recommendation_text: string | null
     recommendation_type: string | null
     urgency_detected: boolean
-    confidence_score: string | null // sent as a string, but represents 0-100 (e.g. "92.5"), confirmed via Ayesha's schema
+    confidence_score: string | null // sent as a string, but represents 0-100 (e.g. "92.5"), confirmed via the worker's schema
     processing_time_ms: number | null
     model_used: string | null
     status: string
@@ -39,10 +39,10 @@ const categoryLabels: Record<string, string> = {
 // against inbox/sent document lists later we could resolve this to a real tx_ref.
 //
 // NOTE: the API also doesn't send "entities" at all — that field was mock-only.
-// Falling back to tags for now so AIHistoryItem doesn't break; revisit if Ayesha's
+// Falling back to tags for now so AIHistoryItem doesn't break; revisit if the worker's
 // Lambda starts returning something entity-like under a different field name.
 //
-// Confirmed via Ayesha's document-analysis.schema.json: confidence_score is
+// Confirmed via the document-analysis.schema.json: confidence_score is
 // already a 0-100 number from the Lambda. The backend's OpenAPI spec shows it
 // serialized as a string (likely a DB Decimal -> str conversion), so we just
 // parse it back to a number — no scaling needed.

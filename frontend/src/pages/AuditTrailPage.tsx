@@ -28,7 +28,7 @@ function formatTimestamp(isoString: string): string {
     return date.toLocaleString('sv-SE') // gives "YYYY-MM-DD HH:mm:ss" style, matches mock format
 }
 
-// Bella added user_name, org_name, and a real tx_ref field directly to this
+// The backend added user_name, org_name, and a real tx_ref field directly to this
 // response — confirmed via a real GET /audit call. tx_ref now shows the
 // actual TX-XXXXXX reference instead of the raw document_id UUID.
 function mapAuditLog(log: ApiAuditLog) {

@@ -62,7 +62,7 @@ export const documentsApi = {
   markAsRead: (id: string) =>
     api.put(`/documents/${id}/read`).then((r) => r.data),
   // NOTE: real doc_id (UUID) required here, not tx_ref.
-  // Response shape from Bella's endpoint isn't confirmed yet — currently
+  // Response shape from the backend endpoint isn't confirmed yet — currently
   // returns 500 ("Unable to generate download URL"), likely an S3/IAM issue
   // on her end. Once fixed, check the real payload and simplify getDownloadUrl
   // if needed — see extractDownloadUrl() below for how we're handling the
@@ -71,7 +71,7 @@ export const documentsApi = {
     api.get(`/documents/${docId}/download-url`).then((r) => r.data),
 };
 
-// Helper: Bella's download-url endpoint has an untyped response in the
+// Helper: the backend's download-url endpoint has an untyped response in the
 // OpenAPI spec, so we don't yet know if it returns a plain string, or an
 // object like { download_url: "..." } or { url: "..." }. This function
 // checks the common shapes so InboxDetail doesn't break once the backend
