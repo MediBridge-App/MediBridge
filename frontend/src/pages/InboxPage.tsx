@@ -18,7 +18,7 @@ function formatTime(isoString: string): string {
     })
 }
 
-// Bella added sender_org_name/recipient_org_name/summary/tags directly to
+// The backend added sender_org_name/recipient_org_name/summary/tags directly to
 // this response — confirmed via a real GET /documents/inbox call. This
 // means we no longer need a separate /organizations fetch to resolve org
 // names, or a separate /ai/analyses/{id} fetch in InboxDetail for the
@@ -117,7 +117,7 @@ export default function InboxPage() {
         return matchSearch && matchStatus
     })
 
-    // Bella added a real PUT /documents/{id}/read endpoint (confirmed live
+    // The backend added a real PUT /documents/{id}/read endpoint (confirmed live
     // Aug 3) — this replaces the old harmful workaround that called
     // PUT /status with "delivered" and risked corrupting the real document
     // workflow status. Now persists for real via the dedicated endpoint.

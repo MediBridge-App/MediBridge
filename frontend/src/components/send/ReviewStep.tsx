@@ -38,7 +38,7 @@ export default function ReviewStep({
 
     // These are simple client-side checks, not a real AI analysis — the
     // actual AI pipeline (classification/summary/tags) runs after the
-    // document is sent, via Ayesha's Lambda. Labeled honestly as a
+    // document is sent, via the worker Lambda. Labeled honestly as a
     // pre-send checklist rather than "AI Analysis" to avoid implying
     // something ran that didn't.
     const checks = [
